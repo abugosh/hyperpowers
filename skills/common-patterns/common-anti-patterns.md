@@ -101,8 +101,8 @@ Anti-patterns that apply across multiple skills. Reference this to avoid duplica
 ❌ Don't commit without running tests
    Verify tests pass before committing
 
-❌ Don't create PR without running full test suite
-   All tests must pass before PR creation
+❌ Don't create MR without running full test suite
+   All tests must pass before MR creation
 
 ❌ Don't skip pre-commit hooks
    Never use --no-verify

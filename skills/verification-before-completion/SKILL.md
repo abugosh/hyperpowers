@@ -33,7 +33,7 @@ No shortcuts. No "should work". No partial verification. Run it, prove it.
 **ALWAYS before:**
 - Any success/completion claim
 - Any expression of satisfaction
-- Committing, PR creation, task completion
+- Committing, MR creation, task completion
 - Moving to next task
 - ANY communication suggesting completion/correctness
 

@@ -59,7 +59,7 @@ All regex patterns in skill-rules.json have been designed to avoid catastrophic 
 - `check.*?(implementation|against spec)` - Safe: lazy quantifier
 
 **finishing-a-development-branch**
-- `(create|open|make).*?(PR|pull request)` - Safe: lazy quantifier
+- `(create|open|make).*?(MR|merge request)` - Safe: lazy quantifier
 - `(merge|finish|close|complete).*?(branch|epic|feature)` - Safe: lazy quantifier
 
 **sre-task-refinement**
@@ -74,7 +74,7 @@ All regex patterns in skill-rules.json have been designed to avoid catastrophic 
 
 **verification-before-completion**
 - `(I'm|it's|work is).*(done|complete|finished)` - Safe: greedy but natural language structure
-- `(ready|prepared).*(merge|commit|push|PR)` - Safe: greedy but short
+- `(ready|prepared).*(merge|commit|push|MR)` - Safe: greedy but short
 
 **dispatching-parallel-agents**
 - `(multiple|several|many).*(failures|errors|issues)` - Safe: greedy but close proximity

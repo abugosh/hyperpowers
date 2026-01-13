@@ -802,7 +802,7 @@ All of these mean: **STOP. Follow full review process.**
 - "No time for thorough review" (Gaps later cost more than review now)
 - "Looks good to me" (Opinion ≠ evidence, run verifications)
 - "Small gaps don't matter" (Spec is contract, all criteria matter)
-- "Will fix in next PR" (This PR completes this epic, fix now)
+- "Will fix in next MR" (This MR completes this epic, fix now)
 - "Can check diff instead of files" (Diff shows changes, not context)
 - "Automated checks cover it" (Checks + code review both required)
 - "Success criteria passing means done" (Also check anti-patterns, quality, edge cases)

@@ -144,9 +144,9 @@
     "enforcement": "suggest",
     "priority": "medium",
     "promptTriggers": {
-      "keywords": ["merge", "PR", "pull request", "finish branch", "close epic"],
+      "keywords": ["merge", "MR", "merge request", "finish branch", "close epic"],
       "intentPatterns": [
-        "(create|open|make).*?(PR|pull request)",
+        "(create|open|make).*?(MR|merge request)",
         "(merge|finish|close|complete).*?(branch|epic|feature)",
         "ready.*?to.*(merge|ship|release)"
       ]
@@ -187,7 +187,7 @@
       "keywords": ["done", "complete", "finished", "ready", "verified", "works", "passing"],
       "intentPatterns": [
         "(I'm|it's|work is).*(done|complete|finished)",
-        "(ready|prepared).*(merge|commit|push|PR)",
+        "(ready|prepared).*(merge|commit|push|MR)",
         "everything.*(works|passes|ready)",
         "(verified|tested|checked).*?(everything|all)",
         "can we.*(merge|commit|ship)"

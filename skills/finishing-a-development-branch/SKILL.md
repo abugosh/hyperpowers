@@ -1,6 +1,6 @@
 ---
 name: finishing-a-development-branch
-description: Use when implementation complete and tests pass - closes bd epic, presents integration options (merge/PR/keep/discard), executes choice
+description: Use when implementation complete and tests pass - closes bd epic, presents integration options (merge/MR/keep/discard), executes choice
 ---
 
 <skill_overview>
@@ -21,7 +21,7 @@ LOW FREEDOM - Follow the 6-step process exactly. Present exactly 4 options. Neve
 | 5 | Execute choice | Follow option workflow |
 | 6 | Cleanup worktree (options 1,2,4 only) | Option 3 keeps worktree |
 
-**Options:** 1=Merge locally, 2=PR, 3=Keep as-is, 4=Discard (confirm)
+**Options:** 1=Merge locally, 2=MR, 3=Keep as-is, 4=Discard (confirm)
 </quick_reference>
 
 <when_to_use>
@@ -113,7 +113,7 @@ Present exactly these 4 options:
 Implementation complete. What would you like to do?
 
 1. Merge back to <base-branch> locally
-2. Push and create a Pull Request
+2. Push and create a Merge Request
 3. Keep the branch as-is (I'll handle it later)
 4. Discard this work
 
@@ -144,7 +144,7 @@ Then: Step 6 (cleanup worktree)
 
 ---
 
-### Option 2: Push and Create PR
+### Option 2: Push and Create MR
 
 **Get epic info:**
 
@@ -153,12 +153,12 @@ bd show bd-1
 bd dep tree bd-1
 ```
 
-**Create PR:**
+**Create MR:**
 
 ```bash
 git push -u origin <feature-branch>
 
-gh pr create --title "feat: <epic-name>" --body "$(cat <<'EOF'
+glab mr create --title "feat: <epic-name>" --description "$(cat <<'EOF'
 ## Epic
 
 Closes bd-<N>: <Epic Title>
@@ -243,7 +243,7 @@ bd close bd-1
 
 "Implementation complete. What would you like to do?
 1. Merge back to main locally
-2. Push and create PR
+2. Push and create MR
 ..."
 
 User selects Option 1
@@ -290,26 +290,26 @@ Dispatch hyperpowers:test-runner agent: "Run: cargo test"
 </example>
 
 <example>
-<scenario>Developer auto-cleans worktree for PR option</scenario>
+<scenario>Developer auto-cleans worktree for MR option</scenario>
 
 <code>
-# User selects Option 2: Create PR
+# User selects Option 2: Create MR
 git push -u origin feature-auth
-gh pr create --title "feat: Add OAuth" --body "..."
+glab mr create --title "feat: Add OAuth" --description "..."
 
 # Developer immediately cleans up worktree
 git worktree remove ../feature-auth-worktree
 
-# PR gets feedback: "Please add rate limiting"
-# User: "Can you address the PR feedback?"
+# MR gets feedback: "Please add rate limiting"
+# User: "Can you address the MR feedback?"
 # Worktree is gone! Have to recreate it
 git worktree add ../feature-auth-worktree feature-auth
 # Lost local state, uncommitted experiments, etc.
 </code>
 
 <why_it_fails>
-- Cleaned worktree when PR still active
-- User likely needs worktree for PR feedback
+- Cleaned worktree when MR still active
+- User likely needs worktree for MR feedback
 - Have to recreate worktree for changes
 - Lost any local uncommitted work
 - Inefficient workflow
@@ -320,27 +320,27 @@ git worktree add ../feature-auth-worktree feature-auth
 
 ```bash
 git push -u origin feature-auth
-gh pr create --title "feat: Add OAuth" --body "..."
+glab mr create --title "feat: Add OAuth" --description "..."
 
-# Report PR created
-"Pull request created: https://github.com/user/repo/pull/42
+# Report MR created
+"Merge request created: https://gitlab.com/user/repo/-/merge_requests/42
 
-Keeping worktree at ../feature-auth-worktree for PR updates."
+Keeping worktree at ../feature-auth-worktree for MR updates."
 
 # NO worktree cleanup
-# User can address PR feedback in same worktree
+# User can address MR feedback in same worktree
 ```
 
 **Cleanup happens later when:**
-- PR is merged
+- MR is merged
 - User explicitly requests cleanup
-- User uses finishing-a-development-branch again after PR merges
+- User uses finishing-a-development-branch again after MR merges
 
 **What you gain:**
-- Worktree available for PR feedback
+- Worktree available for MR feedback
 - No need to recreate worktree
 - Preserve local state and experiments
-- Efficient PR iteration workflow
+- Efficient MR iteration workflow
 </correction>
 </example>
 
@@ -410,7 +410,7 @@ git worktree remove ../feature-experimental-worktree
 | Option | Merge | Push | Keep Worktree | Cleanup Branch | Cleanup Worktree |
 |--------|-------|------|---------------|----------------|------------------|
 | 1. Merge locally | ✓ | - | - | ✓ | ✓ |
-| 2. Create PR | - | ✓ | ✓ | - | - |
+| 2. Create MR | - | ✓ | ✓ | - | - |
 | 3. Keep as-is | - | - | ✓ | - | - |
 | 4. Discard | - | - | - | ✓ (force) | ✓ |
 </option_matrix>
@@ -421,7 +421,7 @@ git worktree remove ../feature-experimental-worktree
 1. **Never skip test verification** → Tests must pass before presenting options
 2. **Present exactly 4 options** → No open-ended questions
 3. **Require confirmation for Option 4** → Type "discard" exactly
-4. **Keep worktree for Options 2 & 3** → PR and keep-as-is need worktree
+4. **Keep worktree for Options 2 & 3** → MR and keep-as-is need worktree
 5. **Verify tests after merge (Option 1)** → Merged result might break
 
 ## Common Excuses
@@ -431,7 +431,7 @@ All of these mean: **STOP. Follow the process.**
 - "Tests passed earlier, don't need to verify" (Might have changed, verify now)
 - "User knows what they want" (Present options, let them choose)
 - "Obvious they want to discard" (Require explicit confirmation)
-- "PR done, cleanup worktree" (PR likely needs updates, keep worktree)
+- "MR done, cleanup worktree" (MR likely needs updates, keep worktree)
 - "Too many options" (Exactly 4, no more, no less)
 </critical_rules>
 
@@ -463,7 +463,7 @@ hyperpowers:executing-plans → hyperpowers:review-implementation → hyperpower
 **This skill calls:**
 - hyperpowers:test-runner agent (for test verification)
 - bd commands (epic management)
-- gh commands (PR creation)
+- glab commands (MR creation)
 
 **CRITICAL:** Never read `.beads/issues.jsonl` directly. Always use bd CLI commands.
 </integration>
@@ -471,8 +471,8 @@ hyperpowers:executing-plans → hyperpowers:review-implementation → hyperpower
 <resources>
 **Detailed guides:**
 - [Git worktree management](resources/worktree-guide.md)
-- [PR description templates](resources/pr-templates.md)
-- [bd epic reference in PRs](resources/bd-pr-integration.md)
+- [MR description templates](resources/mr-templates.md)
+- [bd epic reference in MRs](resources/bd-mr-integration.md)
 
 **When stuck:**
 - Tasks won't close → Check bd status, verify all child tasks done

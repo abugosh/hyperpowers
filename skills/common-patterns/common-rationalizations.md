@@ -63,7 +63,7 @@ These rationalizations appear across multiple contexts. When you catch yourself 
 | Excuse | Reality |
 |--------|---------|
 | "Small gaps don't matter" | Spec is contract. All criteria must be met. |
-| "Will fix in next PR" | This PR should complete this work. Fix now. |
+| "Will fix in next MR" | This MR should complete this work. Fix now. |
 | "Partner will review anyway" | You review first. Don't delegate your quality check. |
 | "Good enough for now" | "Now" becomes "forever". Do it right. |
 
@@ -92,7 +92,7 @@ These rationalizations appear across multiple contexts. When you catch yourself 
 Rationalizations are how good processes fail:
 1. Developer thinks "just this once"
 2. Shortcut causes subtle bug
-3. Bug found in production/PR
+3. Bug found in production/MR
 4. More time spent fixing than process would have cost
 5. Trust damaged
 

@@ -20,7 +20,7 @@ LOW FREEDOM - Follow the RED-GREEN-REFACTOR cycle exactly when creating skills. 
 | **GREEN** | Run WITH skill | Agent now complies |
 | **REFACTOR** | Find new rationalizations | Agent still complies |
 | **REFACTOR** | Add explicit counters | Bulletproof against excuses |
-| **DEPLOY** | Commit and optionally PR | Skill ready for use |
+| **DEPLOY** | Commit and optionally MR | Skill ready for use |
 
 **Iron Law:** NO SKILL WITHOUT FAILING TEST FIRST (applies to new skills AND edits)
 </quick_reference>
@@ -230,7 +230,7 @@ Closes rationalizations:
 
 **Personal skills:** Write to `~/.claude/skills/` for cross-project use
 
-**Plugin skills:** PR to plugin repository if broadly useful
+**Plugin skills:** MR to plugin repository if broadly useful
 
 **STOP:** Before moving to next skill, complete this entire process. No batching untested skills.
 </the_process>
