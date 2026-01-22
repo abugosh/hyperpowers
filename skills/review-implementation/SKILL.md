@@ -208,10 +208,11 @@ rg -i "backward.*compat|legacy.*support|shim|polyfill" src/ || echo "✅ None"
 **IMPORTANT:** Use hyperpowers:test-runner agent to avoid context pollution.
 
 ```
+Dispatch hyperpowers:test-runner: "Run: validate"
+# Or explicitly:
 Dispatch hyperpowers:test-runner: "Run: cargo test"
 Dispatch hyperpowers:test-runner: "Run: cargo fmt --check"
 Dispatch hyperpowers:test-runner: "Run: cargo clippy -- -D warnings"
-Dispatch hyperpowers:test-runner: "Run: .git/hooks/pre-commit"
 ```
 
 ---
@@ -505,7 +506,7 @@ Read code to confirm edge cases handled:
 2. Tautological test: test_jwt_struct_exists must be removed
 
 **Important:**
-3. 3 clippy warnings block pre-commit hook
+3. 3 clippy warnings block validation
 4. test_encode_decode needs edge cases (empty, unicode, max length)
 ```
 
@@ -679,7 +680,7 @@ cargo test
 - Only checked 1 (tests pass)
 - Anti-pattern: unwrap() present (prohibited)
 - Key consideration: Unicode handling not tested
-- Linter has warnings (blocks pre-commit)
+- Linter has warnings (blocks validation)
 </code>
 
 <why_it_fails>
@@ -687,7 +688,7 @@ cargo test
 - Didn't verify all success criteria
 - Didn't check anti-patterns
 - Didn't verify key considerations
-- Pre-commit will fail (blocks merge)
+- Validation will fail (blocks merge)
 - Ships code violating anti-patterns
 </why_it_fails>
 
@@ -725,7 +726,7 @@ rg "unicode" tests/
 **What you gain:**
 - Verified ALL criteria, not just tests
 - Caught anti-pattern violations
-- Caught pre-commit blockers
+- Caught validation blockers
 - Prevented shipping non-compliant code
 - Spec contract honored completely
 </correction>
@@ -1019,7 +1020,7 @@ Before approving implementation:
 - [ ] Read bd task specification completely
 - [ ] Ran all automated checks (TODOs, stubs, unwrap, ignored tests)
 - [ ] **Ran dead code audit (fallback patterns, unused code, deprecation, orphaned tests)**
-- [ ] Ran all quality gates via test-runner agent (tests, format, lint, pre-commit)
+- [ ] Ran all quality gates via test-runner agent (Run: validate, or explicit tests/format/lint)
 - [ ] Read actual implementation files with Read tool (not just diff)
 - [ ] Reviewed code quality with Google Fellow perspective
 - [ ] **Audited all new tests for meaningfulness (not tautological)**

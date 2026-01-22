@@ -119,7 +119,7 @@ bd dep tree bd-1
 Reference bd task IDs in commits (use hyperpowers:test-runner agent):
 
 ```bash
-# Use test-runner agent to avoid pre-commit hook pollution
+# Use test-runner agent to keep verbose output out of context
 Dispatch hyperpowers:test-runner agent: "Run: git add <files> && git commit -m 'feat(bd-3): implement feature
 
 Implements step 1 of bd-3: Task Name

@@ -104,8 +104,8 @@ Anti-patterns that apply across multiple skills. Reference this to avoid duplica
 ❌ Don't create MR without running full test suite
    All tests must pass before MR creation
 
-❌ Don't skip pre-commit hooks
-   Never use --no-verify
+❌ Don't skip validations
+   Always run lint, typecheck, tests before committing
 
 ❌ Don't force push without explicit request
    Respect shared branch history

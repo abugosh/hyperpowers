@@ -25,7 +25,7 @@ No shortcuts. No "should work". No partial verification. Run it, prove it.
 
 **Iron Law:** NO COMPLETION CLAIMS WITHOUT FRESH VERIFICATION EVIDENCE
 
-**Use test-runner agent for:** Tests, pre-commit hooks, commits (keeps verbose output out of context)
+**Use test-runner agent for:** Tests, validations ('Run: validate'), commits (keeps verbose output out of context)
 
 </quick_reference>
 
@@ -175,8 +175,8 @@ rg "TODO|FIXME|todo!|unimplemented!" src/
 cargo test test_generate_token test_verify_token
 # Output: test result: ok. 2 passed ✅
 
-# 3. Run pre-commit hooks (via test-runner agent)
-"Run: cargo fmt --check && cargo clippy && cargo test"
+# 3. Run all validations (via test-runner agent)
+"Run: validate"  # Or explicit: "Run: cargo fmt --check && cargo clippy && cargo test"
 ```
 
 **Agent returns:**
@@ -292,13 +292,12 @@ All of these mean: Stop, run verification:
 - "I'm tired" (exhaustion ≠ excuse)
 - "Partial check is enough"
 
-## Pre-Commit Hook Assumption
+## Current Changes Assumption
 
-**If your project uses pre-commit hooks enforcing tests:**
+**When validations fail, they are from your current changes:**
 - All test failures are from your current changes
 - Never check if errors were "pre-existing"
 - Don't run `git checkout <sha> && pytest` to verify
-- Pre-commit hooks guarantee previous commit passed
 - Just fix the error directly
 
 </critical_rules>
