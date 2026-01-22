@@ -11,6 +11,38 @@ Review completed implementation against bd epic to catch gaps before claiming co
 LOW FREEDOM - Follow the 4-step review process exactly. Review with Google Fellow-level scrutiny. Never skip automated checks, quality gates, or code reading. No approval without evidence for every criterion.
 </rigidity_level>
 
+<evidence_requirements>
+## Evidence-Based Review (Zero Speculation Principle)
+
+**Every claim requires evidence:**
+
+| Claim Type | Required Evidence |
+|------------|-------------------|
+| "Code implements X" | File path:line number showing implementation |
+| "Test covers Y" | Test name + specific assertion |
+| "Criterion met" | Command output proving criterion |
+| "No anti-pattern" | Search command showing no matches |
+
+**Confidence Scores:**
+
+Rate each finding 0.0-1.0:
+- **1.0** - Verified with direct evidence (ran command, read code)
+- **0.8** - Strong indirect evidence (multiple consistent signals)
+- **0.5** - Uncertain (partial evidence, assumptions made)
+- **0.3** - Weak (limited investigation, needs more verification)
+
+**Findings below 0.8 confidence must be investigated until ≥0.8 or marked UNCERTAIN.**
+
+**Example evidence format:**
+```markdown
+| Criterion | Status | Confidence | Evidence |
+|-----------|--------|------------|----------|
+| All tests pass | ✅ Met | 1.0 | `cargo test`: 127 passed, 0 failed |
+| No unwrap in production | ❌ Not met | 1.0 | `rg "\.unwrap\(\)" src/`: Found at jwt.ts:45 |
+| Error handling proper | ⚠️ Uncertain | 0.5 | Read jwt.ts, unclear if all paths covered |
+```
+</evidence_requirements>
+
 <quick_reference>
 | Step | Action | Deliverable |
 |------|--------|-------------|
@@ -95,6 +127,79 @@ rg "\.unwrap\(\)|\.expect\(" src/ | grep -v "/tests/" || echo "✅ None"
 # Ignored/skipped tests
 rg "#\[ignore\]|#\[skip\]|\.skip\(\)" tests/ src/ || echo "✅ None"
 ```
+
+---
+
+### B2. Dead Code and Refactoring Remnants Audit
+
+**Context:** After refactoring, old code must be REMOVED, not kept as fallback.
+The canonical implementation is the new one. Old code is dead code.
+
+**Key principle:** "Don't bother with unused code. Delete it before you try to improve anything."
+
+**Automated detection patterns:**
+
+```bash
+# 1. Fallback/Legacy Code Detection
+# Patterns indicating old code left behind:
+rg -i "fallback|legacy|old_|_old|deprecated|obsolete" src/ || echo "✅ None"
+
+# Conditional using old implementation:
+rg -i "if.*use.*old|if.*legacy|if.*fallback|ENABLE_OLD|USE_LEGACY|FALLBACK_TO" src/ || echo "✅ None"
+
+# "was:" or "previously:" comments (describing removed behavior):
+rg -i "was:|previously:|used to|before refactor" src/ || echo "✅ None"
+
+# 2. Unused Code Detection (Language-Specific)
+
+# Rust - dead code warnings:
+cargo build 2>&1 | grep -E "warning.*never used|warning.*dead_code" || echo "✅ None"
+
+# TypeScript/JavaScript - unused exports (if eslint configured):
+npx eslint --rule 'no-unused-vars: error' src/ 2>/dev/null || echo "Check manually"
+
+# Swift - unused variables (SwiftLint):
+swiftlint lint --reporter json 2>/dev/null | jq '.[] | select(.rule_id == "unused")' || echo "Check manually"
+
+# Python - vulture if available:
+vulture src/ --min-confidence 80 2>/dev/null || echo "vulture not installed, check manually"
+
+# 3. Orphaned Tests Detection
+# Find tests that reference functions/classes that no longer exist:
+git diff main...HEAD --name-only | grep -E "(test|spec)" || echo "No test files changed"
+
+# 4. Deprecation Remnants (should be REMOVED, not marked):
+rg "@deprecated|#\[deprecated\]|// deprecated|DEPRECATED|@Deprecated" src/ || echo "✅ None"
+
+# 5. Backwards Compatibility Shims (unless external API):
+rg -i "backward.*compat|legacy.*support|shim|polyfill" src/ || echo "✅ None"
+```
+
+**If any patterns found, investigate:**
+
+1. **Fallback code:** Why does old implementation still exist? Delete it.
+2. **Unused functions:** Who calls this? If nobody, delete it.
+3. **Orphaned tests:** Does tested functionality still exist? If not, delete test.
+4. **Deprecation markers:** Remove now or create bd issue with removal date.
+5. **Backwards compat shims:** Is this external API? If internal, delete shim.
+
+**Dead Code Audit Results Template:**
+
+```markdown
+#### Dead Code Audit Results
+
+| Category | Pattern | Found | Location | Action |
+|----------|---------|-------|----------|--------|
+| Fallback code | `legacy\|old_\|fallback` | 0 | - | ✅ None |
+| Unused functions | compiler warnings | 0 | - | ✅ None |
+| Deprecation markers | `@deprecated` | 0 | - | ✅ None |
+| Orphaned tests | tests for removed code | 0 | - | ✅ None |
+| Backwards compat shims | `shim\|polyfill` | 0 | - | ✅ None |
+
+**Verdict:** ✅ No dead code / ❌ Dead code found - refactoring incomplete
+```
+
+**If dead code found:** This is a **GAP**. Old code after refactoring = incomplete refactoring.
 
 ---
 
@@ -342,6 +447,22 @@ Read code to confirm edge cases handled:
 ```markdown
 ### Task: bd-3 - Implement JWT authentication
 
+#### Evidence-Based Findings
+
+| Criterion | Status | Confidence | Evidence |
+|-----------|--------|------------|----------|
+| All tests pass | ✅ Met | 1.0 | `cargo test`: 127 passed |
+| Pre-commit passes | ❌ Not met | 1.0 | `cargo clippy`: 3 warnings |
+| No unwrap in production | ❌ Not met | 1.0 | `rg "\.unwrap()"`: src/auth/jwt.ts:45 |
+
+#### File Evidence
+| File | Line | What Verified | Confidence |
+|------|------|---------------|------------|
+| src/auth/jwt.ts | 45 | unwrap violation | 1.0 |
+| src/auth/jwt.ts | 12-30 | token generation logic | 0.9 |
+
+**Findings below 0.8:** None (all verified)
+
 #### Automated Checks
 - TODOs: ✅ None
 - Stubs: ✅ None
@@ -374,11 +495,6 @@ Read code to confirm edge cases handled:
 
 **Tautological tests found:** 1 (test_jwt_struct_exists)
 **Weak tests found:** 1 (test_encode_decode needs edge cases)
-
-#### Success Criteria
-1. "All tests pass": ✅ Met - Evidence: 127 tests passed
-2. "Pre-commit passes": ❌ Not met - Evidence: clippy warnings
-3. "No unwrap in production": ❌ Not met - Evidence: Found at jwt.ts:45
 
 #### Anti-Patterns
 - "NO unwrap in production": ❌ Violated at src/auth/jwt.ts:45
@@ -779,6 +895,83 @@ Remove 3 tautological tests, add 3 edge case tests, then re-review.
 - Confidence in test suite
 </correction>
 </example>
+
+<example>
+<scenario>Developer completes refactoring but leaves old implementation as fallback</scenario>
+
+<code>
+# After refactoring auth system:
+git diff shows:
++ function authenticateV2(token) { ... }   # New implementation
+  function authenticate(token) { ... }      # Old still exists!
+  function authenticateLegacy(token) { ... } # Even older!
+
+# In config:
+const USE_LEGACY_AUTH = process.env.LEGACY_AUTH ?? true
+
+# Developer claims: "Refactoring complete"
+</code>
+
+<why_it_fails>
+- Old implementations still present (authenticate, authenticateLegacy)
+- Feature flag enables fallback to old code
+- Tests may still use old functions
+- No single canonical implementation
+- Technical debt increased, not decreased
+- "Refactoring" actually added code instead of replacing
+</why_it_fails>
+
+<correction>
+**Run dead code audit:**
+
+```bash
+# Fallback patterns
+rg -i "legacy|old_|fallback" src/
+# Found: authenticateLegacy, USE_LEGACY_AUTH ❌
+
+# Check callers
+rg "authenticate\(" src/ --type ts
+# authenticate: 0 callers ❌ DEAD
+# authenticateLegacy: 0 callers ❌ DEAD
+# authenticateV2: 15 callers ✅ ACTIVE
+```
+
+**Dead Code Audit Results:**
+
+| Category | Pattern | Found | Location | Action |
+|----------|---------|-------|----------|--------|
+| Fallback code | `legacy\|fallback` | 2 | auth.ts:45,89 | ❌ Delete |
+| Unused functions | no callers | 2 | authenticate(), authenticateLegacy() | ❌ Delete |
+| Feature flags | `USE_LEGACY` | 1 | config.ts:12 | ❌ Delete |
+
+**Decision: GAPS FOUND ❌**
+
+```markdown
+## Dead Code Audit: GAPS FOUND
+
+### Refactoring Remnants
+- authenticate() at auth.ts:12 - 0 callers, delete
+- authenticateLegacy() at auth.ts:45 - 0 callers, delete
+- USE_LEGACY_AUTH flag at config.ts:12 - enables dead code, delete
+
+### Required Actions
+1. Delete authenticate() - replaced by authenticateV2()
+2. Delete authenticateLegacy() - obsolete
+3. Delete USE_LEGACY_AUTH flag - no longer needed
+4. Rename authenticateV2() to authenticate() (cleaner API)
+5. Update/delete tests for removed functions
+
+**Cannot approve until old code is removed.**
+```
+
+**What you gain:**
+- Single canonical implementation
+- No dead code accumulation
+- Tests test actual functionality
+- Technical debt reduced, not increased
+- Refactoring actually complete
+</correction>
+</example>
 </examples>
 
 <critical_rules>
@@ -786,12 +979,13 @@ Remove 3 tautological tests, add 3 edge case tests, then re-review.
 
 1. **Review every task** → No skipping "simple" tasks
 2. **Run all automated checks** → TODOs, stubs, unwrap, ignored tests
-3. **Read actual files with Read tool** → Not just git diff
-4. **Verify every success criterion** → With evidence, not assumptions
-5. **Check all anti-patterns** → Search for prohibited patterns
-6. **Apply Google Fellow scrutiny** → Production-grade code review
-7. **Audit all new tests for meaningfulness** → Tautological tests = gaps, not coverage
-8. **If gaps found → STOP** → Don't proceed to finishing-a-development-branch
+3. **Run dead code audit** → Fallback code, unused functions, deprecation markers
+4. **Read actual files with Read tool** → Not just git diff
+5. **Verify every success criterion** → With evidence, not assumptions
+6. **Check all anti-patterns** → Search for prohibited patterns
+7. **Apply Google Fellow scrutiny** → Production-grade code review
+8. **Audit all new tests for meaningfulness** → Tautological tests = gaps, not coverage
+9. **If gaps found → STOP** → Don't proceed to finishing-a-development-branch
 
 ## Common Excuses
 
@@ -810,6 +1004,11 @@ All of these mean: **STOP. Follow full review process.**
 - "Coverage looks good" (Coverage can be gamed with meaningless tests)
 - "Tests are boilerplate, don't need review" (Every test must catch a real bug)
 - "It's just a simple existence check" (Compiler already checks existence)
+- "Keeping old code as fallback is safe" (Old code = dead code, delete it)
+- "We might need the old implementation later" (Version control remembers, delete now)
+- "Backwards compatibility requires the shim" (Internal code doesn't need backwards compat)
+- "Deprecation marker is enough" (Deprecation = "delete soon", not "keep forever")
+- "The old tests still pass" (Tests for removed code = orphaned tests, delete)
 
 </critical_rules>
 
@@ -819,6 +1018,7 @@ Before approving implementation:
 **Per task:**
 - [ ] Read bd task specification completely
 - [ ] Ran all automated checks (TODOs, stubs, unwrap, ignored tests)
+- [ ] **Ran dead code audit (fallback patterns, unused code, deprecation, orphaned tests)**
 - [ ] Ran all quality gates via test-runner agent (tests, format, lint, pre-commit)
 - [ ] Read actual implementation files with Read tool (not just diff)
 - [ ] Reviewed code quality with Google Fellow perspective
