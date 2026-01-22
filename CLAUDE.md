@@ -231,7 +231,7 @@ The plugin is published to the Claude Code marketplace:
 
 ```bash
 # In the marketplace system (not in this repo)
-claude-code plugins install withzombies-hyper/hyperpowers
+claude-code plugins install abugosh-hyper/hyperpowers
 ```
 
 Version is tracked in `.claude-plugin/plugin.json`.

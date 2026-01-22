@@ -109,7 +109,7 @@ Task("Run tests", "Run pytest tests/")
 Install from the Claude Code plugin marketplace:
 
 ```
-/plugin marketplace add withzombies/hyperpowers
+/plugin marketplace add abugosh/hyperpowers
 /plugin install hyperpowers@hyperpowers
 ```
 
@@ -189,7 +189,9 @@ MIT
 
 ## Author
 
-Ryan Stortz (ryan@withzombies.com)
+Alex Bugosh
+
+Fork of [withzombies/hyperpowers](https://github.com/withzombies/hyperpowers) by Ryan Stortz.
 
 ## Acknowledgments
 

@@ -1,19 +1,17 @@
 {
-  "name": "withzombies-hyper",
+  "name": "abugosh-hyper",
   "description": "Development marketplace for Hyperpowers core skills library",
   "owner": {
-    "name": "Ryan",
-    "email": "ryan@withzombies.com"
+    "name": "Alex Bugosh"
   },
   "plugins": [
     {
-      "name": "withzombies-hyper",
-      "description": "Ryan's riff on obra/superpowers: strong guidance for Claude Code as a software development assistant",
+      "name": "abugosh-hyper",
+      "description": "Strong guidance for Claude Code as a software development assistant",
       "version": "1.6.1",
       "source": "./",
       "author": {
-        "name": "Ryan",
-        "email": "ryan@withzombies.com"
+        "name": "Alex Bugosh"
       }
     }
   ]
