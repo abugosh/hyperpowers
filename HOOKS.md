@@ -189,16 +189,16 @@ These modifications bypass code review, break CI/CD, and hide underlying issues.
 - Running verification commands (ruff, pytest, mypy, cargo test, npm test, etc.) on previous commits
 
 **Why blocking is necessary:**
-When projects use pre-commit hooks that enforce passing tests, checking if errors are "pre-existing" wastes time. Pre-commit hooks guarantee the previous commit passed all checks, so any test failure or lint error must be from current changes.
+Checking if errors are "pre-existing" wastes time and shifts responsibility away from fixing them. The focus should be on resolving current issues, not investigating history.
 
 Claude sometimes attempts to verify errors are new by:
 - Checking out previous commits to run tests
 - Running linters on previous commits to compare results
 - Using git history to investigate when errors were introduced
 
-These investigations are unnecessary when pre-commit hooks enforce quality standards. The hook forces Claude to fix errors directly instead of investigating git history.
+These investigations are unnecessary for resolving current issues. The hook forces Claude to fix errors directly instead of investigating git history.
 
-**Related skills:** `verification-before-completion`, `debugging-with-tools` both document the pre-commit hook assumption.
+**Related skills:** `verification-before-completion`, `debugging-with-tools` document the approach of fixing errors directly.
 
 ### Stop Hook
 

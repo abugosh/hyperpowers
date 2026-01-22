@@ -58,7 +58,7 @@ Domain-specific agents for complex tasks:
 - **code-reviewer** - Review implementations against plans and coding standards
 - **codebase-investigator** - Understand current codebase state and patterns
 - **internet-researcher** - Research APIs, libraries, and current best practices
-- **test-runner** - Run tests/pre-commit hooks/commits without context pollution (uses Haiku)
+- **test-runner** - Run tests/validations/commits without context pollution (uses Haiku)
 
 ### Hooks System
 
@@ -79,7 +79,7 @@ See [HOOKS.md](HOOKS.md) for configuration, troubleshooting, and customization d
 
 ### Context Efficiency with test-runner Agent
 
-The **test-runner** agent solves a common problem: running tests, pre-commit hooks, or git commits can generate massive amounts of output that pollutes your context window with successful test results, formatting changes, and debug prints.
+The **test-runner** agent solves a common problem: running tests, validations, or git commits can generate massive amounts of output that pollutes your context window with successful test results, formatting changes, and debug prints.
 
 **How it works:**
 - Agent runs commands in its own separate context
@@ -101,7 +101,7 @@ Task("Run tests", "Run pytest tests/")
 - Keeps your context clean and focused
 - Still provides complete failure details when tests fail
 - Works with all test frameworks (pytest, cargo, npm, go)
-- Handles pre-commit hooks without formatting spam
+- Handles 'Run: validate' for universal project validation (lint, typecheck, test)
 - Provides verification evidence for verification-before-completion skill
 
 ## Installation

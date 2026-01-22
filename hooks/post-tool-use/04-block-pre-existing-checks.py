@@ -2,10 +2,9 @@
 """
 PostToolUse hook to block git checkout when checking for pre-existing errors.
 
-When projects use pre-commit hooks that enforce passing tests, checking if
-errors are "pre-existing" is unnecessary and wastes time. All test failures
-and lint errors must be from current changes because pre-commit hooks prevent
-commits with failures.
+Checking if errors are "pre-existing" wastes time and shifts responsibility
+away from fixing them. The focus should be on resolving current issues,
+not investigating history.
 
 Blocked patterns:
 - git checkout <sha> (or git stash && git checkout)
@@ -35,7 +34,6 @@ VERIFICATION_COMMANDS = [
     r'\bpylint\b',
     r'\beslint\b',
     r'\btsc\b',  # TypeScript compiler
-    r'\bpre-commit\s+run\b',
 ]
 
 def is_checking_previous_commit(command):
@@ -90,14 +88,13 @@ def main():
                 "permissionDecision": "deny",
                 "permissionDecisionReason": (
                     "⚠️  CHECKING FOR PRE-EXISTING ERRORS IS UNNECESSARY\n\n"
-                    "Your project uses pre-commit hooks that enforce all tests pass before commits.\n"
-                    "Therefore, ALL test failures and errors are from your current changes.\n\n"
-                    "Do not check if errors were pre-existing. Pre-commit hooks guarantee they weren't.\n\n"
+                    "Investigating git history to determine if errors are 'pre-existing' wastes time.\n"
+                    "The focus should be on fixing current issues, not investigating their origin.\n\n"
                     "What you should do instead:\n"
-                    "1. Read the error messages from the current test run\n"
+                    "1. Read the error messages from the current test/lint run\n"
                     "2. Fix the errors directly\n"
-                    "3. Run tests again to verify the fix\n\n"
-                    "Checking git history for errors is wasting time when pre-commit hooks enforce quality.\n\n"
+                    "3. Run validation again to verify the fix\n\n"
+                    "Fix errors directly instead of investigating git history.\n\n"
                     "Blocked command:\n"
                     f"{command[:200]}"  # Show first 200 chars of command
                 )
