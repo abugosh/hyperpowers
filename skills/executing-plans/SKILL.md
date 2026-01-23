@@ -290,8 +290,10 @@ Review-implementation will:
 - Check each requirement met
 - Verify each success criterion satisfied
 - Confirm no anti-patterns used
-- If approved: Calls `finishing-a-development-branch`
+- If approved: STOP for manual validation (epic stays open)
 - If gaps: Create tasks, return to Step 2
+
+After manual validation complete, user runs `/hyperpowers:finish-branch` to close epic and integrate.
 
 3. **Only close epic after review approves**
 
@@ -596,8 +598,7 @@ Before closing epic:
 - sre-task-refinement (REQUIRED for new tasks created during execution)
 - test-driven-development (when implementing features)
 - test-runner (for running tests without output pollution)
-- review-implementation (final validation before closing epic)
-- finishing-a-development-branch (after review approves)
+- review-implementation (final automated validation - stops for manual testing)
 
 **This skill is called by:**
 - User (via /hyperpowers:execute-plan command)

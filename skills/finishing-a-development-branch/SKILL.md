@@ -25,16 +25,22 @@ LOW FREEDOM - Follow the 6-step process exactly. Present exactly 4 options. Neve
 </quick_reference>
 
 <when_to_use>
-- Implementation complete and reviewed
+- Automated review passed (`/hyperpowers:review-implementation` approved)
+- Manual validation/testing complete
 - All bd tasks for epic are done
 - Ready to integrate work back to main branch
-- Called by hyperpowers:review-implementation (final step)
+
+**Prerequisites:**
+- Run `/hyperpowers:review-implementation` first (automated checks)
+- Complete your manual testing while epic is still open
+- Then run this skill to close epic and integrate
 
 **Don't use for:**
 - Work still in progress
 - Tests failing
 - Epic has open tasks
 - Mid-implementation (use hyperpowers:executing-plans)
+- Before manual validation (review-implementation must pass first)
 </when_to_use>
 
 <the_process>
@@ -451,14 +457,18 @@ Before completing:
 
 <integration>
 **This skill is called by:**
-- hyperpowers:review-implementation (final step after approval)
+- User (via `/hyperpowers:finish-branch` after manual validation complete)
 
 **Call chain:**
 ```
-hyperpowers:executing-plans → hyperpowers:review-implementation → hyperpowers:finishing-a-development-branch
-                         ↓
-                   (if gaps found: STOP)
+hyperpowers:executing-plans → hyperpowers:review-implementation → STOP (manual validation)
+                                                                      ↓
+                                                          User completes manual testing
+                                                                      ↓
+                                                    /hyperpowers:finish-branch (this skill)
 ```
+
+**Why user-invoked:** Epic stays open during manual validation so user has full context. User explicitly triggers closure when ready.
 
 **This skill calls:**
 - hyperpowers:test-runner agent (for test verification)

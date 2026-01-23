@@ -49,7 +49,7 @@ Rate each finding 0.0-1.0:
 | 1 | Load bd epic + all tasks | TodoWrite with tasks to review |
 | 2 | Review each task (automated checks, quality gates, read code, **audit tests**, verify criteria) | Findings per task |
 | 3 | Report findings (approved / gaps found) | Review decision |
-| 4 | Gate: If approved → finishing-a-development-branch, If gaps → STOP | Next action |
+| 4 | Gate: If approved → STOP for manual validation, If gaps → STOP | Next action |
 
 **Review Perspective:** Google Fellow-level SRE with 20+ years experience reviewing junior engineer code.
 
@@ -578,11 +578,35 @@ Implementation does not match spec. Fix gaps before completing.
 ## Step 4: Gate Decision
 
 **If APPROVED:**
-```
-Announce: "I'm using hyperpowers:finishing-a-development-branch to complete this work."
 
-Use Skill tool: hyperpowers:finishing-a-development-branch
+```markdown
+## Implementation Review: APPROVED ✅
+
+[Include full approval report from Step 3]
+
+### Ready for Manual Validation
+
+Automated checks have passed. The epic remains **open** for your manual testing.
+
+When you've completed your manual validation, run:
+- `/hyperpowers:finish-branch` to close the epic and integrate the work
+
+### Epic Status
+- All tasks: ✅ Closed
+- Automated review: ✅ Passed
+- Manual validation: ⏳ Pending (your turn)
 ```
+
+**STOP here.** Do not automatically call finishing-a-development-branch.
+
+The user needs time to:
+- Test the implementation manually in their environment
+- Verify edge cases that automated tests don't cover
+- Confirm the feature works as expected in context
+
+**Why we stop:** Closing the epic removes context the user may need during manual validation. Let them explicitly trigger closure when ready.
+
+---
 
 **If GAPS FOUND:**
 ```
@@ -1043,7 +1067,6 @@ Before approving implementation:
 - hyperpowers:executing-plans (Step 5, after all tasks executed)
 
 **This skill calls:**
-- hyperpowers:finishing-a-development-branch (if approved)
 - hyperpowers:test-runner agent (for quality gates)
 
 **This skill uses:**
@@ -1051,10 +1074,14 @@ Before approving implementation:
 
 **Call chain:**
 ```
-hyperpowers:executing-plans → hyperpowers:review-implementation → hyperpowers:finishing-a-development-branch
-                         ↓
-                   (if gaps: STOP)
+hyperpowers:executing-plans → hyperpowers:review-implementation → STOP (manual validation)
+                                                                      ↓
+                                                          User runs /hyperpowers:finish-branch
+                                                                      ↓
+                                                    hyperpowers:finishing-a-development-branch
 ```
+
+**Why the checkpoint:** Epic stays open during manual validation so user has full context. User explicitly triggers closure when ready.
 
 **CRITICAL:** Use bd commands (bd show, bd list, bd dep tree), never read `.beads/issues.jsonl` directly.
 </integration>
