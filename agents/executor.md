@@ -103,6 +103,8 @@ Before closing any task:
 bd close <task-id>
 ```
 
+**IMPORTANT: Only close the individual task. NEVER close the epic.** Epic closure is exclusively the lead's responsibility after the reviewer agent approves the implementation. If you close the epic, you bypass the entire validation/review gate.
+
 ### 5. Propose next task
 
 After closing a task:
@@ -208,6 +210,8 @@ B. [approach] — [tradeoff, complexity, risk]
 
 When all epic success criteria appear to be met:
 
+**DO NOT close the epic. DO NOT run `bd close <epic-id>`.** Your job is to report completion to the lead with evidence. The lead dispatches the reviewer, and only closes the epic after the reviewer approves.
+
 1. Re-read the epic:
 ```bash
 bd show <epic-id>
@@ -215,7 +219,7 @@ bd show <epic-id>
 
 2. Check each success criterion against what was implemented. Gather evidence for each.
 
-3. Send completion message to lead:
+3. Send completion message to lead (via SendMessage — this is mandatory, do not skip):
 
 ```
 ## Epic Completion Report
@@ -249,4 +253,8 @@ Ready for review-implementation.
 
 6. **Always send structured messages.** Follow the exact message formats defined in the Message Protocol section. Do not send ad-hoc updates or unformatted status reports.
 
-7. **If context is getting exhausted:** Send a status message to the lead with current progress, what is complete, and what remains. The lead can shut down and respawn you with state preserved in bd.
+7. **Never close the epic.** Only close individual tasks. Epic closure is exclusively the lead's responsibility — it happens after the lead dispatches the reviewer and the reviewer returns APPROVED. Closing the epic yourself bypasses the validation/review gate and can result in unverified work being marked as complete.
+
+8. **Always send a completion report before going idle.** When all tasks are done, you MUST send the Epic Completion Report message to the lead via SendMessage. Never go idle or shut down without first reporting your status. If you are respawned to fix gaps, treat each gap fix as a task — send a structured completion report when done.
+
+9. **If context is getting exhausted:** Send a status message to the lead with current progress, what is complete, and what remains. The lead can shut down and respawn you with state preserved in bd.
