@@ -1,7 +1,7 @@
 {
   "name": "hyperpowers",
   "description": "Fork of withzombies/hyperpowers: strong guidance for Claude Code as a software development assistant",
-  "version": "2.9.0",
+  "version": "2.10.0",
   "author": {
     "name": "Alex Bugosh"
   },

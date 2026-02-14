@@ -131,13 +131,6 @@ As you research, note down:
 
 Dead-end documentation prevents wasted re-investigation when obstacles arise later.
 
-**CAPTURE for Parallelism Map:**
-During codebase research, also identify:
-- Module boundaries: Which directories/files form independent units?
-- Shared state: What files, databases, or APIs are touched by multiple features?
-- Natural work streams: Could different developers work on different parts without stepping on each other?
-- These observations inform the Parallelism Map section in the epic.
-
 **Propose 2-3 approaches with trade-offs:**
 
 ```
@@ -214,35 +207,6 @@ bd create "Feature: [Feature Name]" \
 
 ## Architecture
 [Key components, data flow, integration points]
-
-## Parallelism Map
-
-### Independent Work Streams
-1. **[Stream Name]** ([file/module scope])
-   - [What this stream delivers]
-   - Estimated complexity: [low/medium/high]
-2. **[Stream Name]** ([file/module scope])
-   - [What this stream delivers]
-   - Estimated complexity: [low/medium/high]
-
-### Stream Dependencies
-- Stream N depends on Stream M (reason: [why])
-- Streams X and Y are fully independent
-
-### Suggested Waves
-- Wave 1: [Streams that can parallelize] (independent, no shared files)
-- Wave 2: [Streams that depend on Wave 1]
-- Wave 3: [Streams that depend on Wave 2]
-
-### File Ownership Boundaries
-| Stream | Owns (exclusive) | Shared (needs coordination) |
-|--------|-------------------|-----------------------------|
-| [Name] | [paths]           | [paths + which other stream] |
-
-### Parallelism Assessment
-- Independent streams: [N]
-- Recommendation: [team execution / solo execution]
-- Rationale: [why — e.g., '5 independent streams with no shared files' or 'only 2 streams, coordination overhead not worthwhile']
 
 ## Design Rationale
 ### Problem
@@ -433,35 +397,8 @@ SRE refinement will:
 
 **Do NOT skip SRE refinement.** The first task sets the pattern for the entire epic.
 
-**REQUIRED: Team vs. Solo Decision**
+**After refinement approved, present handoff:**
 
-After SRE refinement, review the epic's Parallelism Map to determine the execution path:
-
-**If 3+ independent streams with minimal shared files:**
-→ Recommend team execution path (wave-planning → team-executing-plans)
-
-**If <3 independent streams OR significant shared files:**
-→ Recommend solo execution path (writing-plans → executing-plans)
-
-**If 0 independent streams (everything sequential):**
-→ Default to solo execution. Do NOT present AskUserQuestion for obvious cases.
-
-When 3+ streams exist, use AskUserQuestion to confirm:
-
-```
-AskUserQuestion:
-  question: "Based on the Parallelism Map, this epic has [N] independent streams. Which execution path?"
-  header: "Execution"
-  options:
-    - label: "[Team/Solo] execution (Recommended)"
-      description: "[Reason based on stream count and file ownership analysis]"
-    - label: "[Solo/Team] execution"
-      description: "[Tradeoff — e.g., 'Lower parallelism but simpler coordination' or 'More parallel but higher token cost']"
-```
-
-**After refinement approved, present handoff based on chosen path:**
-
-**Solo path handoff:**
 ```
 "Epic bd-1 is ready with immutable requirements and success criteria.
 First task bd-2 has been refined and is ready to execute.
@@ -476,25 +413,6 @@ The executing-plans skill will:
 5. Repeat until all epic success criteria met
 
 This approach avoids brittle upfront planning - each task adapts to what we learn."
-```
-
-**Team path handoff:**
-```
-"Epic bd-1 is ready with immutable requirements and success criteria.
-The Parallelism Map identifies [N] independent streams suitable for team execution.
-
-Ready to start? I'll use wave-planning to create the first wave of parallel tasks,
-then team-executing-plans to spawn agent teams.
-
-The team workflow will:
-1. Create a wave of parallelizable tasks from the Parallelism Map
-2. Run SRE refinement on the wave batch
-3. Spawn agent teams to execute the wave
-4. Review results at wave boundary (mandatory STOP checkpoint)
-5. Create next wave based on learnings
-6. Repeat until all epic success criteria met
-
-Each wave boundary is a mandatory human review checkpoint."
 ```
 </the_process>
 
@@ -856,82 +774,6 @@ Manual signup has 40% abandonment rate. Google OAuth reduces friction.
 </correction>
 </example>
 
-<example>
-<scenario>Epic includes Parallelism Map identifying team execution opportunity</scenario>
-
-<code>
-User: "Add OAuth authentication with Google, GitHub, and Facebook providers"
-
-After brainstorming and research, the epic's Parallelism Map:
-
-## Parallelism Map
-
-### Independent Work Streams
-1. **Google OAuth** (auth/strategies/google.ts, tests/auth/google.spec.ts)
-   - Google OAuth2 strategy with passport-google-oauth20
-   - Estimated complexity: medium
-2. **GitHub OAuth** (auth/strategies/github.ts, tests/auth/github.spec.ts)
-   - GitHub OAuth strategy with passport-github2
-   - Estimated complexity: medium
-3. **Facebook OAuth** (auth/strategies/facebook.ts, tests/auth/facebook.spec.ts)
-   - Facebook OAuth strategy with passport-facebook
-   - Estimated complexity: medium
-4. **OAuth shared infrastructure** (auth/passport-config.ts, db/models/user.ts)
-   - Session handling, user model updates, callback routing
-   - Estimated complexity: low
-
-### Stream Dependencies
-- Streams 1, 2, 3 depend on Stream 4 (shared infrastructure must exist first)
-- Streams 1, 2, 3 are fully independent of each other
-
-### Suggested Waves
-- Wave 1: Stream 4 (shared infrastructure — must come first)
-- Wave 2: Streams 1, 2, 3 (all three providers in parallel — no shared files)
-
-### File Ownership Boundaries
-| Stream | Owns (exclusive) | Shared (needs coordination) |
-|--------|-------------------|-----------------------------|
-| Google OAuth | auth/strategies/google.ts, tests/auth/google.spec.ts | auth/passport-config.ts (Stream 4) |
-| GitHub OAuth | auth/strategies/github.ts, tests/auth/github.spec.ts | auth/passport-config.ts (Stream 4) |
-| Facebook OAuth | auth/strategies/facebook.ts, tests/auth/facebook.spec.ts | auth/passport-config.ts (Stream 4) |
-| Shared infra | auth/passport-config.ts, db/models/user.ts, routes/auth.ts | — |
-
-### Parallelism Assessment
-- Independent streams: 3 (after Wave 1 completes)
-- Recommendation: team execution
-- Rationale: 3 provider implementations are fully independent with no shared files; each follows identical pattern, ideal for parallel agent teams
-
----
-
-Claude then presents:
-
-AskUserQuestion:
-  question: "Based on the Parallelism Map, this epic has 3 independent provider streams (after shared infrastructure). Which execution path?"
-  header: "Execution"
-  options:
-    - label: "Team execution (Recommended)"
-      description: "Wave 1 builds shared infra (solo), Wave 2 implements all 3 providers in parallel with agent teams"
-    - label: "Solo execution"
-      description: "Implement providers sequentially — simpler but slower"
-</code>
-
-<why_it_fails>
-N/A — this is the correct pattern showing how Parallelism Map enables team routing.
-</why_it_fails>
-
-<correction>
-This example demonstrates the correct workflow:
-
-1. **Research identified** 4 work streams with clear file boundaries
-2. **Dependencies mapped** — shared infra blocks providers, providers independent of each other
-3. **Waves suggested** — Wave 1 solo (infra), Wave 2 team (3 providers)
-4. **File ownership clear** — each provider owns its files, shared file handled in Wave 1
-5. **Assessment concrete** — 3 independent streams → team execution recommended
-6. **User presented choice** with clear tradeoffs via AskUserQuestion
-
-**Key insight:** The shared file (auth/passport-config.ts) is handled by making it part of the infrastructure stream in Wave 1. By the time Wave 2 starts, the shared file is stable and each provider only touches its own files.
-</correction>
-</example>
 </examples>
 
 <key_principles>
@@ -1007,10 +849,7 @@ Before handing off to executing-plans:
 - [ ] Created ONLY first task (not full tree)
 - [ ] First task has detailed implementation checklist
 - [ ] Ran SRE refinement on first task (hyperpowers:sre-task-refinement)
-- [ ] Parallelism Map section present with: streams, dependencies, waves, file ownership, assessment
-- [ ] Parallelism Map assessment recommends team or solo path with rationale
-- [ ] Team vs. solo decision point presented to user (if 3+ independent streams)
-- [ ] Announced handoff to executing-plans or wave-planning after refinement approved
+- [ ] Announced handoff to executing-plans after refinement approved
 
 **Can't check all boxes?** Return to process and complete missing steps.
 </verification_checklist>
@@ -1020,13 +859,11 @@ Before handing off to executing-plans:
 - hyperpowers:codebase-investigator (for finding existing patterns)
 - hyperpowers:internet-researcher (for external documentation)
 - hyperpowers:sre-task-refinement (REQUIRED before handoff to executing-plans)
-- hyperpowers:executing-plans (solo path handoff after refinement approved)
-- hyperpowers:wave-planning (team path handoff when 3+ independent streams)
+- hyperpowers:executing-plans (handoff after refinement approved)
 
 **Call chain:**
 ```
-brainstorming → sre-task-refinement → executing-plans (solo, <3 streams)
-brainstorming → sre-task-refinement → wave-planning (team, 3+ streams)
+brainstorming → sre-task-refinement → executing-plans
 ```
 
 **This skill is called by:**

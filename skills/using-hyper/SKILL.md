@@ -97,18 +97,10 @@ Before using a skill, announce it:
 
 **Before writing ANY code:**
 - Use hyperpowers:brainstorming to refine requirements
+- Use hyperpowers:writing-plans to create detailed plan
+- Use hyperpowers:executing-plans to implement iteratively
 
-**After brainstorming, choose execution path:**
-- **Team path** (3+ independent streams in Parallelism Map): hyperpowers:wave-planning → hyperpowers:team-executing-plans
-- **Solo path** (<3 independent streams): hyperpowers:writing-plans → hyperpowers:executing-plans
-
-```
-brainstorming → epic with Parallelism Map
-  → 3+ independent streams? → wave-planning → team-executing-plans
-  → <3 streams?            → writing-plans → executing-plans (solo)
-```
-
-**When implementing (both paths):**
+**When implementing:**
 - Use hyperpowers:test-driven-development (RED-GREEN-REFACTOR cycle)
 - Use hyperpowers:verification-before-completion before claiming done
 
@@ -317,8 +309,7 @@ These have LOW FREEDOM - follow the exact process:
 
 - hyperpowers:test-driven-development (RED-GREEN-REFACTOR cycle)
 - hyperpowers:verification-before-completion (evidence before claims)
-- hyperpowers:executing-plans (solo execution, substep tracking)
-- hyperpowers:team-executing-plans (team execution, wave-level checkpoints)
+- hyperpowers:executing-plans (continuous execution, substep tracking)
 
 ## Flexible Skills (Adapt Principles)
 
@@ -335,10 +326,7 @@ These have HIGH FREEDOM - adapt core principles to context:
 ## User Instructions Describe WHAT, Not HOW
 
 **User says:** "Add user authentication"
-**This means:** Use brainstorming → check Parallelism Map → team or solo path → TDD → verification
-
-**User says:** "Build a microservice with API, DB, and tests"
-**This means:** Use brainstorming → 3+ streams? → wave-planning → team-executing-plans → TDD → verification
+**This means:** Use brainstorming → writing-plans → executing-plans → TDD → verification
 
 **User says:** "Fix this bug"
 **This means:** Use debugging-with-tools → fixing-bugs → TDD → verification
@@ -382,8 +370,7 @@ Before completing ANY task:
 
 **Critical workflows this establishes:**
 - hyperpowers:brainstorming (before writing code)
-- hyperpowers:wave-planning → hyperpowers:team-executing-plans (team path: 3+ independent streams)
-- hyperpowers:writing-plans → hyperpowers:executing-plans (solo path: <3 streams)
+- hyperpowers:writing-plans → hyperpowers:executing-plans (plan then implement)
 - hyperpowers:test-driven-development (during implementation)
 - hyperpowers:verification-before-completion (before claiming done)
 </integration>
