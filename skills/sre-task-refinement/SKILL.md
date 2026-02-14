@@ -848,7 +848,7 @@ hyperpowers:brainstorming → hyperpowers:writing-plans → hyperpowers:sre-task
                                             (if gaps: revise and re-review)
 
 During execution (for new tasks):
-hyperpowers:executing-plans → creates new task → hyperpowers:sre-task-refinement → STOP checkpoint
+hyperpowers:executing-plans → executor proposes new task → hyperpowers:sre-task-refinement → lead validates proposal
 ```
 
 **This skill uses:**

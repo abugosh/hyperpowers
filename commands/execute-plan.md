@@ -1,14 +1,9 @@
 ---
-description: Execute plan in batches with review checkpoints
+description: Orchestrate plan execution via executor teammate
 ---
 
 Use the hyperpowers:executing-plans skill exactly as written.
 
-**Resumption:** This command supports explicit resumption. Run it multiple times to continue execution:
+**Delegation model:** This command creates an agent team. The lead (main context) orchestrates while an executor teammate implements tasks with TDD. The lead validates proposals against epic requirements and dispatches a reviewer for final verification.
 
-1. First run: Executes first ready task → STOP
-2. User reviews implementation, clears context
-3. Next run: Resumes from bd state, executes next task → STOP
-4. Repeat until epic complete
-
-**Checkpoints:** Each task execution ends with a STOP checkpoint. User must run this command again to continue.
+**Resumption:** If a team already exists from a previous session, the skill resumes from bd and team state automatically.
