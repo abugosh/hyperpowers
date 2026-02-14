@@ -3,6 +3,15 @@ name: refactoring-safely
 description: Use when refactoring code - test-preserving transformations in small steps, running tests between each change
 ---
 
+<codex_compat>
+This skill was ported from Claude Code. In Codex:
+- "Skill tool" means read the skill's `SKILL.md` from disk.
+- "TodoWrite" means create and maintain a checklist section in your response.
+- "Task()" means `spawn_agent` (dispatch in parallel via `multi_tool_use.parallel` when needed).
+- Claude-specific hooks and slash commands are not available; skip those steps.
+</codex_compat>
+
+
 <skill_overview>
 Refactoring changes code structure without changing behavior; tests must stay green throughout or you're rewriting, not refactoring.
 </skill_overview>
@@ -14,7 +23,6 @@ MEDIUM FREEDOM - Follow the change→test→commit cycle strictly, but adapt the
 <quick_reference>
 | Step | Action | Verify |
 |------|--------|--------|
-| 0 | Confirm diagnosis + design exist | Required inputs present |
 | 1 | Run full test suite | ALL pass |
 | 2 | Create bd refactoring task | Track work |
 | 3 | Make ONE small change | Compiles |
@@ -41,14 +49,6 @@ MEDIUM FREEDOM - Follow the change→test→commit cycle strictly, but adapt the
 </when_to_use>
 
 <the_process>
-## 0. Required Inputs (No Exceptions)
-
-You must have:
-- A diagnosis report from `refactoring-diagnosis`
-- A refactor design spec from `refactoring-design`
-
-If either is missing, stop and complete them first.
-
 ## 1. Verify Tests Pass
 
 **BEFORE any refactoring:**
