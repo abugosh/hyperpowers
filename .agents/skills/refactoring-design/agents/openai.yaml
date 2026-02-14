@@ -1,0 +1,4 @@
+interface:
+  display_name: "Refactoring Design"
+  short_description: "Help with Refactoring Design tasks"
+  default_prompt: "Use $refactoring-design to run this workflow."

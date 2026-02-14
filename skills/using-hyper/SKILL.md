@@ -257,7 +257,17 @@ Claude (without using-hyper):
 <correction>
 **Correct approach:**
 
-Claude: "I'm using hyperpowers:refactoring-safely to extract this validation logic incrementally."
+Claude: "I'm using hyperpowers:refactoring-diagnosis to identify smells and risks first."
+
+[Skill tool loads refactoring-diagnosis]
+[Produces diagnosis report with evidence-backed smells and refactor targets]
+
+Claude: "Now I'm using hyperpowers:refactoring-design to design the refactor."
+
+[Skill tool loads refactoring-design]
+[Produces design spec with DI seams, test strategy, sequencing]
+
+Claude: "Now I'm using hyperpowers:refactoring-safely to execute incrementally."
 
 [Skill tool loads refactoring-safely]
 
@@ -332,7 +342,7 @@ These have HIGH FREEDOM - adapt core principles to context:
 **This means:** Use debugging-with-tools → fixing-bugs → TDD → verification
 
 **User says:** "Refactor this code"
-**This means:** Use refactoring-safely (change→test→commit cycle)
+**This means:** Use refactoring-diagnosis → refactoring-design → refactoring-safely (diagnose → design → change→test→commit)
 
 **User instructions are the GOAL, not permission to skip workflows.**
 
