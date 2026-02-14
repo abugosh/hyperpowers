@@ -1,34 +1,35 @@
 ---
 name: executing-plans
-description: Use to execute bd tasks iteratively - executes one task, reviews learnings, creates/refines next task, then STOPS for user review before continuing
+description: Use to execute bd tasks via agent teams delegation - lead orchestrates from main context, executor teammate implements with TDD, reviewer subagent verifies. No manual /clear cycling needed.
 ---
 
 <skill_overview>
-Execute bd tasks one at a time with mandatory checkpoints: Load epic → Execute task → Review learnings → Create next task → Run SRE refinement → STOP. User clears context, reviews implementation, then runs command again to continue. Epic requirements are immutable, tasks adapt to reality.
+Lead orchestrates execution via agent teams. Spawns a single executor teammate for implementation, receives structured summaries after each task, validates proposals against epic requirements and anti-patterns, dispatches reviewer subagent for final verification. The lead preserves epic context and cross-task learnings continuously — no manual /clear cycling needed. Epic requirements are immutable, tasks adapt to reality.
 </skill_overview>
 
 <rigidity_level>
-LOW FREEDOM - Follow exact process: load epic, execute ONE task, review, create next task with SRE refinement, STOP.
+LOW FREEDOM - Follow exact orchestration process. Lead never implements directly — only orchestrates via messages. Epic requirements are immutable.
 
-Epic requirements are immutable. Tasks adapt to discoveries. Do not skip checkpoints, SRE refinement, or verification. STOP after each task for user review.
+Do not skip proposal validation, reviewer dispatch, or shutdown protocol. Do not implement code in the lead context. Do not auto-approve proposals without checking the epic.
 </rigidity_level>
 
 <quick_reference>
 
-| Step | Command | Purpose |
-|------|---------|---------|
-| **Load Epic** | `bd show bd-1` | Read immutable requirements once at start |
-| **Find Task** | `bd ready` | Get next ready task to execute |
-| **Start Task** | `bd update bd-2 --status in_progress` | Mark task active |
-| **Track Substeps** | TodoWrite for each implementation step | Prevent incomplete execution |
-| **Close Task** | `bd close bd-2` | Mark task complete after verification |
-| **Review** | Re-read epic, check learnings | Adapt next task to reality |
-| **Create Next** | `bd create "Task N"` | Based on learnings, not assumptions |
-| **Refine** | Use `sre-task-refinement` skill | Corner-case analysis with Opus 4.1 |
-| **STOP** | Present summary to user | User reviews, clears context, runs command again |
-| **Final Check** | Use `review-implementation` skill | Verify all success criteria before closing epic |
+| Step | Action | Tool/Command |
+|------|--------|--------------|
+| **Load Epic** | Read immutable requirements | `bd show <epic-id>` |
+| **Create Team** | Initialize team for this epic | TeamCreate |
+| **Spawn Executor** | Start executor teammate | Task tool with `team_name` and `name` params |
+| **Receive Summary** | Read executor's structured report | Auto-delivered message (no action needed) |
+| **Validate Proposal** | Check against epic requirements/anti-patterns | `bd show <epic-id>` + systematic check |
+| **Approve** | Tell executor to proceed | SendMessage type: "message" |
+| **Redirect** | Tell executor to change course | SendMessage type: "message" with modified task |
+| **Handle Escalation** | Decide on obstacle | Check Design Discovery + SendMessage |
+| **Dispatch Reviewer** | Final verification | Task tool (subagent, no `team_name`) |
+| **Shutdown** | Terminate executor | SendMessage type: "shutdown_request" |
+| **Cleanup** | Remove team | TeamDelete |
 
-**Critical:** Epic = contract (immutable). Tasks = discovery (adapt to reality). STOP after each task for user review.
+**Critical:** Lead orchestrates, executor implements. Epic = contract (immutable). Lead's value = validation against epic on every proposal.
 
 </quick_reference>
 
@@ -37,16 +38,16 @@ Epic requirements are immutable. Tasks adapt to discoveries. Do not skip checkpo
 
 Symptoms you need this:
 - bd epic exists with tasks ready to execute
-- Need to implement features iteratively
+- Need to implement features iteratively with TDD
 - Requirements clear, but implementation path will adapt
-- Want continuous learning between tasks
+- Want continuous cross-task learning without context exhaustion
 </when_to_use>
 
 <the_process>
 
 ## 0. Resumption Check (Every Invocation)
 
-This skill supports explicit resumption. When invoked:
+Every time this skill is invoked, check current state before acting:
 
 ```bash
 bd list --type epic --status open  # Find active epic
@@ -54,462 +55,516 @@ bd ready                           # Check for ready tasks
 bd list --status in_progress       # Check for in-progress tasks
 ```
 
-**Fresh start:** No in-progress tasks, proceed to Step 1.
+Also check for an existing team:
 
-**Resuming:** Found ready or in-progress tasks:
-- In-progress task exists → Resume at Step 2 (continue executing)
-- Ready task exists → Resume at Step 2 (start executing)
-- All tasks closed but epic open → Resume at Step 4 (check criteria)
+```bash
+ls ~/.claude/teams/  # Check for active team directories
+```
 
-**Why resumption matters:**
-- User cleared context between tasks (intended workflow)
-- Context limit reached mid-task
-- Previous session ended unexpectedly
+**Decision matrix:**
 
-**Do not ask "where did we leave off?"** - bd state tells you exactly where to resume.
+| Team exists? | Executor state | bd state | Action |
+|-------------|---------------|----------|--------|
+| No | N/A | No in-progress tasks | Fresh start → Step 1 |
+| No | N/A | In-progress task exists | Fresh start → Step 1 (executor will resume from bd) |
+| Yes | Idle | Tasks remain | Resume → SendMessage to executor to continue |
+| Yes | Active | Tasks remain | Resume → Wait for executor's next message |
+| Yes or No | N/A | All tasks closed, epic open | Skip to Step 4 (reviewer dispatch) |
 
-## 1. Load Epic Context (Once at Start)
+**If multiple epics are open:** Ask the user which epic to execute (use AskUserQuestion). One team per epic, one epic at a time.
 
-Before executing ANY task, load the epic into context:
+**Do not ask "where did we leave off?"** — bd state and team state tell you exactly where to resume.
+
+## 1. Load Epic Context
+
+Before doing anything else, load the epic into your context:
 
 ```bash
 bd list --type epic --status open  # Find epic
-bd show bd-1                       # Load epic details
+bd show <epic-id>                  # Load epic details
 ```
 
-**Extract and keep in mind:**
-- Requirements (IMMUTABLE)
-- Success criteria (validation checklist)
-- Anti-patterns (FORBIDDEN shortcuts)
-- Approach (high-level strategy)
+**Extract and hold in mind (you keep this for the entire session):**
+- **Requirements** — IMMUTABLE. Never water down, even when executor reports blockers.
+- **Success Criteria** — Your validation checklist for every proposal.
+- **Anti-Patterns** — FORBIDDEN. Reject any proposal that violates these.
+- **Design Discovery** — Reference context for obstacle decisions and escalations.
+- **Approaches Considered** — Especially the rejected approaches and their "DO NOT REVISIT UNLESS" conditions.
 
-**Why:** Requirements prevent watering down when blocked.
+**Why this matters:** The lead holding this context continuously is the core advantage over the old solo mode. You never lose the epic vision or cross-task learnings.
 
-## 2. Execute Current Ready Task
+## 2. Create Team and Spawn Executor
 
+### 2a. Create the team
+
+```
+TeamCreate:
+  team_name: "epic-<epic-id>"
+  description: "Executing epic <epic-id>: <epic title>"
+```
+
+**If TeamCreate fails because team already exists:** Skip to resumption — the team is from a previous session. Check executor state and resume from Step 0 decision matrix.
+
+### 2b. Spawn the executor
+
+```
+Task tool:
+  subagent_type: "general-purpose"
+  team_name: "epic-<epic-id>"
+  name: "executor"
+  mode: "bypassPermissions"
+  prompt: "You are the executor agent. Execute tasks for epic <epic-id>.
+           Follow the executor agent definition in agents/executor.md exactly.
+           Start with: bd show <epic-id>"
+```
+
+The executor will:
+1. Read the epic from bd
+2. Find the first ready task
+3. Execute it with TDD (red-green-refactor-commit)
+4. Send you a structured task completion message
+5. Wait for your approval before continuing
+
+**After spawning:** Wait for the executor's first message. It will arrive automatically.
+
+## 3. Lead Orchestration Loop
+
+Messages from the executor are auto-delivered to you. You do not need to poll or check — they appear as new conversation turns. For each message, determine its type and respond:
+
+### A) Task Completion Message
+
+The executor sends this after closing a task. Format:
+```
+## Task <id> Complete
+### Done — [implementation summary]
+### Learned — [discoveries]
+### Changed from plan — [deviations]
+### Proposed next task — [title, goal, approach, SRE refined]
+```
+
+**Your response process:**
+
+1. **Read the summary.** Note what was learned and what changed.
+
+2. **Re-read the epic** to keep requirements fresh:
 ```bash
-bd ready                           # Find next task
-bd update bd-2 --status in_progress # Start it
-bd show bd-2                       # Read details
+bd show <epic-id>
 ```
 
-**CRITICAL - Create TodoWrite for ALL substeps:**
+3. **Validate the proposed next task** against the epic. Check each of these:
+   - Does it advance toward a success criterion? (Which one?)
+   - Does it violate any anti-pattern? (Check each one explicitly.)
+   - Does it touch any rejected approach from Design Discovery?
+   - Is it consistent with the learnings reported?
 
-Tasks contain 4-8 implementation steps. Create TodoWrite todos for each to prevent incomplete execution:
+4. **Decide and respond** via SendMessage to the executor:
 
+   **APPROVE** — Proposal is valid, proceed as described:
+   ```
+   SendMessage:
+     type: "message"
+     recipient: "executor"
+     content: "Approved. Proceed with proposed task as described."
+     summary: "Approved proposed task"
+   ```
+
+   **MODIFY** — Proposal is mostly valid but needs adjustment:
+   ```
+   SendMessage:
+     type: "message"
+     recipient: "executor"
+     content: "Approved with changes: [specific modifications and reasoning]. Proceed with these adjustments."
+     summary: "Approved with modifications"
+   ```
+
+   **REDIRECT** — Proposal is invalid, do something different:
+   ```
+   SendMessage:
+     type: "message"
+     recipient: "executor"
+     content: "Do not proceed with proposed task. Instead: [different task description with rationale referencing epic requirements]."
+     summary: "Redirected to different task"
+   ```
+
+### B) Escalation Message
+
+The executor sends this when hitting an obstacle that might violate epic requirements. Format:
 ```
-- bd-2 Step 1: Write test (pending)
-- bd-2 Step 2: Run test RED (pending)
-- bd-2 Step 3: Implement function (pending)
-- bd-2 Step 4: Run test GREEN (pending)
-- bd-2 Step 5: Refactor (pending)
-- bd-2 Step 6: Commit (pending)
+## Escalation: [obstacle summary]
+### Problem — [what's blocking]
+### Epic context — [relevant anti-pattern or requirement]
+### Options — [approaches with tradeoffs]
+### My recommendation — [which option and why]
 ```
 
-**Execute steps:**
-- Use `test-driven-development` when implementing features
-- Mark each substep completed immediately after finishing
-- Use `test-runner` agent for verifications
+**Your response process:**
 
-**Pre-close verification:**
-- Check TodoWrite: All substeps completed?
-- If incomplete: Continue with remaining substeps
-- If complete: Close task and commit
+1. **Read the problem and options.**
 
+2. **Re-read the epic** and specifically check Design Discovery:
 ```bash
-bd close bd-2  # After ALL substeps done
+bd show <epic-id>
 ```
 
-## 2a. When Hitting Obstacles
+3. **Check "Approaches Considered"** for any rejected approach the executor wants to try:
+   - Find the "REJECTED BECAUSE" reasoning
+   - Find the "DO NOT REVISIT UNLESS" conditions
+   - Determine if revisit conditions are met
 
-**CRITICAL: Check Design Discovery before switching approaches**
+4. **If a rejected approach is being considered and revisit conditions are NOT met:**
+   Reject it. Explain why the original rejection still applies.
 
-When you hit a blocker or obstacle during implementation, do NOT automatically try alternative approaches. First check the epic's "Approaches Considered" section.
+5. **If a rejected approach is being considered and revisit conditions ARE met:**
+   Present to the USER for confirmation before approving. Use AskUserQuestion:
+   ```
+   AskUserQuestion:
+     "The executor hit [obstacle] and is considering [rejected approach].
+      Original rejection: [reason]. Revisit condition: [condition].
+      The condition appears met because [evidence]. Approve switching?"
+   ```
 
-**BEFORE switching approaches:**
-1. Re-read epic: `bd show bd-1`
-2. Find "Approaches Considered" section
-3. Check if the alternative you're considering was already rejected
-4. Read the "⚠️ REJECTED BECAUSE" reasoning
-5. Check "🚫 DO NOT REVISIT UNLESS" conditions
+6. **SendMessage to executor** with your decision and reasoning.
 
-**If rejected approach seems needed:**
+### C) Completion Report
 
-Before switching to a previously rejected approach, you MUST:
-- Document why the rejection reason no longer applies
-- Or explain why this obstacle changes the calculus
-- Get user confirmation before switching
+The executor sends this when all success criteria appear met. Format:
+```
+## Epic Completion Report
+### Success Criteria Status — [each criterion with evidence]
+### Summary — [overview of entire implementation]
+### Recommendation — Ready for review-implementation.
+```
+
+**Your response process:**
+
+1. **Verify each criterion** in the report against the epic's actual success criteria.
+2. **Spot-check the evidence** — does it make sense? Are any criteria missing?
+3. If report looks complete → proceed to Step 4 (dispatch reviewer).
+4. If report has gaps → SendMessage to executor with specific items to address.
+
+### Handling Idle Notifications
+
+**The executor going idle after sending a message is completely normal.** This is standard agent teams behavior — the executor sends its message and waits for your response. Do NOT:
+- Treat idle as an error
+- Send "are you still there?" messages
+- Interpret idle as the executor being done
+
+Simply process the executor's most recent message and respond when ready.
+
+## 4. Dispatch Reviewer
+
+When the executor reports all success criteria met and you've verified the completion report:
+
+```
+Task tool:
+  subagent_type: "general-purpose"
+  prompt: "You are the reviewer agent. Review the implementation for epic <epic-id>.
+           Follow the reviewer agent definition in agents/reviewer.md exactly.
+           Start with: bd show <epic-id>"
+```
+
+The reviewer is a **subagent** (no `team_name` parameter) — a one-shot analysis that returns its verdict directly in the Task tool output. It is NOT a teammate.
+
+**Handle the verdict:**
+
+**APPROVED:**
+- Proceed to Step 5 (shutdown and present).
+
+**GAPS FOUND:**
+- Read the gaps list from the reviewer's output
+- SendMessage to executor with the specific gaps to fix:
+  ```
+  SendMessage:
+    type: "message"
+    recipient: "executor"
+    content: "Reviewer found gaps. Fix these before we can close:
+              [list gaps from reviewer verdict with evidence].
+              After fixing, send updated completion report."
+    summary: "Fix gaps from reviewer"
+  ```
+- Return to Step 3 (orchestration loop) and wait for executor's response.
+
+**If reviewer returns partial verdict** (context exhaustion on large epic):
+- Check what was reviewed and what remains
+- Re-dispatch reviewer for remaining tasks
+
+## 5. Shutdown and Present
+
+After reviewer returns APPROVED:
+
+### 5a. Shut down the executor
+
+```
+SendMessage:
+  type: "shutdown_request"
+  recipient: "executor"
+  content: "All success criteria met and reviewer approved. Shutting down. Thank you."
+```
+
+Wait for the executor to confirm shutdown (shutdown_response with approve: true).
+
+### 5b. Clean up the team
+
+```
+TeamDelete
+```
+
+### 5c. Present to user
+
+Present the final status:
 
 ```markdown
-## Obstacle Encountered
+## Epic <epic-id> — Implementation Complete
 
-**Current approach:** [Chosen Approach from epic]
-**Obstacle:** [What blocker was hit]
+### Summary
+[2-3 sentence overview from executor's completion report]
 
-**Considering:** [Rejected Approach from epic]
+### Success Criteria
+[Each criterion with status and evidence from completion report]
 
-**Original rejection reason:** [Copy from epic]
-**DO NOT REVISIT UNLESS:** [Copy from epic]
+### Reviewer Verdict
+APPROVED — [summary from reviewer]
 
-**Why reconsidering:**
-- [ ] Rejection reason no longer applies because: [specific reason]
-- [ ] DO NOT REVISIT condition is now met: [specific evidence]
-
-**Recommendation:** [Stay course / Switch with user approval]
+### Next Step
+Run `/hyperpowers:finish-branch` to close the epic and integrate.
 ```
-
-**Anti-pattern:** Automatically trying rejected alternatives when hitting obstacles
-
-**Why this matters:**
-- Rejected approaches were rejected for good reasons
-- Those reasons often still apply when obstacles arise
-- Example: Chose passport.js, hit session complexity, considered switching to custom JWT
-  - But custom JWT was rejected because it requires rewriting 15 files
-  - The obstacle doesn't change that - switching makes the problem worse
-
-**Reference Design Discovery:**
-- Check "Dead-End Paths" for approaches already abandoned during research
-- Check "Key Decisions Made" for user requirements that constrain options
-- Check "Open Concerns Raised" for context on prior discussions
-
-## 3. Review Against Epic and Create Next Task
-
-**CRITICAL:** After each task, adapt plan based on reality.
-
-**Review questions:**
-1. What did we learn?
-2. Discovered any blockers, existing functionality, limitations?
-3. Does this move us toward epic success criteria?
-4. What's next logical step?
-5. Any epic anti-patterns to avoid?
-
-**Re-read epic:**
-```bash
-bd show bd-1  # Keep requirements fresh
-```
-
-**Three cases:**
-
-**A) Next task still valid** → Proceed to Step 2
-
-**B) Next task now redundant** (plan invalidation allowed):
-```bash
-bd delete bd-4  # Remove wasteful task
-# Or update: bd update bd-4 --title "New work" --design "..."
-```
-
-**C) Need new task** based on learnings:
-```bash
-bd create "Task N: [Next Step Based on Reality]" \
-  --type feature \
-  --design "## Goal
-[Deliverable based on what we learned]
-
-## Context
-Completed bd-2: [discoveries]
-
-## Implementation
-[Steps reflecting current state, not assumptions]
-
-## Success Criteria
-- [ ] Specific outcomes
-- [ ] Tests passing"
-
-bd dep add bd-N bd-1 --type parent-child
-bd dep add bd-N bd-2 --type blocks
-```
-
-**REQUIRED - Run SRE refinement on new task:**
-```
-Use Skill tool: hyperpowers:sre-task-refinement
-```
-
-SRE refinement will:
-- Apply 7-category corner-case analysis (Opus 4.1)
-- Identify edge cases and failure modes
-- Strengthen success criteria
-- Ensure task is ready for implementation
-
-**Do NOT skip SRE refinement.** New tasks need the same rigor as initial planning.
-
-## 4. Check Epic Success Criteria and STOP
-
-```bash
-bd show bd-1  # Check success criteria
-```
-
-- ALL criteria met? → Step 5 (final validation)
-- Some missing? → **STOP for user review**
-
-## 4a. STOP Checkpoint (Mandatory)
-
-**Present summary to user:**
-
-```markdown
-## Task bd-N Complete - Checkpoint
-
-### What Was Done
-- [Summary of implementation]
-- [Key learnings/discoveries]
-
-### Next Task Ready
-- bd-M: [Title]
-- [Brief description of what's next]
-
-### Epic Progress
-- [X/Y success criteria met]
-- [Remaining criteria]
-
-### To Continue
-Run `/hyperpowers:execute-plan` to execute the next task.
-```
-
-**Why STOP is mandatory:**
-- User can clear context (prevents context exhaustion)
-- User can review implementation before next task
-- User can adjust next task if needed
-- Prevents runaway execution without oversight
-
-**Do NOT rationalize skipping the stop:**
-- "Good context loaded" → Context reloads are cheap, wrong decisions aren't
-- "Momentum" → Checkpoints ensure quality over speed
-- "User didn't ask to stop" → Stopping is the default, continuing requires explicit command
-
-## 5. Final Validation and Closure
-
-When all success criteria appear met:
-
-1. **Run full verification** (tests, hooks, manual checks)
-
-2. **REQUIRED - Use review-implementation skill:**
-```
-Use Skill tool: hyperpowers:review-implementation
-```
-
-Review-implementation will:
-- Check each requirement met
-- Verify each success criterion satisfied
-- Confirm no anti-patterns used
-- If approved: STOP for manual validation (epic stays open)
-- If gaps: Create tasks, return to Step 2
-
-After manual validation complete, user runs `/hyperpowers:finish-branch` to close epic and integrate.
-
-3. **Only close epic after review approves**
 
 </the_process>
 
 <examples>
 
 <example>
-<scenario>Developer closes task without completing all substeps, claims "mostly done"</scenario>
+<scenario>Lead implements directly instead of delegating to executor</scenario>
 
 <code>
-bd-2 has 6 implementation steps.
+Executor sends task completion message with proposed next task.
 
-TodoWrite shows:
-- ✅ bd-2 Step 1: Write test
-- ✅ bd-2 Step 2: Run test RED
-- ✅ bd-2 Step 3: Implement function
-- ⏸️ bd-2 Step 4: Run test GREEN (pending)
-- ⏸️ bd-2 Step 5: Refactor (pending)
-- ⏸️ bd-2 Step 6: Commit (pending)
+Lead thinks: "I already have context on this codebase, I'll just
+implement the next feature directly. It'll be faster than waiting
+for the executor to do it."
 
-Developer thinks: "Function works, I'll close bd-2 and move on"
-Runs: bd close bd-2
+Lead starts writing code, editing files, running tests in main context.
 </code>
 
 <why_it_fails>
-Steps 4-6 skipped:
-- Tests not verified GREEN (might have broken other tests)
-- Code not refactored (leaves technical debt)
-- Changes not committed (work could be lost)
+**Violates core principle — lead orchestrates, never implements:**
+- Lead context fills with implementation verbosity
+- Cross-task learnings get pushed out of context
+- Epic requirements and Design Discovery get compressed
+- Lead loses ability to validate future proposals
+- Defeats the entire purpose of the delegation model
 
-"Mostly done" = incomplete task = will cause issues later.
+**Why it happens:** "I can do it faster" rationalization. But speed
+isn't the goal — context preservation is. The lead's job is holding
+the big picture, not writing code.
 </why_it_fails>
 
 <correction>
-**Pre-close verification checkpoint:**
+**Lead validates the proposal and delegates:**
 
-Before closing ANY task:
-1. Check TodoWrite: All substeps completed?
-2. If incomplete: Continue with remaining substeps
-3. Only when ALL ✅: bd close bd-2
+1. Re-read epic: `bd show <epic-id>`
+2. Check proposed task against requirements and anti-patterns
+3. If valid:
+```
+SendMessage:
+  type: "message"
+  recipient: "executor"
+  content: "Approved. Proceed with proposed task as described."
+  summary: "Approved proposed task"
+```
 
-**Result:** Task actually complete, tests passing, code committed.
+**Result:** Lead preserves context. Executor implements with TDD.
+Each role does what it's designed for.
 </correction>
 </example>
 
 <example>
-<scenario>Developer discovers planned task is redundant, executes it anyway "because it's in the plan"</scenario>
+<scenario>Lead auto-approves executor's proposal without checking epic</scenario>
 
 <code>
-bd-4 says: "Implement token refresh middleware"
+Executor sends:
+"## Task bd-5 Complete
+### Proposed next task
+Title: Add caching layer with Redis
+Goal: Improve API response times
+Approach: Add Redis caching to all endpoints"
 
-While executing bd-2, developer discovers:
-- Token refresh middleware already exists in auth/middleware/refresh.ts
-- Works correctly, has tests
-- bd-4 would duplicate existing code
+Lead thinks: "Sounds reasonable, executor knows what they're doing."
 
-Developer thinks: "bd-4 is in the plan, I should do it anyway"
-Proceeds to implement duplicate middleware
+SendMessage: "Approved. Proceed."
+
+# But epic anti-patterns say:
+# "FORBIDDEN: Adding external dependencies (Redis, Memcached)
+#  without explicit user approval. Use in-memory caching only."
 </code>
 
 <why_it_fails>
-**Wasteful execution:**
-- Duplicates existing functionality
-- Creates maintenance burden (two implementations to keep in sync)
-- Violates DRY principle
-- Wastes time on redundant work
+**Skipped proposal validation — lead's core responsibility:**
+- Epic explicitly forbids adding Redis without user approval
+- Lead approved a task that violates an anti-pattern
+- Executor will implement something that must be reverted
+- Time wasted on forbidden approach
+- Lead's value is validation — without it, lead is just a message relay
 
-**Why it happens:** Treating tasks as immutable instead of epic.
+**Why it happens:** Trust in executor + desire to move fast.
+But the executor doesn't have the lead's continuous epic context.
+That's precisely why validation exists.
 </why_it_fails>
 
 <correction>
-**Plan invalidation is allowed:**
+**Systematic validation before every approval:**
 
-1. Verify the discovery:
-```bash
-# Check existing code
-cat auth/middleware/refresh.ts
-# Confirm it works
-npm test -- refresh.spec.ts
+1. Re-read epic: `bd show <epic-id>`
+2. Check anti-patterns:
+   - "Adding external dependencies without user approval" — Redis is external
+   - VIOLATION DETECTED
+3. Redirect the executor:
+```
+SendMessage:
+  type: "message"
+  recipient: "executor"
+  content: "Do not proceed with Redis caching. Epic anti-pattern
+            forbids external dependencies without user approval.
+            Instead: propose an in-memory caching approach
+            (e.g., LRU cache in the application process)."
+  summary: "Redirected — Redis violates anti-pattern"
 ```
 
-2. Delete redundant task:
-```bash
-bd delete bd-4
-```
-
-3. Document why:
-```
-bd update bd-2 --design "...
-
-Discovery: Token refresh middleware already exists (auth/middleware/refresh.ts).
-Verified working with tests. bd-4 deleted as redundant."
-```
-
-4. Create new task if needed (maybe "Integrate existing refresh middleware" instead)
-
-**Result:** Plan adapts to reality. No wasted work.
+**Result:** Anti-pattern caught. Executor redirected to valid approach.
+Epic requirements preserved.
 </correction>
 </example>
 
 <example>
-<scenario>Developer hits blocker, waters down epic requirement to "make it easier"</scenario>
+<scenario>Lead dismisses escalation without checking Design Discovery</scenario>
 
 <code>
-Epic bd-1 anti-patterns say:
-"FORBIDDEN: Using mocks for database integration tests. Must use real test database."
+Executor escalates:
+"## Escalation: Authentication library doesn't support OAuth2 PKCE
+### Problem: passport.js v0.6 has no PKCE support
+### Options:
+A. Upgrade passport.js to v1.0 (breaking changes, 2 days)
+B. Switch to custom JWT implementation (more control)
+### My recommendation: Option B, custom JWT"
 
-Developer encounters:
-- Real database setup is complex
-- Mocking would make tests pass quickly
+Lead thinks: "Executor knows the technical details, I'll just approve
+their recommendation."
 
-Developer thinks: "This is too hard, I'll use mocks just for now and refactor later"
+SendMessage: "Go with Option B, custom JWT."
 
-Adds TODO: // TODO: Replace mocks with real DB later
+# But Design Discovery says:
+# "Custom JWT was REJECTED BECAUSE it requires rewriting 15 files
+#  and introduces security risks from hand-rolled crypto.
+#  DO NOT REVISIT UNLESS passport.js is fully deprecated."
 </code>
 
 <why_it_fails>
-**Violates epic anti-pattern:**
-- Epic explicitly forbids mocks for integration tests
-- "Later" never happens (TODO remains forever)
-- Tests don't verify actual integration
-- Defeats purpose of integration testing
+**Dismissed escalation without checking Design Discovery:**
+- Custom JWT was explicitly rejected during brainstorming
+- Rejection reason still applies (15 file rewrite, security risk)
+- Revisit condition NOT met (passport.js not deprecated, just missing one feature)
+- Lead approved a previously rejected approach without realizing it
+- Executor lacks the Design Discovery context — that's why they escalated
 
-**Why it happens:** Rationalizing around blockers instead of solving them.
+**Why it happens:** Deferring to executor's technical judgment. But
+escalations exist specifically because the lead holds design context
+the executor doesn't have.
 </why_it_fails>
 
 <correction>
-**When blocked, re-read epic:**
+**Check Design Discovery on every escalation:**
 
-1. Re-read epic requirements and anti-patterns:
-```bash
-bd show bd-1
+1. Re-read epic: `bd show <epic-id>`
+2. Find "Approaches Considered" → Custom JWT
+3. Check: "REJECTED BECAUSE: requires rewriting 15 files, security risk"
+4. Check: "DO NOT REVISIT UNLESS: passport.js fully deprecated"
+5. passport.js is not deprecated — just missing PKCE in v0.6
+6. Revisit condition NOT met → reject Option B
+7. Research Option A more carefully:
+```
+SendMessage:
+  type: "message"
+  recipient: "executor"
+  content: "Do NOT use custom JWT — it was rejected during design
+            because it requires rewriting 15 files and introduces
+            security risks. The revisit condition (passport.js
+            fully deprecated) is not met.
+
+            Instead, investigate Option A more carefully:
+            - What specific breaking changes does passport.js v1.0 have?
+            - Is there a v0.7 or v0.8 with PKCE but fewer breaking changes?
+            - Can we use a passport.js PKCE plugin/middleware instead?
+
+            Report findings before proceeding."
+  summary: "Rejected custom JWT — checking alternatives"
 ```
 
-2. Check if solution violates anti-pattern:
-- Using mocks? YES, explicitly forbidden
-
-3. Don't rationalize. Instead:
-
-**Option A - Research:**
-```bash
-bd create "Research: Real DB test setup for [project]" \
-  --design "Find how this project sets up test databases.
-Check existing test files for patterns.
-Document setup process that meets anti-pattern requirements."
-```
-
-**Option B - Ask user:**
-"Blocker: Test DB setup complex. Epic forbids mocks for integration.
-Is there existing test DB infrastructure I should use?"
-
-**Result:** Epic requirements maintained. Blocker solved properly.
+**Result:** Rejected approach blocked. Design Discovery honored.
+Executor investigates better alternatives.
 </correction>
 </example>
 
 <example>
-<scenario>Developer skips STOP checkpoint to "maintain momentum"</scenario>
+<scenario>Proper end-to-end flow: executor completes task, lead validates and modifies</scenario>
 
 <code>
-Just completed bd-2 (authentication middleware).
-Created bd-3 (rate limiting endpoint).
-Ran SRE refinement on bd-3.
+# Executor sends task completion:
 
-Developer thinks: "Good context loaded, I'll just do bd-3 quickly then stop.
-User approved the epic, they trust me to execute it.
-Stopping now is inefficient."
+"## Task bd-3 Complete
+### Done
+- Implemented user registration endpoint with bcrypt password hashing
+- Added input validation for email, password strength, username uniqueness
 
-Continues directly to execute bd-3 without STOP checkpoint.
+### Learned
+- The existing User model already has a `verified` field but no verification flow
+- There's an unused email template system in lib/mailer.ts
+
+### Changed from plan
+- None — executed as planned
+
+### Proposed next task
+Title: Implement email verification flow
+Goal: Add email verification using existing mailer system
+Approach: Use lib/mailer.ts template system to send verification emails,
+          add /verify endpoint, set User.verified on confirmation
+SRE refined: yes
+Key considerations: Token expiry (24h), rate limiting on resend,
+                    idempotent verification (double-click safe)"
 </code>
 
-<why_it_fails>
-**Multiple failures:**
-- User can't review bd-2 implementation before bd-3 starts
-- User can't clear context (may hit context limit mid-task)
-- User can't adjust bd-3 based on bd-2 learnings
-- No checkpoint = no oversight
+<why_it_works>
+**Lead follows the full validation process:**
 
-**The rationalization trap:**
-- "Good context" sounds efficient but prevents review
-- "User trust" misinterprets approval (one command ≠ blanket permission)
-- "Quick task" becomes long task when issues arise
+1. Read summary — notes discovery about existing mailer system
+2. Re-read epic: `bd show <epic-id>`
+3. Validate proposal:
+   - Advances success criterion "User registration with email verification" ✓
+   - Uses existing code (lib/mailer.ts) — not adding new dependencies ✓
+   - No anti-pattern violations ✓
+   - Not touching any rejected approach ✓
+   - SRE refined ✓
+4. But notice: epic Design Discovery mentions "rate limiting must use
+   the existing RateLimiter middleware, not custom implementation"
+5. Modify proposal to include this constraint:
 
-**What actually happens:**
-- bd-3 hits unexpected issue
-- Context exhausted trying to debug
-- User returns to find 2 half-finished tasks instead of 1 complete task
-</why_it_fails>
-
-<correction>
-**Follow the STOP checkpoint:**
-
-1. After completing bd-2 and refining bd-3:
-```markdown
-## Task bd-2 Complete - Checkpoint
-
-### What Was Done
-- Implemented JWT middleware with validation
-- Added token refresh handling
-
-### Next Task Ready
-- bd-3: Implement rate limiting
-- Adds rate limiting to auth endpoints
-
-### Epic Progress
-- 2/4 success criteria met
-- Remaining: password reset, rate limiting
-
-### To Continue
-Run `/hyperpowers:execute-plan` to execute the next task.
+```
+SendMessage:
+  type: "message"
+  recipient: "executor"
+  content: "Approved with one modification: For rate limiting on
+            resend, use the existing RateLimiter middleware from
+            lib/middleware/rate-limiter.ts (per Design Discovery
+            constraint). Do not implement custom rate limiting.
+            Proceed with this adjustment."
+  summary: "Approved with rate limiter constraint"
 ```
 
-2. **STOP and wait for user**
-
-**Result:** User can review, clear context, adjust next task. Each task completes with full oversight.
-</correction>
+**Result:**
+- Proposal validated against all epic requirements
+- Design Discovery constraint caught and applied
+- Executor proceeds with correct constraints
+- Lead preserves cross-task learning (mailer system, rate limiter)
+</why_it_works>
 </example>
 
 </examples>
@@ -518,102 +573,121 @@ Run `/hyperpowers:execute-plan` to execute the next task.
 
 ## Rules That Have No Exceptions
 
-1. **STOP after each task** → Present summary, wait for user to run command again
-   - User needs checkpoint to review implementation
-   - User may need to clear context
-   - Continuous execution = no oversight
+1. **Lead NEVER implements** → Only orchestrates via messages
+   - No editing files, writing code, or running tests in lead context
+   - Delegation is the entire point of this skill
+   - "I can do it faster" = rationalization, not efficiency
 
-2. **SRE refinement for new tasks** → Never skip corner-case analysis
-   - New tasks created during execution need same rigor as initial planning
-   - Use Opus 4.1 for thorough analysis
-   - Tasks without refinement will miss edge cases
+2. **Validate EVERY proposal against epic** → No auto-approvals
+   - Re-read epic before every approval decision
+   - Check each anti-pattern explicitly
+   - Check Design Discovery if proposal is near rejected approaches
+   - Lead's value IS validation — skip it and lead is just a message relay
 
-3. **Epic requirements are immutable** → Never water down when blocked
-   - If blocked: Research solution or ask user
-   - Never violate anti-patterns to "make it easier"
+3. **Check Design Discovery for ALL escalations** → Never decide without context
+   - Read "Approaches Considered" before approving alternatives
+   - Check "REJECTED BECAUSE" and "DO NOT REVISIT UNLESS"
+   - If rejected approach needed and conditions met: ask USER first, never decide alone
+   - Executor escalates BECAUSE they lack this context — provide it
 
-4. **Check Design Discovery before switching approaches** → Never auto-try rejected alternatives
-   - Read "Approaches Considered" section when hitting obstacles
-   - Check "⚠️ REJECTED BECAUSE" and "🚫 DO NOT REVISIT UNLESS"
-   - Rejected approaches were rejected for good reasons that usually still apply
-   - Get user confirmation before switching to previously rejected approach
+4. **Reviewer is a subagent, not a teammate** → One-shot dispatch
+   - No `team_name` parameter when dispatching reviewer
+   - Reviewer returns verdict in Task tool output
+   - Do not add reviewer to the team
 
-5. **All substeps must be completed** → Never close task with pending substeps
-   - Check TodoWrite before closing
-   - "Mostly done" = incomplete = will cause issues
+5. **Epic requirements are immutable** → Lead enforces this on all proposals
+   - If executor proposes something that waters down a requirement: redirect
+   - If executor escalates because a requirement is hard: research or ask user
+   - Never approve a proposal that violates an anti-pattern
 
-6. **Plan invalidation is allowed** → Delete redundant tasks
-   - If discovered existing functionality: Delete duplicate task
-   - If discovered blocker: Update or delete invalid task
-   - Document what you found and why
+6. **Shutdown executor before TeamDelete** → Graceful, not abrupt
+   - Send shutdown_request and wait for confirmation
+   - Then call TeamDelete
+   - Abrupt cleanup leaves executor in undefined state
 
-7. **Review before closing epic** → Use review-implementation skill
-   - Tasks done ≠ success criteria met
-   - All criteria must be verified before closing
+7. **Idle executor = normal** → Do not treat as error
+   - Executor goes idle after every message — this is expected
+   - Do not send "are you still there?" messages
+   - Simply process the executor's message and respond when ready
+
+8. **One epic at a time** → Do not mix execution across epics
+   - If multiple epics open: ask user which to execute
+   - Team name includes epic ID to prevent confusion
 
 ## Common Excuses
 
-All of these mean: Re-read epic, STOP as required, ask for help:
-- "Good context loaded, don't want to lose it" → STOP anyway, context reloads
-- "Just one more quick task" → STOP anyway, user needs checkpoint
-- "User didn't ask me to stop" → Stopping is default, continuing requires explicit command
-- "SRE refinement is overkill for this task" → Every task needs refinement, no exceptions
-- "This requirement is too hard" → Research or ask, don't water down
-- "I'll come back to this later" → Complete now or document why blocked
-- "Let me fake this to make tests pass" → Never, defeats purpose
-- "Existing task is wasteful, but it's planned" → Delete it, plan adapts to reality
-- "All tasks done, epic must be complete" → Verify with review-implementation
-- "Hit obstacle, let me try the other approach" → Check Design Discovery first, rejection reasons often still apply
-- "The rejected approach would be easier now" → Check "DO NOT REVISIT UNLESS" conditions, get user approval
+All of these mean: follow the process, validate against epic, delegate to executor:
+
+- "I already have context, I'll implement it directly" → Lead never implements. SendMessage to executor.
+- "Executor knows what they're doing, I'll just approve" → Validate. Every. Time.
+- "This escalation is clearly the right choice" → Check Design Discovery first. Always.
+- "The reviewer is overkill for this small epic" → Dispatch reviewer. No exceptions.
+- "I'll skip the team setup, just implement solo" → Hard commit to delegation. No solo mode.
+- "Executor went idle, something must be wrong" → Idle is normal. Read their last message.
+- "Let me just fix this one small thing myself" → Send it to the executor. Lead doesn't implement.
+- "This requirement is unrealistic based on what executor found" → Requirements are immutable. Research or ask user.
 
 </critical_rules>
 
 <verification_checklist>
 
-Before closing each task:
-- [ ] ALL TodoWrite substeps completed (no pending)
-- [ ] Tests passing (use test-runner agent)
-- [ ] Changes committed
-- [ ] Task actually done (not "mostly")
+Before approving any proposal:
+- [ ] Re-read epic (`bd show <epic-id>`)
+- [ ] Checked proposal against each success criterion
+- [ ] Checked proposal against each anti-pattern
+- [ ] Checked Design Discovery if proposal is near rejected approaches
+- [ ] Decision (approve/modify/redirect) documented in SendMessage
 
-After closing each task:
-- [ ] Reviewed learnings against epic
-- [ ] Created/updated next task based on reality
-- [ ] Ran SRE refinement on any new tasks
-- [ ] Presented STOP checkpoint summary to user
-- [ ] STOPPED execution (do not continue to next task)
+Before dispatching reviewer:
+- [ ] All success criteria reported as met by executor
+- [ ] Evidence provided for each criterion
+- [ ] No pending or in-progress tasks in bd (all closed)
+- [ ] Completion report verified against actual epic criteria
 
-Before closing epic:
-- [ ] ALL success criteria met (check epic)
-- [ ] review-implementation skill used and approved
-- [ ] No anti-patterns violated
-- [ ] All tasks closed
+Before shutting down:
+- [ ] Reviewer returned APPROVED verdict
+- [ ] Shutdown_request sent to executor
+- [ ] Executor confirmed shutdown (shutdown_response approve: true)
+- [ ] TeamDelete called
+- [ ] Final status presented to user
 
 </verification_checklist>
 
 <integration>
 
 **This skill calls:**
-- writing-plans (creates epic and first task before this runs)
-- sre-task-refinement (REQUIRED for new tasks created during execution)
-- test-driven-development (when implementing features)
-- test-runner (for running tests without output pollution)
-- review-implementation (final automated validation - stops for manual testing)
+- agents/executor.md (spawned as teammate via Task tool with `team_name`)
+- agents/reviewer.md (dispatched as subagent via Task tool without `team_name`)
+
+**Skills used by executor (not invoked by lead directly):**
+- test-driven-development (executor follows TDD cycle)
+- sre-task-refinement (executor refines proposed tasks before sending to lead)
+- verification-before-completion (executor verifies before closing tasks)
+
+**Skills used by reviewer (not invoked by lead directly):**
+- testing-anti-patterns (reviewer checks test quality)
+- verification-before-completion (reviewer requires evidence for claims)
 
 **This skill is called by:**
 - User (via /hyperpowers:execute-plan command)
-- After writing-plans creates epic
-- Explicitly to resume after checkpoint (user runs command again)
+- After brainstorming/writing-plans creates epic
+- Explicitly to resume after context clear or new session
 
 **Agents used:**
-- hyperpowers:test-runner (run tests, return summary only)
+- executor (teammate — persistent context, continuous work, TDD discipline)
+- reviewer (subagent — one-shot verdict, APPROVED or GAPS FOUND)
+- test-runner (used by executor internally for running tests — not invoked by lead)
 
 **Workflow pattern:**
 ```
-/hyperpowers:execute-plan → Execute task → STOP
-[User clears context, reviews]
-/hyperpowers:execute-plan → Execute next task → STOP
-[Repeat until epic complete]
+/hyperpowers:execute-plan
+  → Load epic → Create team → Spawn executor
+  → Executor works → sends structured summary → Lead validates → approves/modifies/redirects
+  → ...repeats until all criteria met...
+  → Lead dispatches reviewer (subagent) → APPROVED or GAPS FOUND
+  → If GAPS: send to executor for fixes, re-review
+  → If APPROVED: shutdown executor → TeamDelete → present to user
+  → User runs /hyperpowers:finish-branch to close epic and integrate
 ```
 
 </integration>
@@ -623,10 +697,20 @@ Before closing epic:
 **bd command reference:**
 - See [bd commands](../common-patterns/bd-commands.md) for complete command list
 
+**Agent teams API tools:**
+- TeamCreate — create team (one per epic)
+- Task tool with `team_name` + `name` — spawn teammate (executor)
+- Task tool without `team_name` — spawn subagent (reviewer)
+- SendMessage type: "message" — direct message to executor
+- SendMessage type: "shutdown_request" — graceful shutdown
+- TeamDelete — cleanup after shutdown
+
 **When stuck:**
-- Hit blocker → Re-read epic, check anti-patterns, research or ask
-- Don't understand instruction → Stop and ask (never guess)
-- Verification fails repeatedly → Check epic anti-patterns, ask for help
-- Tempted to skip steps → Check TodoWrite, complete all substeps
+- Executor not responding → Check if team exists and executor is idle. If idle, SendMessage to continue. If team gone, respawn.
+- Reviewer returns GAPS → Send gap details to executor, return to orchestration loop
+- Escalation about rejected approach → Check Design Discovery, ask USER if revisit conditions met
+- Multiple epics open → Ask user which to execute
+- TeamCreate fails → Team already exists from previous session. Skip to resumption.
+- Executor goes idle → Normal. Process their last message and respond.
 
 </resources>
