@@ -98,7 +98,7 @@ Before using a skill, announce it:
 **Before writing ANY code:**
 - Use hyperpowers:brainstorming to refine requirements
 - Use hyperpowers:writing-plans to create detailed plan
-- Use hyperpowers:executing-plans to implement iteratively
+- Use hyperpowers:executing-plans to orchestrate execution via executor teammate
 
 **When implementing:**
 - Use hyperpowers:test-driven-development (RED-GREEN-REFACTOR cycle)
@@ -173,10 +173,11 @@ Claude: "Now I'm using hyperpowers:writing-plans to create a detailed implementa
 [Skill tool loads writing-plans]
 [Creates bd epic with tasks]
 
-Claude: "Now I'm using hyperpowers:executing-plans to implement the tasks iteratively."
+Claude: "Now I'm using hyperpowers:executing-plans to orchestrate task execution."
 
 [Skill tool loads executing-plans]
-[Implements with TDD, commits incrementally]
+[Creates team, spawns executor teammate who implements with TDD]
+[Lead validates proposals against epic, executor continues]
 
 **What you gain:**
 - Clear requirements before coding
@@ -319,7 +320,7 @@ These have LOW FREEDOM - follow the exact process:
 
 - hyperpowers:test-driven-development (RED-GREEN-REFACTOR cycle)
 - hyperpowers:verification-before-completion (evidence before claims)
-- hyperpowers:executing-plans (continuous execution, substep tracking)
+- hyperpowers:executing-plans (lead orchestration, executor delegation)
 
 ## Flexible Skills (Adapt Principles)
 
@@ -336,7 +337,7 @@ These have HIGH FREEDOM - adapt core principles to context:
 ## User Instructions Describe WHAT, Not HOW
 
 **User says:** "Add user authentication"
-**This means:** Use brainstorming → writing-plans → executing-plans → TDD → verification
+**This means:** Use brainstorming → writing-plans → executing-plans (lead orchestrates executor with TDD) → verification
 
 **User says:** "Fix this bug"
 **This means:** Use debugging-with-tools → fixing-bugs → TDD → verification
@@ -380,7 +381,7 @@ Before completing ANY task:
 
 **Critical workflows this establishes:**
 - hyperpowers:brainstorming (before writing code)
-- hyperpowers:writing-plans → hyperpowers:executing-plans (plan then implement)
+- hyperpowers:writing-plans → hyperpowers:executing-plans (plan then orchestrate execution via executor teammate)
 - hyperpowers:test-driven-development (during implementation)
 - hyperpowers:verification-before-completion (before claiming done)
 </integration>

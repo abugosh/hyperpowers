@@ -13,7 +13,7 @@ Reusable workflows for common development tasks:
 **Feature Development:**
 - **brainstorming** - Interactive design refinement using Socratic method
 - **writing-plans** - Create detailed implementation plans (single task or multiple tasks)
-- **executing-plans** - Execute tasks continuously with optional per-task review
+- **executing-plans** - Lead orchestrates executor teammate for TDD implementation; validates proposals against epic
 - **review-implementation** - Verify implementation matches requirements
 - **finishing-a-development-branch** - Complete workflow for PR creation and cleanup
 - **sre-task-refinement** - Ensure all corner cases and requirements are understood (uses Opus 4.1)
@@ -50,7 +50,7 @@ Quick access to key workflows:
 
 - `/hyperpowers:brainstorm` - Start interactive design refinement
 - `/hyperpowers:write-plan` - Create detailed implementation plan
-- `/hyperpowers:execute-plan` - Execute plan with review checkpoints
+- `/hyperpowers:execute-plan` - Orchestrate plan execution via executor teammate
 - `/hyperpowers:review-implementation` - Review completed implementation
 - `/hyperpowers:refactor-diagnose` - Diagnose code/design smells and refactor targets
 - `/hyperpowers:refactor-design` - Design refactor with composition, DI, and test strategy
@@ -60,6 +60,8 @@ Quick access to key workflows:
 
 Domain-specific agents for complex tasks:
 
+- **executor** - Implements bd tasks with TDD discipline as a persistent teammate; sends structured summaries to lead
+- **reviewer** - Verifies implementation against bd epic spec; returns APPROVED or GAPS FOUND verdict
 - **code-reviewer** - Review implementations against plans and coding standards
 - **codebase-investigator** - Understand current codebase state and patterns
 - **internet-researcher** - Research APIs, libraries, and current best practices
@@ -150,17 +152,15 @@ Claude: Now I'm using the writing-plans skill to create a detailed implementatio
 
 [Creates detailed plan with specific tasks in bd]
 
-Claude: I'm using the executing-plans skill to implement the tasks.
+Claude: I'm using the executing-plans skill to orchestrate execution.
 
-[Works through ready tasks continuously, using bd ready to find next task]
+[Creates team, spawns executor teammate]
+[Executor implements tasks with TDD, sends structured summaries]
+[Lead validates proposals against epic requirements]
 
-Claude: I'm using the test-runner agent to verify all tests pass.
+Claude: The executor reports all criteria met. Dispatching the reviewer agent.
 
-[Agent runs tests, reports: "✓ 47 tests passed, 0 failed"]
-
-Claude: I'm using the review-implementation skill to verify everything works.
-
-[Reviews implementation against requirements]
+[Reviewer verifies implementation, returns APPROVED]
 
 Claude: I'm using the finishing-a-development-branch skill to wrap up.
 

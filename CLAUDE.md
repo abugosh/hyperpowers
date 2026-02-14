@@ -89,7 +89,7 @@ The repository is organized as follows:
 
 - **skills/** - Reusable workflow definitions (each in its own directory with SKILL.md)
 - **commands/** - Slash command definitions that invoke skills
-- **agents/** - Specialized subagent prompts (code-reviewer, codebase-investigator, internet-researcher, test-runner)
+- **agents/** - Specialized agent prompts (executor, reviewer, code-reviewer, codebase-investigator, internet-researcher, test-runner)
 - **hooks/** - Automatic behaviors triggered by events
 - **.claude-plugin/** - Plugin metadata (plugin.json)
 
@@ -125,7 +125,7 @@ Skills are invoked through slash commands that expand to prompts. The flow is:
 Many skills integrate with `bd` (a task management tool). The workflows expect:
 
 - **Epics** - High-level features/initiatives (created by writing-plans)
-- **Tasks** - Specific implementation steps (created by writing-plans, executed by executing-plans)
+- **Tasks** - Specific implementation steps (created by writing-plans, executed by executor agent via executing-plans)
 - **Dependencies** - Task relationships (blocking, parent-child)
 - **Status tracking** - Open, in-progress, done, ready
 
@@ -142,12 +142,16 @@ bd status bd-3 --status in-progress     # Update task status
 
 Specialized agents run in separate contexts to handle specific tasks:
 
-1. **test-runner** (uses Haiku) - Runs tests/hooks/commits, returns only summary + failures to keep context clean
-2. **code-reviewer** - Reviews implementations against plans and coding standards
-3. **codebase-investigator** - Explores codebase state and patterns when planning/designing
-4. **internet-researcher** - Researches APIs, libraries, docs when planning/designing
+1. **executor** (teammate) - Implements bd tasks with TDD discipline, sends structured summaries to lead after each task. Spawned by executing-plans as a persistent teammate.
+2. **reviewer** (subagent) - Verifies implementation against bd epic spec with Google Fellow SRE scrutiny. Returns APPROVED or GAPS FOUND verdict. Dispatched as one-shot subagent.
+3. **test-runner** (uses Haiku) - Runs tests/hooks/commits, returns only summary + failures to keep context clean
+4. **code-reviewer** - Reviews implementations against plans and coding standards
+5. **codebase-investigator** - Explores codebase state and patterns when planning/designing
+6. **internet-researcher** - Researches APIs, libraries, docs when planning/designing
 
 **Critical pattern:** Agents keep verbose output (test results, formatting diffs) in their own context, returning only essential info to the main conversation.
+
+**Delegation pattern:** The executing-plans skill uses agent teams — the lead (main context) orchestrates while the executor teammate implements. This preserves epic context and cross-task learnings in the lead, avoiding context exhaustion from implementation verbosity.
 
 ### Common Patterns Location
 
@@ -168,7 +172,7 @@ Complete workflow from idea to PR:
 1. **Brainstorming** (`/hyperpowers:brainstorm`) - Socratic questioning to refine requirements
 2. **SRE Task Refinement** (optional) - Uses Opus 4.1 to identify corner cases
 3. **Writing Plans** (`/hyperpowers:write-plan`) - Creates detailed bd epic with tasks
-4. **Executing Plans** (`/hyperpowers:execute-plan`) - Implements tasks continuously, updating bd
+4. **Executing Plans** (`/hyperpowers:execute-plan`) - Lead orchestrates executor teammate who implements tasks with TDD; lead validates proposals against epic
 5. **Review Implementation** (`/hyperpowers:review-implementation`) - Verifies against spec
 6. **Finishing Branch** - Creates PR, handles cleanup
 

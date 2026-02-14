@@ -20,7 +20,7 @@ HIGH FREEDOM - Adapt Socratic questioning to context, but always create immutabl
 | 4 | Present design in sections (200-300 words) | Validated architecture |
 | 5 | Create bd epic with IMMUTABLE requirements | Epic with anti-patterns |
 | 6 | Create ONLY first task | Ready for executing-plans |
-| 7 | Hand off to executing-plans | Iterative implementation begins |
+| 7 | Hand off to executing-plans | Lead orchestrates executor for implementation |
 
 **Key:** Epic = contract (immutable), Tasks = adaptive (created as you learn)
 </quick_reference>
@@ -403,16 +403,16 @@ SRE refinement will:
 "Epic bd-1 is ready with immutable requirements and success criteria.
 First task bd-2 has been refined and is ready to execute.
 
-Ready to start implementation? I'll use executing-plans to work through this iteratively.
+Ready to start implementation? I'll use executing-plans to orchestrate execution.
 
 The executing-plans skill will:
-1. Execute the current task
-2. Review what was learned against epic requirements
-3. Create next task based on current reality
-4. Run SRE refinement on new tasks
-5. Repeat until all epic success criteria met
+1. Create a team and spawn an executor teammate for implementation
+2. The executor implements tasks with TDD (red-green-refactor-commit)
+3. I validate each proposed next task against epic requirements and anti-patterns
+4. The executor proposes SRE-refined tasks, I approve or redirect
+5. When all criteria met, a reviewer agent verifies the implementation
 
-This approach avoids brittle upfront planning - each task adapts to what we learn."
+This approach preserves epic context and cross-task learnings continuously — no manual /clear cycling needed."
 ```
 </the_process>
 
@@ -859,7 +859,7 @@ Before handing off to executing-plans:
 - hyperpowers:codebase-investigator (for finding existing patterns)
 - hyperpowers:internet-researcher (for external documentation)
 - hyperpowers:sre-task-refinement (REQUIRED before handoff to executing-plans)
-- hyperpowers:executing-plans (handoff after refinement approved)
+- hyperpowers:executing-plans (handoff — lead orchestrates executor teammate after refinement approved)
 
 **Call chain:**
 ```
