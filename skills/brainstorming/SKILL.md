@@ -79,7 +79,25 @@ ls doc/arch/adr-*.md 2>/dev/null
 # Read ADRs that mention the node or its volatility axis
 ```
 
-3. Present the loaded context before proceeding with Socratic questioning:
+3. If a codebase exists, dispatch `hyperpowers:codebase-investigator` to derive fresh data flow context scoped to the detected component:
+
+```
+Dispatch codebase-investigator with prompt:
+"For component [node name] with these boundaries: [adjacent nodes from bd deps]
+
+1. What data enters this component? (from which upstream modules, what shape at module level?)
+2. What data exits this component? (to which downstream modules, what shape?)
+3. What data transformations happen inside? (what shape goes in vs what comes out?)
+4. What are the primary request paths that flow through this component?
+
+Reference the component declared interface contract: [from node design]"
+```
+
+This dispatch is COMPONENT-SCOPED — it asks about ONE component's data flow, not the entire system. Fresh derivation catches drift since the outer-loop decomposition without stale artifacts.
+
+If no codebase exists (greenfield/design phase), skip this dispatch entirely — the architecture graph can exist before code does.
+
+4. Present the loaded context before proceeding with Socratic questioning:
 ```
 Architecture context loaded for [node name]:
 - Volatility axis: [from node design]
@@ -89,16 +107,24 @@ Architecture context loaded for [node name]:
 - Relevant ADRs:
   - ADR-NNN: [title] — [key decision and consequences]
   - ADR-NNN: [title] — [key decision and consequences]
+- Data flow context:
+  - Inbound: [data shapes from upstream modules]
+  - Outbound: [data shapes to downstream modules]
+  - Transforms: [shape changes inside component]
+  - Request paths: [entry points flowing through]
 
 These ADRs represent architectural decisions that may inform
 anti-patterns for this epic.
 ```
 
+If the flow dispatch was skipped (no codebase), omit the "Data flow context" section from the presentation.
+
 The architect decides during the brainstorm which architectural tradeoffs become anti-patterns in the inner-loop epic. Do NOT auto-insert ADR tradeoffs as anti-patterns.
 
 **Edge cases:**
 - No architecture graph exists: skip detection, proceed with normal brainstorming
-- Multiple nodes referenced: load context for all matched nodes
+- No codebase but graph exists: skip flow dispatch, present architectural context only
+- Multiple nodes referenced: load context for all matched nodes (dispatch per node is acceptable given rarity)
 - Node is closed/stable: still load context (historical design decisions inform the brainstorm)
 - No ADRs found for the node: note "No ADRs found for this component"
 - User doesn't reference any node: skip detection, proceed normally
