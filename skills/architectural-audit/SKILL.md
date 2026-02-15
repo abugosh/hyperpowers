@@ -846,6 +846,7 @@ Before presenting the audit report:
 - [ ] Existing ADRs read (or noted as absent)
 - [ ] Codebase-investigator dispatched (if codebase exists)
 - [ ] Evidence gathered covers: module structure, imports, co-change, call patterns, interfaces, shared state
+- [ ] Flow evidence gathered (Step 1b): request paths, undeclared data flows, implicit ordering (if codebase exists)
 - [ ] All 6 analysis passes executed (complection, interfaces, temporal coupling, hidden deps, layer violations, state/identity)
 - [ ] Accepted ADR tensions skipped with note
 - [ ] Drift detected where ADRs contradict codebase evidence
@@ -887,7 +888,7 @@ HANDOFF (all tensions resolved/accepted):
 ```
 
 **Agents used:**
-- codebase-investigator (gather module structure, imports, co-change, call patterns, interfaces, shared state)
+- codebase-investigator (Step 1a: gather module structure, imports, co-change, call patterns, interfaces, shared state; Step 1b: gather request paths, undeclared data flows, implicit ordering)
 - NO internet-researcher (audit uses only graph + codebase evidence)
 
 **Tools required:**
