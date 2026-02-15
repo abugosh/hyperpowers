@@ -49,6 +49,60 @@ HIGH FREEDOM - Adapt Socratic questioning to context, but always create immutabl
 - Dispatch `hyperpowers:codebase-investigator` for existing patterns
 - Dispatch `hyperpowers:internet-researcher` for external APIs/libraries
 
+**Check for architecture node context:**
+
+If the user's request mentions a component, module, or bd ID that might be an architecture node, check for an existing architecture graph:
+
+```bash
+# Check for architecture graph
+bd list --label arch --type epic --status open
+```
+
+If a graph exists, check if any architecture node matches the user's request:
+
+```bash
+# List all architecture component nodes
+bd list --label arch,component --parent <epic-id>
+```
+
+**If an architecture node is detected** (by bd ID, component name match, or explicit user mention):
+
+1. Load the node's design context:
+```bash
+bd show <node-id>          # Volatility axis, layer, interface contract, responsibility
+bd dep tree <node-id>      # Adjacent nodes (blocks, relates_to edges)
+```
+
+2. Find relevant ADRs:
+```bash
+ls doc/arch/adr-*.md 2>/dev/null
+# Read ADRs that mention the node or its volatility axis
+```
+
+3. Present the loaded context before proceeding with Socratic questioning:
+```
+Architecture context loaded for [node name]:
+- Volatility axis: [from node design]
+- Layer: [from node design]
+- Interface contract: [from node design]
+- Adjacent nodes: [from bd deps — which nodes this one blocks or relates_to]
+- Relevant ADRs:
+  - ADR-NNN: [title] — [key decision and consequences]
+  - ADR-NNN: [title] — [key decision and consequences]
+
+These ADRs represent architectural decisions that may inform
+anti-patterns for this epic.
+```
+
+The architect decides during the brainstorm which architectural tradeoffs become anti-patterns in the inner-loop epic. Do NOT auto-insert ADR tradeoffs as anti-patterns.
+
+**Edge cases:**
+- No architecture graph exists: skip detection, proceed with normal brainstorming
+- Multiple nodes referenced: load context for all matched nodes
+- Node is closed/stable: still load context (historical design decisions inform the brainstorm)
+- No ADRs found for the node: note "No ADRs found for this component"
+- User doesn't reference any node: skip detection, proceed normally
+
 **REQUIRED: Use AskUserQuestion tool with scannable format**
 
 **Question Format Guidelines:**
@@ -863,13 +917,18 @@ Before handing off to executing-plans:
 
 **Call chain:**
 ```
-brainstorming → sre-task-refinement → executing-plans
+OUTER LOOP (when architecture node is stable):
+  /decompose → /audit-arch → stable node → brainstorming (auto-loads arch context)
+
+INNER LOOP:
+  brainstorming → sre-task-refinement → executing-plans
 ```
 
 **This skill is called by:**
 - hyperpowers:using-hyper (mandatory before writing code)
 - User requests for new features
 - Beginning of greenfield development
+- Stable architecture node handoff from outer loop (/decompose -> /audit-arch -> stable -> /brainstorm)
 
 **Agents used:**
 - codebase-investigator (understand existing code)
