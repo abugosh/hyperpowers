@@ -15,7 +15,7 @@ RIGID - Same 6 analysis passes every time, same output format, same self-check p
 | Step | Action | Deliverable |
 |------|--------|-------------|
 | 0 | Load architecture graph from bd | Graph state + ADRs loaded |
-| 1 | Gather evidence (codebase-investigator) | Module structure, imports, co-change data |
+| 1 | Gather evidence (codebase-investigator) | Module structure, imports, co-change data; request paths and undeclared flows |
 | 2 | Run 6 analysis passes | Raw tension findings |
 | 3 | Self-check + present | Tension report (no recommendations) |
 
@@ -144,6 +144,24 @@ not class/function level.
 
 Record all evidence for use in Step 2.
 
+**Step 1b -- Data flow investigation (skip if no codebase):**
+
+After the structural investigation above returns results, dispatch a second `hyperpowers:codebase-investigator` to gather data flow evidence, using the structural findings and the architecture graph to target questions precisely.
+
+```
+Based on these structural findings: [include Step 1a results -- module structure, imports, co-change, call patterns, interfaces, shared state]
+And this architecture graph: [include graph nodes, edges, layers, volatility axes from Step 0]
+
+Trace data flows at module level:
+1. For each entry point in the codebase, trace the request path through modules. Which modules participate in each request path?
+2. Identify data flows between modules that have no declared edge in the architecture graph (undeclared flows).
+3. Identify implicit ordering: which modules must process data before others, and is this ordering captured in the graph edges?
+
+Report at module level. Reference architecture graph node names where modules map to nodes.
+```
+
+The flow evidence from Step 1b feeds into passes 1, 3, and 4 -- it does NOT replace the structural evidence from Step 1a.
+
 ---
 
 ## Step 2 -- Run 6 Analysis Passes
@@ -165,6 +183,10 @@ Run each pass using both graph evidence and codebase evidence (when available). 
 - Modules that import from multiple unrelated domains
 - Files that contain logic for multiple independent concerns
 - Functions that combine data access, business logic, and orchestration
+
+**Flow evidence (from Step 1b, when available):**
+- Modules that participate in request paths for multiple unrelated features (a module appearing in both the checkout path and the reporting path participates in independent concerns)
+- Request paths that pass through a single module for unrelated reasons
 
 **Tension pattern:** "[Component] braids [Concern A] and [Concern B]"
 
@@ -198,6 +220,10 @@ Run each pass using both graph evidence and codebase evidence (when available). 
 - Initialization sequences that break if reordered
 - Event handlers that assume specific execution order
 
+**Flow evidence (from Step 1b, when available):**
+- Request paths where module A must process data before module B, but no blocks edge exists between the corresponding graph nodes
+- Implicit ordering derived from data flow direction that is not captured in the declared graph edges
+
 **Tension pattern:** "[A] and [B] have implicit ordering dependency not captured in graph"
 
 ### Pass 4: Hidden Dependencies
@@ -214,6 +240,10 @@ Run each pass using both graph evidence and codebase evidence (when available). 
 - Shared configuration or environment variables creating invisible coupling
 - Dynamic dispatch or event systems hiding concrete dependencies
 - Shared data formats or schemas without explicit interface contracts
+
+**Flow evidence (from Step 1b, when available):**
+- Data flows between modules that map to graph nodes with no declared edge (data moves from node A to node B but graph shows no relationship)
+- Undeclared flows that only become visible when tracing request paths end-to-end
 
 **Tension pattern:** "[A] depends on [B] through [mechanism] but graph shows no relationship"
 
