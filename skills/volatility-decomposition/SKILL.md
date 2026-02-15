@@ -16,7 +16,7 @@ The questioning adapts. The deliverable format does not.
 <quick_reference>
 | Step | Action | Deliverable |
 |------|--------|-------------|
-| 0 | Context detection | Existing graph or fresh start determined |
+| 0 | Context detection + data coupling | Existing graph or fresh start determined; data coupling evidence gathered |
 | 1 | Socratic questioning (Lowy framework) | Volatility axes and forces identified |
 | 2 | Structure proposal (2-3 alternatives) | Alternatives with tradeoff tables |
 | 3 | Encode chosen structure in bd | Architecture epic + component nodes |
@@ -78,6 +78,37 @@ bd list --label arch,component --parent <epic-id>
   ```
 - If no codebase (greenfield): pure design mode -- all evidence comes from Socratic dialogue
 
+**Step 0b -- Data coupling investigation (skip if greenfield):**
+
+After the structural investigation above returns results, dispatch a second `hyperpowers:codebase-investigator` to gather data coupling evidence, using the structural findings to target questions precisely.
+
+**INCEPTION MODE prompt:**
+```
+Based on these structural findings: [include Step 0a results -- modules, dependencies, boundaries]
+
+For each pair of modules that share a dependency edge:
+1. What data shapes cross this boundary? (types, structures, DTOs at module level)
+2. Which entry points produce data that flows across this boundary?
+3. Are there modules that share data shapes despite no direct import? (hidden coupling through intermediaries)
+
+Report at module level. For each coupling: source module, destination module, data shape description, triggering entry points.
+```
+
+**REVISION MODE prompt:**
+```
+Based on these structural findings: [include Step 0a results]
+And this existing architecture graph: [include graph nodes and edges from bd]
+
+For each boundary in the graph:
+1. What data shapes cross this boundary? Does actual data coupling match the declared edge?
+2. Are there data flows between graph nodes with no declared edge? (hidden coupling)
+3. Which entry points produce data that flows across each boundary?
+
+Report at module level. Reference graph node names.
+```
+
+The coupling evidence from Step 0b feeds into Steps 1 and 2 -- it does NOT replace the structural evidence from Step 0a.
+
 **Check for existing ADRs:**
 ```bash
 ls doc/arch/adr-*.md 2>/dev/null
@@ -92,6 +123,8 @@ ls doc/arch/adr-*.md 2>/dev/null
 **REQUIRED: Use AskUserQuestion tool for ALL questions. Do not print questions and wait.**
 
 Work through these question families, adapting to domain. Each round uses AskUserQuestion with multiple-choice options where possible.
+
+**When data coupling evidence exists (from Step 0b):** Weave coupling findings into your Socratic questions as concrete evidence. When probing isolation ("If you replace X, what else changes?"), reference specific coupling: "Codebase investigation found modules A and B share N data shapes across their boundary, triggered by M entry points." When probing rate-of-change, note which boundaries have heavy data coupling (high interface cost if split) vs light coupling (low interface cost). For REVISION MODE, highlight where actual data coupling differs from declared graph edges -- these discrepancies are high-value questioning targets.
 
 ### Forces Discovery
 
@@ -305,11 +338,13 @@ Each proposal must include:
 | [Name] | [1 sentence] | [What changes it isolates] | Utility |
 
 Edges:
-- [Node A] blocks [Node B] (interface: [what flows between them])
-- [Node C] relates_to [Node D] (interaction: [how they interact])
+- [Node A] blocks [Node B] (interface: [what flows between them], coupling: [N shared data shapes, M triggering entry points])
+- [Node C] relates_to [Node D] (interaction: [how they interact], coupling: [N shared data shapes, M triggering entry points])
+
+(Omit coupling annotation when no data coupling evidence exists -- greenfield or Step 0b not dispatched.)
 
 **Optimizes for:** [What this structure does best]
-**Trades off:** [What you give up]
+**Trades off:** [What you give up -- reference coupling evidence where relevant: "This boundary splits modules with N shared data shapes -- interface cost is real"]
 
 ### Proposal B: [Name -- what it optimizes for]
 
