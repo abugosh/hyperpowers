@@ -70,7 +70,7 @@ find-relationships <element-id>
 ```
 
 - Read all elements with their metadata (volatility_axis, layer, stability_state)
-- Identify #target elements (aspirational, not yet implemented) vs implemented elements (no tag)
+- Identify #target elements (greenfield, no code exists) vs elements with existing code (no #target tag)
 - Read all relationships (blocks, relatesTo)
 - Summarize current model state for the architect before proceeding
 - Socratic questions will focus on what feels wrong and where restructuring is needed
@@ -471,7 +471,7 @@ model {
                 stability_state 'exploring'
             }
             link ../doc/arch/components/component-name.md 'Design Doc'
-            #target
+            // #target — ONLY if no code exists (greenfield). Omit for existing codebases.
         }
     }
 }
@@ -486,7 +486,14 @@ model {
 - The linked markdown doc notes: "This component's volatility axis is a hypothesis. See ADR-NNN for falsification criteria."
 - Boundary annotations note interface cost explicitly
 
-**#target tag:** Applied to aspirational components not yet implemented. When a component is implemented, remove the tag. The tag is orthogonal to stability_state.
+**#target tag — greenfield only:** Applied to components where NO CODE EXISTS yet. When the component is implemented, remove the tag. The tag is orthogonal to stability_state.
+
+**CRITICAL: Do NOT tag components `#target` when decomposing an existing codebase.** If code exists but isn't yet factored into the proposed boundary, the component is NOT a target — it's an existing component with a proposed boundary. The audit needs to compare actual code structure against proposed boundaries to find tensions and drift. Tagging these as `#target` causes the audit to skip codebase comparison entirely, defeating its purpose.
+
+**When to use `#target`:**
+- Greenfield component: no code exists, purely aspirational → `#target`
+- Existing code, new boundary: code exists but not yet modularized → NO `#target` (use `stability_state 'exploring'` only)
+- Mixed: some code exists, component needs significant new code → NO `#target` (partial code still warrants comparison)
 
 ### 3d. Create doc/arch/components/<name>.md for each component
 
@@ -616,7 +623,7 @@ model {
                     stability_state 'exploring'
                 }
                 link ../doc/arch/components/sub-component.md 'Design Doc'
-                #target
+                // #target — ONLY if no code exists (greenfield)
             }
         }
     }
@@ -633,7 +640,7 @@ If migrating from an existing bd-based architecture graph to LikeC4:
 4. Create `doc/arch/components/` markdown docs for each component
 5. Existing ADRs in `doc/arch/adr-*.md` remain unchanged
 6. Create views: `arch/views/landscape.c4` at minimum
-7. Mark aspirational components with `#target` tag
+7. Mark greenfield-only components with `#target` tag (do NOT tag components that have existing code)
 8. Set `stability_state` metadata based on previous bd state (labels or set-state)
 9. Close bd architecture epic and component nodes
 10. Create new bd work issues for remaining implementation work (referencing LikeC4 components)
@@ -718,7 +725,7 @@ Present a summary of the architecture model and recommended next steps:
 
 | Component | Layer | Volatility Axis | Stability | Target? |
 |-----------|-------|-----------------|-----------|---------|
-| [name] | [layer] | [axis] | exploring | #target |
+| [name] | [layer] | [axis] | exploring | #target or blank |
 | ... | ... | ... | ... | ... |
 
 ## Files Created
@@ -1182,7 +1189,7 @@ Before completing decomposition:
 - [ ] arch/components/*.c4 created for each component with metadata (volatility_axis, layer, stability_state)
 - [ ] doc/arch/components/*.md created with interface contracts for each component
 - [ ] Components linked to markdown docs via link keyword
-- [ ] Aspirational components tagged with #target
+- [ ] Greenfield-only components tagged with #target (existing code components NOT tagged)
 - [ ] stability_state set on all components (pre-fit or exploring)
 - [ ] Pre-fit components have ADRs with falsification criteria
 - [ ] Dynamic views created only for curated flows (not auto-generated)

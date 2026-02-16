@@ -194,7 +194,7 @@ anti-patterns for this epic.
 
 If stability_state is 'pre-fit': note "Volatility axis is a hypothesis — see ADR-NNN for falsification criteria."
 
-If the component has #target tag: note "This is an aspirational component — not yet implemented."
+If the component has #target tag: note "This is a greenfield component — no code exists yet."
 
 If the flow dispatch was skipped (no codebase), omit the codebase-derived data flow from the presentation.
 
@@ -204,7 +204,7 @@ The architect decides during the brainstorm which architectural tradeoffs become
 - No architecture model exists (no arch/*.c4): skip detection, proceed with normal brainstorming
 - No codebase but model exists: skip codebase-investigator dispatch, present architectural context only
 - Multiple components referenced: load context for all matched (search-element for each)
-- Component has #target tag (aspirational): still load context, note it's aspirational
+- Component has #target tag (greenfield, no code): still load context, note no code exists yet
 - Component is pre-fit: load context, note volatility axis is a hypothesis
 - No ADRs found for the component: note "No ADRs found for this component"
 - User doesn't reference any component: skip detection, proceed normally

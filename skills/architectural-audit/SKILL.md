@@ -96,7 +96,8 @@ Record for analysis:
 - All relationships (blocks, relatesTo) with their descriptions
 - Stability states of each component (from metadata.stability_state)
 - Layer assignments (from metadata.layer)
-- #target components (aspirational — skip codebase comparison for these)
+- #target components (greenfield — no code exists, skip codebase comparison for these)
+- NOTE: Components WITHOUT #target always get codebase comparison, even if the boundary is new. The `#target` tag means "no code exists," NOT "the boundary isn't factored yet." When decomposing an existing codebase, most components should NOT have #target because code exists — only the boundary is aspirational.
 - Pre-fit components (stability_state 'pre-fit' — lighter axis scrutiny, heavier boundary cost)
 - Dynamic views with their documented flows (for Pass 7)
 
@@ -193,7 +194,7 @@ Run each pass using both model evidence and codebase evidence (when available). 
 
 **Before recording a tension:** Check if an existing ADR already accepts this tension. If an accepted ADR covers the exact structural choice, skip the tension and note: "Accepted via ADR-NNN: [title]".
 
-**#target components:** Skip codebase comparison for aspirational components (no code to compare). Include them in graph-level analysis only.
+**#target components (greenfield only):** Skip codebase comparison for components where no code exists at all. Include them in graph-level analysis only. Components where code exists but boundaries are aspirational should NOT have #target — they need codebase comparison to find tensions between actual structure and proposed boundaries.
 
 **Pre-fit components (stability_state 'pre-fit'):**
 - Passes 1-5: LIGHTER axis scrutiny (do NOT flag axis alignment tensions — axis is a known hypothesis). HEAVIER boundary cost scrutiny (flag if boundary has high interface surface area relative to uncertainty).
@@ -320,7 +321,7 @@ Run each pass using both model evidence and codebase evidence (when available). 
 
 **Skip if no codebase** (greenfield with model only) or **no dynamic views exist**.
 
-**Skip #target components** in dynamic views (aspirational, no code to compare).
+**Skip #target components** in dynamic views (greenfield, no code to compare).
 
 **Skip pre-fit components** in dynamic views (axis is uncertain, drift comparison not meaningful).
 
@@ -440,7 +441,7 @@ Ordering language (rewrite if found):
 
 ### Target Components (Skipped)
 
-[List #target components not audited against codebase — aspirational only]
+[List #target components not audited against codebase — greenfield, no code exists]
 - [component name]: aspirational, not yet implemented
 
 ### Pre-fit Components (Lighter Scrutiny)
@@ -918,7 +919,7 @@ presented as structural observations for the architect to evaluate.
 
 11. **Pre-fit components get adjusted scrutiny.** Lighter axis scrutiny (axis is a hypothesis — do NOT flag axis alignment). Heavier boundary cost scrutiny (flag expensive boundaries around uncertain axes). Do NOT promote pre-fit to audited — the architect explicitly chose pre-fit.
 
-12. **#target components are aspirational.** Skip codebase comparison for components tagged #target. Include in model-level analysis only.
+12. **#target means greenfield (no code exists).** Skip codebase comparison ONLY for components tagged #target. Components where code exists but boundaries are aspirational should NOT have #target and MUST get codebase comparison — that comparison is the point.
 
 ## Common Excuses
 
@@ -939,7 +940,8 @@ Before presenting the audit report:
 - [ ] Architecture model loaded from LikeC4 MCP (not bd)
 - [ ] No bd architecture commands remain (no bd list --label arch, no bd set-state)
 - [ ] Dynamic views loaded from LikeC4 model (for Pass 7)
-- [ ] #target components identified and skipped in codebase comparison
+- [ ] #target components (greenfield only) identified and skipped in codebase comparison
+- [ ] Components with existing code but aspirational boundaries are NOT tagged #target and DO get codebase comparison
 - [ ] Pre-fit components identified with adjusted scrutiny noted
 - [ ] Existing ADRs read (or noted as absent)
 - [ ] Codebase-investigator dispatched (if codebase exists)
