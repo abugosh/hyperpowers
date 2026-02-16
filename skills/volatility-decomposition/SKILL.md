@@ -1,14 +1,14 @@
 ---
 name: volatility-decomposition
-description: "Lowy volatility-based decomposition producing architecture graph in bd with ADRs"
+description: "Lowy volatility-based decomposition producing LikeC4 .c4 architecture model with linked docs, bd work issues, and ADRs"
 ---
 
 <skill_overview>
-Guide architects through Lowy's volatility-based decomposition via Socratic dialogue, producing 2-3 alternative component structures encoded as a bd architecture graph, with key decisions captured as ADRs in the repository.
+Guide architects through Lowy's volatility-based decomposition via Socratic dialogue, producing 2-3 alternative component structures encoded as LikeC4 .c4 files with linked markdown docs, bd work issues for the implementation delta, and key decisions captured as ADRs.
 </skill_overview>
 
 <rigidity_level>
-HIGH FREEDOM - Socratic questions adapt to domain and system context. Output structure is rigid: always 2-3 alternatives with tradeoffs, always bd graph encoding, always ADRs for key decisions.
+HIGH FREEDOM - Socratic questions adapt to domain and system context. Output structure is rigid: always 2-3 alternatives with tradeoffs, always LikeC4 model encoding, always ADRs for key decisions.
 
 The questioning adapts. The deliverable format does not.
 </rigidity_level>
@@ -16,14 +16,14 @@ The questioning adapts. The deliverable format does not.
 <quick_reference>
 | Step | Action | Deliverable |
 |------|--------|-------------|
-| 0 | Context detection + data coupling | Existing graph or fresh start determined; data coupling evidence gathered |
+| 0 | Context detection + data coupling | Existing LikeC4 model or fresh start; data coupling evidence |
 | 1 | Socratic questioning (Lowy framework) | Volatility axes and forces identified |
 | 2 | Structure proposal (2-3 alternatives) | Alternatives with tradeoff tables |
-| 3 | Encode chosen structure in bd | Architecture epic + component nodes |
+| 3 | Encode in LikeC4 + create bd work issues | .c4 files + doc/arch/components/*.md + bd feature issues |
 | 4 | Create ADRs for key decisions | doc/arch/adr-NNN.md files |
 | 5 | Handoff guidance | Next steps toward audit and inner loop |
 
-**Key:** Graph = temporary work plan (created, consumed, closed). ADRs = permanent intent.
+**Key:** LikeC4 model = architecture (persistent, evolving). bd issues = work delta (created, consumed, closed). ADRs = permanent intent.
 </quick_reference>
 
 <when_to_use>
@@ -47,27 +47,38 @@ The questioning adapts. The deliverable format does not.
 
 **Announce:** "I'm using the volatility-decomposition skill to guide you through structural decomposition."
 
-**Check for existing architecture graph:**
+**Check for existing LikeC4 architecture model:**
 
 ```bash
-# Check for existing architecture epic
-bd list --label arch --type epic --status open
+ls arch/*.c4 2>/dev/null
 ```
 
-**If found (REVISION MODE):**
-```bash
-# Load existing graph
-bd show <epic-id>
-bd list --label arch,component --parent <epic-id>
+**If .c4 files found (REVISION MODE):**
+
+LikeC4 MCP server is REQUIRED. If MCP is not available, fail with: "LikeC4 MCP server is required for revision mode. Run: likec4 mcp --stdio"
+
+Load the existing model via LikeC4 MCP:
 ```
-- Read all component nodes, their volatility axes, stability states, and edges
-- Summarize current graph state for the architect before proceeding
+# Get high-level overview
+read-project-summary
+
+# For each component, read full details
+read-element <element-id>
+
+# Read relationships
+find-relationships <element-id>
+```
+
+- Read all elements with their metadata (volatility_axis, layer, stability_state)
+- Identify #target elements (aspirational, not yet implemented) vs implemented elements (no tag)
+- Read all relationships (blocks, relatesTo)
+- Summarize current model state for the architect before proceeding
 - Socratic questions will focus on what feels wrong and where restructuring is needed
 
-**If not found (INCEPTION MODE):**
+**If no .c4 files found (INCEPTION MODE):**
 - Starting fresh -- all evidence comes from Socratic dialogue and codebase investigation
 
-**Codebase detection:**
+**Step 0a -- Codebase detection:**
 - If codebase exists: dispatch `hyperpowers:codebase-investigator` with prompt:
   ```
   Map the current module/package structure, dependency graph between top-level
@@ -97,14 +108,14 @@ Report at module level. For each coupling: source module, destination module, da
 **REVISION MODE prompt:**
 ```
 Based on these structural findings: [include Step 0a results]
-And this existing architecture graph: [include graph nodes and edges from bd]
+And this existing architecture model: [include elements and relationships from LikeC4 MCP]
 
-For each boundary in the graph:
-1. What data shapes cross this boundary? Does actual data coupling match the declared edge?
-2. Are there data flows between graph nodes with no declared edge? (hidden coupling)
+For each boundary in the model:
+1. What data shapes cross this boundary? Does actual data coupling match the declared relationship?
+2. Are there data flows between elements with no declared relationship? (hidden coupling)
 3. Which entry points produce data that flows across each boundary?
 
-Report at module level. Reference graph node names.
+Report at module level. Reference LikeC4 element names.
 ```
 
 The coupling evidence from Step 0b feeds into Steps 1 and 2 -- it does NOT replace the structural evidence from Step 0a.
@@ -384,94 +395,243 @@ AskUserQuestion:
 
 ---
 
-## Step 3 -- Encode in bd
+## Step 3 -- Encode in LikeC4
 
-After the architect chooses a structure:
+After the architect chooses a structure, create the LikeC4 model files in this order: spec.c4 first (defines element kinds), then model.c4 (defines system), then components/*.c4 (defines elements), then views (references elements). Each step depends on types defined in the previous.
 
-**Create architecture epic:**
+### 3a. Create/update arch/spec.c4
+
+Define element kinds mapping to Lowy layers:
 
 ```bash
-bd create '[System Name] Architecture' --type epic --label arch \
-  --design '## System Purpose
-[1-2 sentences from Socratic dialogue]
-
-## Lowy Layer Map
-- Manager: [components at this layer]
-- Engine: [components at this layer]
-- Resource Accessor: [components at this layer]
-- Utility: [components at this layer]
-
-## Global Constraints
-[Cross-cutting rules from Socratic dialogue -- e.g., "no component may
-access storage directly except Resource Accessors"]'
+mkdir -p arch/components arch/views/data-flows doc/arch/components
 ```
 
-**Create component nodes (one per component):**
+```likec4
+// arch/spec.c4
+specification {
+    element manager {
+        style { shape rectangle }
+    }
+    element engine {
+        style { shape component }
+    }
+    element resourceAccessor {
+        style { shape storage }
+    }
+    element utility {
+        style { shape cylinder }
+    }
 
-```bash
-bd create '[Component Name]' --type feature --label arch,component \
-  --parent <epic-id> \
-  --design '## Volatility Axis
-[What this component encapsulates -- which force/change it isolates]
+    relationship blocks
+    relationship relatesTo
+
+    tag target
+}
+```
+
+### 3b. Create/update arch/model.c4
+
+Top-level system element and relationships:
+
+```likec4
+// arch/model.c4
+model {
+    systemName = manager 'System Name' {
+        description 'System purpose from Socratic dialogue'
+    }
+}
+```
+
+Add relationships between components in model.c4 or component files:
+
+```likec4
+model {
+    componentA -> componentB 'interface description' {
+        // blocks relationship
+    }
+    componentC -> componentD 'interaction description' {
+        // relatesTo relationship
+    }
+}
+```
+
+### 3c. Create arch/components/<name>.c4 for each component
+
+```likec4
+// arch/components/component-name.c4
+model {
+    systemName {
+        componentName = engine 'Component Title' {
+            summary 'One-line responsibility'
+            description 'Encapsulates [volatility axis]. [Layer] reasoning.'
+            metadata {
+                volatility_axis '[what changes this component isolates]'
+                layer '[manager|engine|resourceAccessor|utility]'
+                stability_state 'exploring'
+            }
+            link ../doc/arch/components/component-name.md 'Design Doc'
+            #target
+        }
+    }
+}
+```
+
+**stability_state values:** pre-fit, exploring, audited, stable
+
+**Pre-fit components** (stability_state 'pre-fit'):
+- The volatility axis is a hypothesis, not yet validated
+- Do NOT fractal-decompose pre-fit components (shallower nesting)
+- ADRs for pre-fit components MUST include a "Falsification Criteria" section
+- The linked markdown doc notes: "This component's volatility axis is a hypothesis. See ADR-NNN for falsification criteria."
+- Boundary annotations note interface cost explicitly
+
+**#target tag:** Applied to aspirational components not yet implemented. When a component is implemented, remove the tag. The tag is orthogonal to stability_state.
+
+### 3d. Create doc/arch/components/<name>.md for each component
+
+Prose documentation linked from LikeC4 element:
+
+```markdown
+# Component Name
+
+## Volatility Axis
+[What this component encapsulates and why this axis was chosen]
 
 ## Layer: [Manager|Engine|Resource Accessor|Utility]
-[Why this layer -- what it does and does NOT do]
+[Why this layer assignment]
 
 ## Interface Contract
-- IN: [operations this component exposes to others]
-- OUT: [operations this component calls on others]
+- IN: [operations exposed]
+- OUT: [operations called]
 
 ## Responsibility
-[1-2 sentences -- what it does, what it does NOT do]'
+[1-2 sentences on what this component does]
+
+## What Changes Should Be Local
+[What kinds of changes should only affect this component]
 ```
 
-**Set initial stability state:**
+For pre-fit components, add:
+```markdown
+## Pre-fit Notice
+This component's volatility axis is a hypothesis. See ADR-NNN for falsification criteria.
+```
+
+### 3e. Create arch/views/landscape.c4
+
+```likec4
+// arch/views/landscape.c4
+views {
+    view landscape {
+        include *
+        title 'System Architecture'
+    }
+
+    view targetComponents {
+        include * where tag is 'target'
+        title 'Aspirational Components'
+    }
+}
+```
+
+### 3f. Create dynamic views for important data flows (curated only)
+
+Only create dynamic views for flows worth reasoning about. Do NOT auto-generate a view for every data flow.
+
+```likec4
+// arch/views/data-flows/flow-name.c4
+views {
+    dynamic view flowName {
+        entryPoint ->> componentA
+        componentA ->> componentB
+        componentB ->> componentC
+        title 'Flow Name'
+        description 'What this flow represents and why it matters'
+    }
+}
+```
+
+Ask the architect which flows warrant dynamic views:
+```
+AskUserQuestion:
+  question: "Which data flows through this system are important enough to document as architecture views?"
+  header: "Dynamic View Curation"
+  options:
+    - label: "[Flow 1 name]"
+      description: "[path through components]"
+    - label: "[Flow 2 name]"
+      description: "[path through components]"
+    - label: "None right now"
+      description: "We can add views during audit or brainstorming"
+    - label: "Other (please describe)"
+      description: "A flow not listed above"
+```
+
+### 3g. Create bd work issues for the implementation delta
+
+Instead of creating bd architecture nodes, create bd work issues that reference the LikeC4 components. These track implementation work, NOT architecture structure.
 
 ```bash
-# Primary approach: state dimensions
-bd set-state <component-id> stability=exploring \
-  --reason 'initial decomposition, not yet audited'
+bd create 'Implement [Component Name]' --type feature --priority 2 \
+  --description 'Build the [component] as defined in arch/components/[name].c4.
+See doc/arch/components/[name].md for interface contract and design rationale.
+References ADR-NNN.'
 ```
 
-If `bd set-state` is not available (bd version may not support it), use labels as fallback:
+Link work issues to the parent epic if one exists. These are work items that will be consumed and closed — NOT architecture nodes.
 
-```bash
-# Fallback: label-based stability tracking
-bd label <component-id> arch:exploring
-# Later transitions: arch:audited, arch:accepted, arch:stable
+### For REVISION MODE:
+
+In REVISION MODE (existing LikeC4 model), the skill:
+- Reads current model via MCP (loaded in Step 0)
+- Proposes changes to existing components (edit .c4 files using Edit tool — read file first, use targeted edits)
+- Proposes new components (create new .c4 + .md files)
+- Proposes removing components (delete .c4 + .md, or mark deprecated)
+- Updates relationships in model.c4
+- Does NOT use bd supersedes — edits the .c4 files directly
+- Creates bd work issues only for the delta (new implementation work)
+
+### For fractal sub-decomposition:
+
+Create nested elements within the parent component's .c4 file:
+
+```likec4
+// arch/components/parent-component.c4
+model {
+    systemName {
+        parentComponent = engine 'Parent Component' {
+            // ... parent metadata ...
+
+            subComponent = engine 'Sub Component' {
+                summary 'Sub-component responsibility'
+                metadata {
+                    volatility_axis '[sub-axis]'
+                    layer '[layer]'
+                    stability_state 'exploring'
+                }
+                link ../doc/arch/components/sub-component.md 'Design Doc'
+                #target
+            }
+        }
+    }
+}
 ```
 
-**Create edges between components:**
+### Migration Path: bd Architecture to LikeC4
 
-```bash
-# Interface dependency (downstream depends on upstream)
-bd dep add <downstream-id> <upstream-id>
+If migrating from an existing bd-based architecture graph to LikeC4:
 
-# Non-blocking interaction
-bd relate <node-a-id> <node-b-id>
-```
-
-**For REVISION MODE:** Update existing nodes rather than creating duplicates. If a component is being fundamentally replaced (not just edited), use supersedes:
-
-```bash
-# Update existing component
-bd update <component-id> --design '[updated design]'
-
-# If replacing a component entirely
-bd create '[New Component Name]' --type feature --label arch,component \
-  --parent <epic-id> --design '[new design]'
-bd dep add <new-id> <old-id> --type supersedes
-bd close <old-id>
-```
-
-**For fractal sub-decomposition:** Create sub-components as children of the component being decomposed. They follow the same rules (layers, volatility axes, ADRs).
-
-```bash
-# Sub-components use hierarchical IDs
-bd create '[Sub-Component Name]' --type feature --label arch,component \
-  --parent <component-id> \
-  --design '[same structure as regular component nodes]'
-```
+1. Create `arch/` directory and `arch/spec.c4` with element kinds
+2. For each architecture component node in bd: create corresponding LikeC4 element in `arch/components/<name>.c4`
+3. For each edge in bd: create corresponding LikeC4 relationship in `arch/model.c4`
+4. Create `doc/arch/components/` markdown docs for each component
+5. Existing ADRs in `doc/arch/adr-*.md` remain unchanged
+6. Create views: `arch/views/landscape.c4` at minimum
+7. Mark aspirational components with `#target` tag
+8. Set `stability_state` metadata based on previous bd state (labels or set-state)
+9. Close bd architecture epic and component nodes
+10. Create new bd work issues for remaining implementation work (referencing LikeC4 components)
 
 ---
 
@@ -534,27 +694,41 @@ After architect approves, create the file:
 
 ## Step 5 -- Handoff Guidance
 
-Present a summary of the architecture graph and recommended next steps:
+Present a summary of the architecture model and recommended next steps:
 
 ```
-## Graph Summary
+## Model Summary
 
-| Node | Layer | Volatility Axis | Stability |
-|------|-------|-----------------|-----------|
-| [name] | [layer] | [axis] | exploring |
-| ... | ... | ... | exploring |
+| Component | Layer | Volatility Axis | Stability | Target? |
+|-----------|-------|-----------------|-----------|---------|
+| [name] | [layer] | [axis] | exploring | #target |
+| ... | ... | ... | ... | ... |
+
+## Files Created
+- arch/spec.c4: Element kinds and relationship types
+- arch/model.c4: System element and relationships
+- arch/components/[name].c4: [per component]
+- arch/views/landscape.c4: System-level view
+- arch/views/data-flows/[name].c4: [per curated flow]
+- doc/arch/components/[name].md: [per component]
 
 ## ADRs Created
 - doc/arch/adr-NNN.md: [Decision title]
 - doc/arch/adr-NNN.md: [Decision title]
 
+## bd Work Issues Created
+- bd-xxx: Implement [Component Name]
+- bd-xxx: Implement [Component Name]
+
 ## Recommended Next Steps
 - Run /audit-arch to stress-test this decomposition for hidden complection
-- [List any nodes that are simple/obvious candidates for early stability]
-- After audit: resolve or accept tensions, then stable nodes feed /brainstorm
-- Stable nodes transition: exploring -> audited -> accepted -> stable
-- When a node reaches 'stable', it's ready for inner-loop handoff via /brainstorm
-  (/brainstorm will auto-detect the architecture node and load its context)
+  (/audit-arch loads the architecture model from LikeC4 MCP)
+- [List any components that are simple/obvious candidates for early stability]
+- [List any pre-fit components that need validation before deepening]
+- After audit: resolve or accept tensions, then stable components feed /brainstorm
+- Stability transitions: pre-fit -> exploring -> audited -> stable
+- When a component reaches 'stable', it's ready for inner-loop handoff via /brainstorm
+  (/brainstorm will detect the LikeC4 model and load component context via MCP)
 ```
 
 </the_process>
@@ -652,11 +826,17 @@ Claude uses AskUserQuestion:
   question: "Which structure best matches your understanding of the system's volatility?"
   [Architect chooses Proposal A]
 
-Claude encodes in bd:
-  bd create 'Order Processing Architecture' --type epic --label arch --design '...'
-  bd create 'Order Orchestrator' --type feature --label arch,component --parent <epic> --design '...'
-  bd create 'Pricing Engine' --type feature --label arch,component --parent <epic> --design '...'
-  [... for each component]
+Claude encodes in LikeC4:
+  Creates arch/spec.c4 with element kinds (manager, engine, resourceAccessor, utility)
+  Creates arch/model.c4 with 'orderProcessing = manager' and relationships
+  Creates arch/components/order-orchestrator.c4 with metadata (volatility_axis, layer, stability_state)
+  Creates arch/components/pricing-engine.c4
+  Creates arch/components/fulfillment-engine.c4
+  Creates arch/components/payment-gateway.c4
+  Creates arch/components/order-store.c4
+  Creates doc/arch/components/*.md with interface contracts
+  Creates arch/views/landscape.c4 with system view
+  Creates bd work issues: 'Implement Order Orchestrator', 'Implement Pricing Engine', etc.
 
 Claude drafts ADR:
   # ADR-001: Isolate pricing, fulfillment, and payment as independent volatility axes
@@ -838,16 +1018,16 @@ Content Engine and Routing Engine in a notification system always change togethe
 Architect invokes /decompose to restructure.
 
 Claude detects REVISION MODE:
-  bd list --label arch --type epic --status open
-  [Found: bd-abc 'Notification System Architecture']
-  bd list --label arch,component --parent bd-abc
+  ls arch/*.c4
+  [Found: spec.c4, model.c4, components/*.c4]
+  Queries LikeC4 MCP: read-project-summary
   [Found: Notification Orchestrator, Content Engine, Routing Engine,
    Email Accessor, Push Accessor]
 
 Claude summarizes current state:
-"Your notification architecture has 5 components. The audit found Content Engine and
-Routing Engine have coupled volatility -- they change together when notification types change.
-Let me ask some questions about the restructuring."
+"Your notification architecture has 5 components in the LikeC4 model. The audit found
+Content Engine and Routing Engine have coupled volatility -- they change together when
+notification types change. Let me ask some questions about the restructuring."
 
 Claude uses AskUserQuestion:
   question: "The audit found Content Engine and Routing Engine change together. Does splitting them still make sense, or should they merge?"
@@ -893,16 +1073,13 @@ Change: Merge Content + Routing AND merge Email + Push Accessors
 
 [Architect chooses Proposal A]
 
-Claude updates bd (does not create duplicates):
-  bd create 'Notification Engine' --type feature --label arch,component \
-    --parent bd-abc --design '## Volatility Axis
-  Notification type changes -- content rendering and channel routing change together
-  when new notification types are added. Merged from former Content Engine and Routing Engine.
-  ...'
-  bd dep add <new-notification-engine> <old-content-engine> --type supersedes
-  bd dep add <new-notification-engine> <old-routing-engine> --type supersedes
-  bd close <old-content-engine>
-  bd close <old-routing-engine>
+Claude updates LikeC4 model (edits .c4 files directly):
+  Deletes arch/components/content-engine.c4
+  Deletes arch/components/routing-engine.c4
+  Creates arch/components/notification-engine.c4 with merged metadata
+  Updates arch/model.c4 relationships (Orchestrator -> Notification Engine)
+  Updates doc/arch/components/ (removes old, creates notification-engine.md)
+  Creates bd work issue: 'Implement merged Notification Engine'
 
 Claude creates ADR:
   # ADR-003: Merge Content Engine and Routing Engine into Notification Engine
@@ -924,10 +1101,10 @@ Claude creates ADR:
 </code>
 
 <why_it_works>
-- Loads existing graph before questioning (REVISION MODE)
+- Loads existing model from LikeC4 MCP before questioning (REVISION MODE)
 - Socratic questions focus on the specific tension, not full re-decomposition
 - Proposals are targeted revisions, not wholesale replacements
-- Existing components updated or superseded, not duplicated
+- Existing .c4 files edited or replaced directly, not duplicated in bd
 - ADR explains WHY the revision was needed (audit evidence)
 - Consequences note what to watch in future audits
 </why_it_works>
@@ -976,23 +1153,29 @@ Before completing decomposition:
 
 - [ ] Used AskUserQuestion for all questions (never printed and waited)
 - [ ] Dispatched codebase-investigator if codebase exists
-- [ ] Checked for existing ADRs and architecture epic
+- [ ] Checked for existing LikeC4 model (ls arch/*.c4) and ADRs
 - [ ] Identified volatility axes through isolation testing (not just entity listing)
 - [ ] Verified axes are independent (each changes for one reason only)
 - [ ] Distinguished volatility from variability for each force
 - [ ] Presented 2-3 alternatives with tradeoff tables (never just one)
-- [ ] Every node names its volatility axis explicitly
+- [ ] Every component names its volatility axis explicitly
 - [ ] Lowy layer rules respected (no upward deps, no business logic in Managers, no resource access in Engines)
-- [ ] Architecture epic created in bd with --label arch
-- [ ] Component nodes created with --label arch,component and --parent
-- [ ] Component designs include: volatility axis, layer, interface contract, responsibility
-- [ ] Stability state set on all components (exploring)
-- [ ] Edges created (blocks for interface deps, relates_to for interactions)
+- [ ] arch/spec.c4 created with element kinds and relationship types
+- [ ] arch/model.c4 created with system element and relationships
+- [ ] arch/components/*.c4 created for each component with metadata (volatility_axis, layer, stability_state)
+- [ ] doc/arch/components/*.md created with interface contracts for each component
+- [ ] Components linked to markdown docs via link keyword
+- [ ] Aspirational components tagged with #target
+- [ ] stability_state set on all components (pre-fit or exploring)
+- [ ] Pre-fit components have ADRs with falsification criteria
+- [ ] Dynamic views created only for curated flows (not auto-generated)
+- [ ] bd work issues created for implementation delta (NOT bd architecture nodes)
 - [ ] ADRs created for key boundary decisions and tradeoffs
 - [ ] ADRs follow Nygard format (Status, Context, Decision, Consequences)
-- [ ] Handoff guidance presented with graph summary and next steps
+- [ ] Handoff guidance presented with model summary and next steps
 - [ ] No implementation-level detail (classes, functions, data structures) in any output
-- [ ] For revisions: existing nodes updated or superseded, not duplicated
+- [ ] For revisions: .c4 files edited directly, not duplicated in bd
+- [ ] No bd architecture commands remain (no bd list --label arch, no bd create --label arch,component)
 
 **Can't check all boxes?** Return to the relevant step and complete it.
 </verification_checklist>
@@ -1012,8 +1195,8 @@ Before completing decomposition:
 OUTER LOOP:
   /decompose <-> /audit-arch <-> architect resolves
 
-HANDOFF (stable node):
-  stable node -> /brainstorm (auto-loads arch context + ADRs)
+HANDOFF (stable component):
+  stable component -> /brainstorm (loads arch context from LikeC4 MCP + ADRs)
 
 INNER LOOP (unchanged):
   brainstorming -> sre-refinement -> writing-plans -> executing-plans -> review
@@ -1025,12 +1208,15 @@ INNER LOOP (unchanged):
 
 **Tools required:**
 - AskUserQuestion (for all Socratic questions)
-- Write (for creating ADR files)
-- bd CLI (for graph encoding)
+- Write (for creating .c4 files, markdown docs, and ADR files)
+- Edit (for updating existing .c4 files in REVISION MODE)
+- LikeC4 MCP (for reading existing model in REVISION MODE — required, no fallback)
+- bd CLI (for creating work issues only — NOT architecture nodes)
 
 **Artifacts produced:**
-- bd architecture epic (type: epic, labels: arch)
-- bd component nodes (type: feature, labels: arch,component)
+- LikeC4 model files (arch/spec.c4, arch/model.c4, arch/components/*.c4, arch/views/*.c4)
+- Component documentation (doc/arch/components/*.md)
+- bd work issues (for implementation delta — NOT architecture nodes)
 - ADR files (doc/arch/adr-NNN.md)
 </integration>
 
