@@ -8,19 +8,20 @@ Examine an architecture graph (and codebase if available) for complection, hidde
 </skill_overview>
 
 <rigidity_level>
-RIGID - Same 6 analysis passes every time, same output format, same self-check procedure. No adaptation, no shortcuts, no skipping passes. The analytical rigor IS the value.
+RIGID - Same 7 analysis passes every time (Passes 1-6 + Pass 7: dynamic view drift), same output format, same self-check procedure. No adaptation, no shortcuts, no skipping passes. The analytical rigor IS the value.
 </rigidity_level>
 
 <quick_reference>
 | Step | Action | Deliverable |
 |------|--------|-------------|
-| 0 | Load architecture graph from bd | Graph state + ADRs loaded |
+| 0 | Load architecture model from LikeC4 MCP | Model state + ADRs loaded |
 | 1 | Gather evidence (codebase-investigator) | Module structure, imports, co-change data; request paths and undeclared flows |
-| 2 | Run 6 analysis passes | Raw tension findings |
+| 2 | Run 7 analysis passes | Raw tension findings (Passes 1-6 + Pass 7: dynamic view drift) |
 | 3 | Self-check + present | Tension report (no recommendations) |
 
 **Key:** This skill is ANALYTICAL. No AskUserQuestion during analysis. Load, analyze, report.
 **Key:** Tensions surface both pulls. NO recommendations, NO severity rankings.
+**Key:** Pre-fit components get lighter axis scrutiny, heavier boundary cost scrutiny.
 </quick_reference>
 
 <when_to_use>
@@ -39,47 +40,57 @@ RIGID - Same 6 analysis passes every time, same output format, same self-check p
 
 <the_process>
 
-## Step 0 -- Load Architecture Graph
+## Step 0 -- Load Architecture Model
 
-**Announce:** "I'm using the architectural-audit skill to examine your architecture graph for complection and hidden coupling."
+**Announce:** "I'm using the architectural-audit skill to examine your architecture model for complection and hidden coupling."
 
-**Load the graph:**
-
-```bash
-# Find architecture epic
-bd list --label arch --type epic --status open
-```
-
-**If no architecture epic found:**
-```
-No architecture graph found in bd. The audit skill examines an existing
-architecture graph for tensions and complection.
-
-To create an architecture graph, run /decompose first.
-```
-Stop here -- cannot audit without a graph.
-
-**If found, load full graph:**
+**Check for architecture model:**
 
 ```bash
-# Load epic
-bd show <epic-id>
+ls arch/*.c4 2>/dev/null
+```
 
-# Load all component nodes
-bd list --label arch,component --parent <epic-id>
+**If no .c4 files found:**
+```
+No architecture model found. The audit skill examines an existing
+LikeC4 architecture model for tensions and complection.
+
+To create an architecture model, run /decompose first.
+```
+Stop here -- cannot audit without a model.
+
+**If .c4 files found, load via LikeC4 MCP:**
+
+LikeC4 MCP server is REQUIRED. If MCP is not available, fail with: "LikeC4 MCP server required. Run: likec4 mcp --stdio"
+
+```
+# Get model overview
+read-project-summary
+
+# Find all components
+search-element (by kind: manager, engine, resourceAccessor, utility)
 
 # For each component, load full details
-bd show <component-id>
+read-element <element-id>
+# Returns: metadata (volatility_axis, layer, stability_state), description, tags, links
 
-# Load dependency tree
-bd dep tree <epic-id>
+# Get all relationships
+find-relationships <element-id>
+# Returns: blocks, relatesTo relationships with descriptions
+
+# Load dynamic views (for Pass 7)
+# List and read each view in arch/views/data-flows/
+read-view <view-id>
 ```
 
 Record for analysis:
-- All component nodes with their volatility axes, layers, interface contracts
-- All edges (blocks, relates_to) with their interaction descriptions
-- Stability states of each component
-- Layer assignments (Manager, Engine, Resource Accessor, Utility)
+- All components with their volatility axes, layers, interface contracts (from linked doc/arch/components/*.md)
+- All relationships (blocks, relatesTo) with their descriptions
+- Stability states of each component (from metadata.stability_state)
+- Layer assignments (from metadata.layer)
+- #target components (aspirational — skip codebase comparison for these)
+- Pre-fit components (stability_state 'pre-fit' — lighter axis scrutiny, heavier boundary cost)
+- Dynamic views with their documented flows (for Pass 7)
 
 **Load existing ADRs:**
 
@@ -93,7 +104,7 @@ If ADRs exist, read each one. Record:
 - Consequences stated
 - These will be used to: (a) skip already-accepted tensions, (b) detect drift
 
-If no ADRs exist, note this and proceed -- analysis uses graph and codebase evidence.
+If no ADRs exist, note this and proceed -- analysis uses model and codebase evidence.
 
 ---
 
@@ -150,25 +161,33 @@ After the structural investigation above returns results, dispatch a second `hyp
 
 ```
 Based on these structural findings: [include Step 1a results -- module structure, imports, co-change, call patterns, interfaces, shared state]
-And this architecture graph: [include graph nodes, edges, layers, volatility axes from Step 0]
+And this architecture model: [include elements, relationships, layers, volatility axes from LikeC4 MCP]
 
 Trace data flows at module level:
 1. For each entry point in the codebase, trace the request path through modules. Which modules participate in each request path?
-2. Identify data flows between modules that have no declared edge in the architecture graph (undeclared flows).
-3. Identify implicit ordering: which modules must process data before others, and is this ordering captured in the graph edges?
+2. Identify data flows between modules that have no declared relationship in the architecture model (undeclared flows).
+3. Identify implicit ordering: which modules must process data before others, and is this ordering captured in the model relationships?
 
-Report at module level. Reference architecture graph node names where modules map to nodes.
+Report at module level. Reference LikeC4 element names where modules map to components.
 ```
 
 The flow evidence from Step 1b feeds into passes 1, 3, and 4 -- it does NOT replace the structural evidence from Step 1a.
 
 ---
 
-## Step 2 -- Run 6 Analysis Passes
+## Step 2 -- Run 7 Analysis Passes
 
-Run each pass using both graph evidence and codebase evidence (when available). Each pass may produce zero or more tensions.
+Run each pass using both model evidence and codebase evidence (when available). Each pass may produce zero or more tensions.
 
 **Before recording a tension:** Check if an existing ADR already accepts this tension. If an accepted ADR covers the exact structural choice, skip the tension and note: "Accepted via ADR-NNN: [title]".
+
+**#target components:** Skip codebase comparison for aspirational components (no code to compare). Include them in graph-level analysis only.
+
+**Pre-fit components (stability_state 'pre-fit'):**
+- Passes 1-5: LIGHTER axis scrutiny (do NOT flag axis alignment tensions — axis is a known hypothesis). HEAVIER boundary cost scrutiny (flag if boundary has high interface surface area relative to uncertainty).
+- Pass 6: Normal scrutiny (state management issues are independent of fit).
+- Pass 7: SKIP pre-fit components (no meaningful drift comparison if axis is uncertain).
+- Note in any pre-fit tension: "Component is pre-fit — volatility axis is a hypothesis."
 
 ### Pass 1: Complection Scan
 
@@ -283,6 +302,44 @@ Run each pass using both graph evidence and codebase evidence (when available). 
 
 **Tension pattern:** "[A] and [B] share mutable state [S] creating hidden coupling"
 
+### Pass 7: Dynamic View Drift
+
+**What to look for:** Documented data flows (dynamic views in arch/views/data-flows/) that no longer match actual codebase request paths.
+
+**Skip if no codebase** (greenfield with model only) or **no dynamic views exist**.
+
+**Skip #target components** in dynamic views (aspirational, no code to compare).
+
+**Skip pre-fit components** in dynamic views (axis is uncertain, drift comparison not meaningful).
+
+For each dynamic view loaded in Step 0:
+
+1. Identify the documented flow: entry point -> component A -> component B -> ... -> exit
+2. Dispatch `hyperpowers:codebase-investigator`:
+   ```
+   Trace the [flow name] request path starting from [entry point].
+   What modules/components does it actually flow through?
+   What data shapes cross each boundary in this path?
+   ```
+3. Compare actual path vs documented path:
+   - Steps differ (different components in path) -> tension
+   - Components renamed/removed from path -> tension
+   - New components in actual path not in documented view -> tension
+   - Path no longer exists in codebase -> tension
+
+**Tension format (same structure as Passes 1-6):**
+```
+Name: Dynamic view [flow-name] drift
+Components: [components involved]
+Analysis Pass: 7 — Dynamic View Drift
+Pull A: Documented flow reflects intended architecture; actual code has drifted
+Pull B: Actual code reflects evolved requirements; documented flow is stale
+If you assume: the documented flow represents the correct architecture, then code should be realigned
+If you assume: the code reflects evolved understanding, then the dynamic view should be updated
+Structural observation: [specific discrepancy — e.g., "documented path has 3 hops, actual has 4"]
+Evidence: [from codebase-investigator dispatch]
+```
+
 ---
 
 ## Step 3 -- Self-Check and Present
@@ -327,10 +384,13 @@ Ordering language (rewrite if found):
 ```
 ## Architectural Audit Report
 
-**Graph:** [Epic name] ([epic-id])
+**Model:** [System name from LikeC4]
 **Components audited:** [count]
-**Evidence sources:** [graph | graph + codebase]
+**Target components (skipped):** [count, or "none"]
+**Pre-fit components (lighter scrutiny):** [count, or "none"]
+**Evidence sources:** [model | model + codebase]
 **ADRs reviewed:** [count, or "none found"]
+**Dynamic views checked:** [count, or "none"]
 
 ---
 
@@ -338,7 +398,7 @@ Ordering language (rewrite if found):
 
 ## Tension: [Descriptive Name]
 **Components:** [Component A], [Component B]
-**Analysis pass:** [which of the 6 passes found this]
+**Analysis pass:** [which of the 7 passes found this]
 **Pull 1:** [Structural choice] -- Gain: [what you get]. Cost: [what you pay].
 **Pull 2:** [Alternative choice] -- Gain: [what you get]. Cost: [what you pay].
 **If you assume:** [condition that makes Pull 1 correct].
@@ -366,44 +426,56 @@ Ordering language (rewrite if found):
 
 [Repeat for each drift]
 
-### Graph Summary
+### Target Components (Skipped)
 
-| Component | Layer | Stability | Tensions | Drift |
-|-----------|-------|-----------|----------|-------|
-| [name] | [layer] | [state] | [count] | [yes/no] |
+[List #target components not audited against codebase — aspirational only]
+- [component name]: aspirational, not yet implemented
+
+### Pre-fit Components (Lighter Scrutiny)
+
+[List pre-fit components with note about adjusted scrutiny]
+- [component name]: volatility axis is a hypothesis (see ADR-NNN)
+
+### Model Summary
+
+| Component | Layer | Stability | Tensions | View Drift | Notes |
+|-----------|-------|-----------|----------|------------|-------|
+| [name] | [layer] | [state] | [count] | [yes/no] | [#target, pre-fit, or blank] |
 
 ### Audit Outcome
 
 **Tensions found:** [count]
 **Accepted (via ADRs):** [count]
-**Drift detected:** [count]
+**Drift detected (ADR):** [count]
+**View drift detected (Pass 7):** [count]
 **Clean (no tensions, no drift):** [yes/no]
 
 [If clean:]
-All components passed audit. Nodes currently in 'exploring' state
-can transition to 'audited'.
+All components passed audit. Components currently in 'exploring' state
+can transition to 'audited'. Pre-fit components stay pre-fit (architect decides).
 
 [If tensions found:]
 [count] tensions require architect resolution. Options for each tension:
-- Modify graph structure (run /decompose to restructure)
+- Modify model structure (run /decompose to restructure)
 - Accept the tension (create ADR documenting the acceptance)
 - Investigate further (dispatch codebase-investigator for deeper analysis)
 ```
 
 **Update component stability states after audit:**
 
-For components with no tensions and no drift:
-```bash
-bd set-state <component-id> stability=audited \
-  --reason 'passed architectural audit with no tensions'
+For components with stability_state 'exploring' and no tensions and no drift:
+- Edit the component's .c4 file to update metadata:
+```likec4
+metadata {
+    stability_state 'audited'  // was 'exploring'
+}
 ```
 
-Fallback if set-state not available:
-```bash
-bd label <component-id> arch:audited
-```
+For components with stability_state 'pre-fit':
+- Do NOT promote to 'audited' — pre-fit stays pre-fit until architect explicitly changes it
+- Pre-fit is the architect's declaration that the axis is a hypothesis, not the audit's to override
 
-For components with tensions: leave stability unchanged (still 'exploring').
+For components with tensions: leave stability unchanged.
 
 </the_process>
 
@@ -413,12 +485,12 @@ For components with tensions: leave stability unchanged (still 'exploring').
 <scenario>Good audit finding real tensions in an order processing architecture</scenario>
 
 <code>
-Claude loads architecture graph:
-  bd list --label arch --type epic --status open
-  [Found: bd-abc 'Order Processing Architecture']
-  bd list --label arch,component --parent bd-abc
+Claude loads architecture model:
+  ls arch/*.c4
+  [Found: spec.c4, model.c4, components/*.c4]
+  Queries LikeC4 MCP: read-project-summary, read-element for each
   [Found: Order Orchestrator, Pricing Engine, Fulfillment Engine,
-   Payment Gateway, Order Store]
+   Payment Gateway, Order Store — all stability_state 'exploring']
   [ADRs: doc/arch/adr-001.md (isolate payment as independent axis)]
 
 Claude dispatches codebase-investigator:
@@ -446,10 +518,13 @@ Claude presents:
 
 ## Architectural Audit Report
 
-**Graph:** Order Processing Architecture (bd-abc)
+**Model:** Order Processing Architecture
 **Components audited:** 5
-**Evidence sources:** graph + codebase
+**Target components (skipped):** none
+**Pre-fit components (lighter scrutiny):** none
+**Evidence sources:** model + codebase
 **ADRs reviewed:** 1
+**Dynamic views checked:** 0
 
 ---
 
@@ -650,10 +725,13 @@ Claude presents:
 
 ## Architectural Audit Report
 
-**Graph:** Order Processing Architecture (bd-abc)
+**Model:** Order Processing Architecture
 **Components audited:** 5
-**Evidence sources:** graph + codebase
+**Target components (skipped):** none
+**Pre-fit components (lighter scrutiny):** none
+**Evidence sources:** model + codebase
 **ADRs reviewed:** 1
+**Dynamic views checked:** 0
 
 ---
 
@@ -814,7 +892,7 @@ presented as structural observations for the architect to evaluate.
 
 4. **Run self-check EVERY TIME.** Scan all output for recommendation, severity, and ordering keywords before presenting. This step is mandatory and non-negotiable. "Output looks fine" is a rationalization for skipping it.
 
-5. **Run ALL 6 passes.** Never skip a pass, even if early passes found nothing. Each pass looks for a different category of problem. Skipping passes misses problems.
+5. **Run ALL 7 passes.** Never skip a pass, even if early passes found nothing. Each pass looks for a different category of problem. Skipping passes misses problems. Pass 7 (dynamic view drift) is mandatory like Passes 1-6.
 
 6. **ANALYTICAL, not Socratic.** No AskUserQuestion during analysis. Load graph, gather evidence, run passes, present report. The architect reads and decides.
 
@@ -825,6 +903,10 @@ presented as structural observations for the architect to evaluate.
 9. **Use structured tension format.** Every tension follows the exact format: tension name, components, analysis pass, Pull 1 (gain/cost), Pull 2 (gain/cost), conditional assumptions, structural observation, evidence. No free-form commentary.
 
 10. **Think in components and boundaries, NOT classes and functions.** If the analysis descends to implementation details (class hierarchies, function signatures), you have crossed into inner-loop territory. Stay at the component level.
+
+11. **Pre-fit components get adjusted scrutiny.** Lighter axis scrutiny (axis is a hypothesis — do NOT flag axis alignment). Heavier boundary cost scrutiny (flag expensive boundaries around uncertain axes). Do NOT promote pre-fit to audited — the architect explicitly chose pre-fit.
+
+12. **#target components are aspirational.** Skip codebase comparison for components tagged #target. Include in model-level analysis only.
 
 ## Common Excuses
 
@@ -842,35 +924,41 @@ All of these mean: **STOP. Follow the process.**
 <verification_checklist>
 Before presenting the audit report:
 
-- [ ] Architecture graph loaded from bd (epic + all component nodes + edges)
+- [ ] Architecture model loaded from LikeC4 MCP (not bd)
+- [ ] No bd architecture commands remain (no bd list --label arch, no bd set-state)
+- [ ] Dynamic views loaded from LikeC4 model (for Pass 7)
+- [ ] #target components identified and skipped in codebase comparison
+- [ ] Pre-fit components identified with adjusted scrutiny noted
 - [ ] Existing ADRs read (or noted as absent)
 - [ ] Codebase-investigator dispatched (if codebase exists)
 - [ ] Evidence gathered covers: module structure, imports, co-change, call patterns, interfaces, shared state
 - [ ] Flow evidence gathered (Step 1b): request paths, undeclared data flows, implicit ordering (if codebase exists)
-- [ ] All 6 analysis passes executed (complection, interfaces, temporal coupling, hidden deps, layer violations, state/identity)
+- [ ] All 7 analysis passes executed (complection, interfaces, temporal coupling, hidden deps, layer violations, state/identity, dynamic view drift)
+- [ ] Pass 7 compared documented flows to actual codebase paths
 - [ ] Accepted ADR tensions skipped with note
 - [ ] Drift detected where ADRs contradict codebase evidence
 - [ ] Every tension uses structured format (name, components, pass, both pulls, assumptions, observation, evidence)
 - [ ] Self-check completed: no recommendation keywords in output
 - [ ] Self-check completed: no severity rankings in output
 - [ ] Self-check completed: no ordering/prioritization in output
-- [ ] Structural observations use neutral facts (counts, affected nodes, file paths)
-- [ ] Component stability states updated for clean components
+- [ ] Structural observations use neutral facts (counts, affected components, file paths)
+- [ ] Stability states updated via .c4 file edit for clean exploring components
+- [ ] Pre-fit components NOT promoted to audited
 - [ ] No implementation-level detail (classes, functions, data structures)
-- [ ] Report includes graph summary table and audit outcome
+- [ ] Report includes model summary table, target/pre-fit sections, and audit outcome
 
 **Can't check all boxes?** Return to the relevant step and complete it.
 </verification_checklist>
 
 <integration>
 **This skill calls:**
-- hyperpowers:codebase-investigator (when codebase exists -- gathers evidence for all 6 passes)
+- hyperpowers:codebase-investigator (when codebase exists -- gathers evidence for all 7 passes)
 
 **This skill is called by:**
 - User (via /hyperpowers:audit-arch command)
-- After /decompose creates or revises an architecture graph
+- After /decompose creates or revises an architecture model
 - Periodic architecture health checks
-- Before inner-loop handoff of stable nodes
+- Before inner-loop handoff of stable components
 
 **Call chain:**
 ```
@@ -878,31 +966,34 @@ OUTER LOOP:
   /decompose -> /audit-arch -> architect resolves tensions
        |              |              |
        v              v              v
-  graph (bd)    tension report    ADRs (repo) or graph changes
+  LikeC4 model  tension report    ADRs (repo) or model changes
 
 RESOLUTION:
   tension -> /decompose (restructure) or ADR (accept)
 
 HANDOFF (all tensions resolved/accepted):
-  stable node -> /brainstorm (auto-loads arch context)
+  stable component -> /brainstorm (loads arch context from LikeC4 MCP)
 ```
 
 **Agents used:**
-- codebase-investigator (Step 1a: gather module structure, imports, co-change, call patterns, interfaces, shared state; Step 1b: gather request paths, undeclared data flows, implicit ordering)
-- NO internet-researcher (audit uses only graph + codebase evidence)
+- codebase-investigator (Step 1a: gather module structure, imports, co-change, call patterns, interfaces, shared state; Step 1b: gather request paths, undeclared data flows, implicit ordering; Pass 7: trace actual request paths for dynamic view comparison)
+- NO internet-researcher (audit uses only model + codebase evidence)
 
 **Tools required:**
-- bd CLI (load graph, update stability states)
-- Read (load ADR files)
+- LikeC4 MCP (load model, read elements, read views — required, no fallback)
+- Edit (update stability_state in .c4 files)
+- Read (load ADR files, load linked component markdown docs)
 
 **Artifacts consumed:**
-- bd architecture epic + component nodes (from /decompose)
+- LikeC4 model files (arch/*.c4, from /decompose)
+- Component documentation (doc/arch/components/*.md, from /decompose)
+- Dynamic views (arch/views/data-flows/*.c4, from /decompose)
 - ADR files in doc/arch/ (from /decompose or manual creation)
 
 **Artifacts produced:**
 - Tension report (presented to architect, not persisted)
-- Drift report (presented to architect, not persisted)
-- Updated stability states on clean components (in bd)
+- Drift report including dynamic view drift (presented to architect, not persisted)
+- Updated stability states on clean exploring components (edited in .c4 files)
 </integration>
 
 <resources>
