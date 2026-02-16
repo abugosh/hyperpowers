@@ -520,12 +520,15 @@ This component's volatility axis is a hypothesis. See ADR-NNN for falsification 
 
 ### 3e. Create arch/views/landscape.c4
 
+**At minimum one view must show the full component graph with all relationships.** The `include * -> *` predicate ensures all elements AND all directed edges between them are visible. Without it, `include *` may omit relationship arrows.
+
 ```likec4
 // arch/views/landscape.c4
 views {
     view landscape {
-        include *
+        include * -> *
         title 'System Architecture'
+        description 'All components and their relationships'
     }
 
     view targetComponents {
@@ -534,6 +537,8 @@ views {
     }
 }
 ```
+
+The landscape view is **required** — it is the primary artifact that makes the architecture graph readable by humans. Without it, the `.c4` model is just data. Validate that the landscape view renders all components and their blocks/relatesTo edges before proceeding.
 
 ### 3f. Create dynamic views for important data flows (curated only)
 

@@ -100,6 +100,10 @@ Record for analysis:
 - Pre-fit components (stability_state 'pre-fit' — lighter axis scrutiny, heavier boundary cost)
 - Dynamic views with their documented flows (for Pass 7)
 
+**Verify landscape view exists:**
+
+Check that at least one view uses `include * -> *` to show the full component graph with relationships. If no such view exists, warn the architect: "No landscape view showing component relationships found. Run /decompose to create arch/views/landscape.c4 with `include * -> *`." The audit can still proceed using MCP data, but the architecture is not human-readable without a relationship view.
+
 **Load existing ADRs:**
 
 ```bash
