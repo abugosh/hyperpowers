@@ -107,85 +107,108 @@ When transitioning: announce 'Switching to building mode — let me load context
 - Dispatch `hyperpowers:codebase-investigator` for existing patterns
 - Dispatch `hyperpowers:internet-researcher` for external APIs/libraries
 
-**Check for architecture node context:**
+**Check for architecture model context:**
 
-If the user's request mentions a component, module, or bd ID that might be an architecture node, check for an existing architecture graph:
-
-```bash
-# Check for architecture graph
-bd list --label arch --type epic --status open
-```
-
-If a graph exists, check if any architecture node matches the user's request:
+If the user's request mentions a component, module, or architecture element, check for an existing LikeC4 architecture model:
 
 ```bash
-# List all architecture component nodes
-bd list --label arch,component --parent <epic-id>
+ls arch/*.c4 2>/dev/null
 ```
 
-**If an architecture node is detected** (by bd ID, component name match, or explicit user mention):
+If no arch/*.c4 files found: skip architecture context loading, proceed with normal brainstorming.
 
-1. Load the node's design context:
-```bash
-bd show <node-id>          # Volatility axis, layer, interface contract, responsibility
-bd dep tree <node-id>      # Adjacent nodes (blocks, relates_to edges)
+If arch/*.c4 files found, LikeC4 MCP is REQUIRED. If MCP is not available, fail with: "LikeC4 MCP server is required. Run: likec4 mcp --stdio"
+
+**Load architecture context via LikeC4 MCP:**
+
+1. Find the component matching the user's reference:
+```
+# Get model overview
+read-project-summary
+
+# Search for component by name, kind, tag, or metadata
+search-element <user's component reference>
 ```
 
-2. Find relevant ADRs:
+2. Load full component details:
+```
+# Read element with metadata
+read-element <element-id>
+# Returns: metadata (volatility_axis, layer, stability_state), description, tags, links
+
+# Get adjacent components
+find-relationships <element-id>
+# Returns: direct and indirect relationships (blocks, relatesTo)
+```
+
+3. Find relevant ADRs:
 ```bash
 ls doc/arch/adr-*.md 2>/dev/null
-# Read ADRs that mention the node or its volatility axis
+# Read ADRs that mention the component or its volatility axis
 ```
 
-3. If a codebase exists, dispatch `hyperpowers:codebase-investigator` to derive fresh data flow context scoped to the detected component:
+4. Load data flow context from dynamic views:
+```
+# Read dynamic views that include this component
+read-view <view-id>
+# Returns: view definition with component participation in flows
+```
+
+5. If a codebase exists, dispatch `hyperpowers:codebase-investigator` to derive fresh data flow context scoped to the detected component:
 
 ```
 Dispatch codebase-investigator with prompt:
-"For component [node name] with these boundaries: [adjacent nodes from bd deps]
+"For component [component name] with these boundaries: [adjacent components from find-relationships]
 
 1. What data enters this component? (from which upstream modules, what shape at module level?)
 2. What data exits this component? (to which downstream modules, what shape?)
 3. What data transformations happen inside? (what shape goes in vs what comes out?)
 4. What are the primary request paths that flow through this component?
 
-Reference the component declared interface contract: [from node design]"
+Reference the component's interface contract from: doc/arch/components/[name].md"
 ```
 
 This dispatch is COMPONENT-SCOPED — it asks about ONE component's data flow, not the entire system. Fresh derivation catches drift since the outer-loop decomposition without stale artifacts.
 
-If no codebase exists (greenfield/design phase), skip this dispatch entirely — the architecture graph can exist before code does.
+If no codebase exists (greenfield/design phase), skip this dispatch entirely — the architecture model can exist before code does.
 
-4. Present the loaded context before proceeding with Socratic questioning:
+6. Present the loaded context before proceeding with Socratic questioning:
 ```
-Architecture context loaded for [node name]:
-- Volatility axis: [from node design]
-- Layer: [from node design]
-- Interface contract: [from node design]
-- Adjacent nodes: [from bd deps — which nodes this one blocks or relates_to]
+Architecture context loaded for [component name]:
+- Volatility axis: [from element metadata.volatility_axis]
+- Layer: [from element metadata.layer]
+- Stability state: [from element metadata.stability_state]
+- Interface contract: [from doc/arch/components/<name>.md]
+- Adjacent components: [from find-relationships — blocks and relatesTo]
 - Relevant ADRs:
   - ADR-NNN: [title] — [key decision and consequences]
-  - ADR-NNN: [title] — [key decision and consequences]
 - Data flow context:
-  - Inbound: [data shapes from upstream modules]
-  - Outbound: [data shapes to downstream modules]
-  - Transforms: [shape changes inside component]
+  - Dynamic views: [views this component participates in]
+  - Inbound: [data from upstream in views + codebase-investigator]
+  - Outbound: [data to downstream in views + codebase-investigator]
   - Request paths: [entry points flowing through]
 
 These ADRs represent architectural decisions that may inform
 anti-patterns for this epic.
 ```
 
-If the flow dispatch was skipped (no codebase), omit the "Data flow context" section from the presentation.
+If stability_state is 'pre-fit': note "Volatility axis is a hypothesis — see ADR-NNN for falsification criteria."
+
+If the component has #target tag: note "This is an aspirational component — not yet implemented."
+
+If the flow dispatch was skipped (no codebase), omit the codebase-derived data flow from the presentation.
 
 The architect decides during the brainstorm which architectural tradeoffs become anti-patterns in the inner-loop epic. Do NOT auto-insert ADR tradeoffs as anti-patterns.
 
 **Edge cases:**
-- No architecture graph exists: skip detection, proceed with normal brainstorming
-- No codebase but graph exists: skip flow dispatch, present architectural context only
-- Multiple nodes referenced: load context for all matched nodes (dispatch per node is acceptable given rarity)
-- Node is closed/stable: still load context (historical design decisions inform the brainstorm)
-- No ADRs found for the node: note "No ADRs found for this component"
-- User doesn't reference any node: skip detection, proceed normally
+- No architecture model exists (no arch/*.c4): skip detection, proceed with normal brainstorming
+- No codebase but model exists: skip codebase-investigator dispatch, present architectural context only
+- Multiple components referenced: load context for all matched (search-element for each)
+- Component has #target tag (aspirational): still load context, note it's aspirational
+- Component is pre-fit: load context, note volatility axis is a hypothesis
+- No ADRs found for the component: note "No ADRs found for this component"
+- User doesn't reference any component: skip detection, proceed normally
+- LikeC4 MCP not running: fail with "LikeC4 MCP server required. Run: likec4 mcp --stdio"
 
 **REQUIRED: Use AskUserQuestion tool with scannable format**
 
@@ -306,6 +329,24 @@ I recommend option 1 because [specific reason, especially codebase consistency].
 - "API docs show OAuth flow requires..."
 - Demonstrate how design builds on existing code
 
+**Dynamic view proposal:**
+If the design involves data flowing through 2+ existing architecture components, ask:
+
+```
+AskUserQuestion:
+  question: "Does this feature create a new request path through 2+ existing components that's worth documenting?"
+  header: "Dynamic View Proposal"
+  options:
+    - label: "Yes — [describe the flow]"
+      description: "This creates a new path worth reasoning about as architecture"
+    - label: "No — uses existing paths only"
+      description: "No new cross-component flow to document"
+    - label: "Not sure"
+      description: "We can decide during implementation"
+```
+
+If yes, note the proposed dynamic view in the epic's Architecture Context section: "Proposed dynamic view: [flow name] ([component A] -> [component B] -> [component C])"
+
 **CAPTURE for Design Discovery:**
 When user raises concerns, hesitations, or "what if" questions:
 - Record in "Open Concerns Raised" section
@@ -345,6 +386,27 @@ bd create "Feature: [Feature Name]" \
 
 ## Architecture
 [Key components, data flow, integration points]
+
+## Architecture Context
+(Include this section when architecture model exists — populated from LikeC4 MCP context loaded in Step 1)
+- Component: [LikeC4 element name]
+- Volatility axis: [from metadata]
+- Layer: [from metadata]
+- Stability state: [from metadata]
+- Adjacent components: [from relationships]
+- Relevant ADRs: [ADR-NNN: title]
+- Key data flows: [from dynamic views involving this component]
+- Proposed dynamic view: [if new request path identified in Step 3, else 'None']
+
+## Architecture Update Checklist
+After inner-loop work completes, review-implementation runs these 5 questions:
+1. Did this work change a component's public interface?
+2. Did this work add or remove a dependency between components?
+3. Did this work create a new component or remove an existing one?
+4. Did this work move responsibility from one component to another?
+5. Did this work create a new request path through 2+ components?
+
+If any yes: update .c4 files, update linked markdown, remove #target if component now matches intent, propose dynamic view if Q5, confirm with architect.
 
 ## Design Rationale
 ### Problem
@@ -549,6 +611,7 @@ The executing-plans skill will:
 3. I validate each proposed next task against epic requirements and anti-patterns
 4. The executor proposes SRE-refined tasks, I approve or redirect
 5. When all criteria met, a reviewer agent verifies the implementation
+6. Review-implementation runs the architecture update checklist (5 questions)
 
 This approach preserves epic context and cross-task learnings continuously — no manual /clear cycling needed."
 ```
