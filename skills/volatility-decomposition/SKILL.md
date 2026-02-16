@@ -633,6 +633,18 @@ If migrating from an existing bd-based architecture graph to LikeC4:
 9. Close bd architecture epic and component nodes
 10. Create new bd work issues for remaining implementation work (referencing LikeC4 components)
 
+### Validate the LikeC4 model
+
+After creating or updating .c4 files, run syntax validation:
+
+```bash
+likec4 validate arch/
+```
+
+This checks for syntax errors and layout drift. On success: zero exit code, no output. On failure: non-zero exit code with error details.
+
+**Run this after every batch of .c4 file changes in Step 3.** Fix any errors before proceeding to Step 4 (ADRs). Do not create bd work issues or ADRs referencing components that fail validation.
+
 ---
 
 ## Step 4 -- Create ADRs

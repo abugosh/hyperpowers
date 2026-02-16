@@ -59,7 +59,15 @@ To create an architecture model, run /decompose first.
 ```
 Stop here -- cannot audit without a model.
 
-**If .c4 files found, load via LikeC4 MCP:**
+**If .c4 files found, validate then load via LikeC4 MCP:**
+
+First, validate the model syntax:
+
+```bash
+likec4 validate arch/
+```
+
+If validation fails: report the errors to the architect. Do not proceed with audit until syntax errors are fixed — MCP queries against an invalid model produce unreliable results.
 
 LikeC4 MCP server is REQUIRED. If MCP is not available, fail with: "LikeC4 MCP server required. Run: likec4 mcp --stdio"
 
