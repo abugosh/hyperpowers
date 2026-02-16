@@ -137,12 +137,15 @@ The executor sends this after closing a task. Format:
 ```
 ## Task <id> Complete
 ### Done — [implementation summary]
+### Commits — [hash: message]
 ### Learned — [discoveries]
 ### Changed from plan — [deviations]
 ### Proposed next task — [title, goal, approach, SRE refined]
 ```
 
 **Your response process:**
+
+0. **Verify commit hashes.** Check the executor's message for a `### Commits` section containing at least one entry in the format `<short hash>: <message>`. If the Commits section is missing, empty, or contains placeholder text instead of actual commit hashes, do NOT proceed to proposal validation — redirect the executor to commit first (see REDIRECT below for missing commits).
 
 1. **Read the summary.** Note what was learned and what changed.
 
@@ -184,6 +187,15 @@ bd show <epic-id>
      recipient: "executor"
      content: "Do not proceed with proposed task. Instead: [different task description with rationale referencing epic requirements]."
      summary: "Redirected to different task"
+   ```
+
+   **REDIRECT (missing commits)** — Executor did not commit before closing task:
+   ```
+   SendMessage:
+     type: "message"
+     recipient: "executor"
+     content: "Task completion message is missing commit hashes. Commit all work for the task before I can evaluate your proposal. Send updated completion message with ### Commits section containing hash and message."
+     summary: "Commit first — missing commit hashes"
    ```
 
 ### B) Escalation Message
@@ -515,6 +527,9 @@ Executor investigates better alternatives.
 - Implemented user registration endpoint with bcrypt password hashing
 - Added input validation for email, password strength, username uniqueness
 
+### Commits
+- `a1b2c3d`: feat: implement user registration with bcrypt and input validation
+
 ### Learned
 - The existing User model already has a `verified` field but no verification flow
 - There's an unused email template system in lib/mailer.ts
@@ -632,6 +647,7 @@ All of these mean: follow the process, validate against epic, delegate to execut
 <verification_checklist>
 
 Before approving any proposal:
+- [ ] Verified ### Commits section contains at least one actual commit hash
 - [ ] Re-read epic (`bd show <epic-id>`)
 - [ ] Checked proposal against each success criterion
 - [ ] Checked proposal against each anti-pattern
