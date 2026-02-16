@@ -121,7 +121,7 @@ Task tool:
 The executor will:
 1. Read the epic from bd
 2. Find the first ready task
-3. Execute it with TDD (red-green-refactor-commit)
+3. Execute it with TDD (red-green-refactor)
 4. Send you a structured task completion message
 5. Wait for your approval before continuing
 
