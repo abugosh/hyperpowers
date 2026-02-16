@@ -14,15 +14,16 @@ HIGH FREEDOM - Adapt Socratic questioning to context, but always create immutabl
 <quick_reference>
 | Step | Action | Deliverable |
 |------|--------|-------------|
-| 1 | Ask questions (one at a time) | Understanding of requirements |
-| 2 | Research (agents for codebase/internet) | Existing patterns and approaches |
-| 3 | Propose 2-3 approaches with trade-offs | Recommended option |
-| 4 | Present design in sections (200-300 words) | Validated architecture |
-| 5 | Create bd epic with IMMUTABLE requirements | Epic with anti-patterns |
-| 6 | Create ONLY first task | Ready for executing-plans |
-| 7 | Hand off to executing-plans | Lead orchestrates executor for implementation |
+| 0 | **Mode detection gate** | THINKING or BUILDING mode |
+| 1 | Ask questions (one at a time) | Understanding (thinking: open Socratic; building: requirement-eliciting) |
+| 2 | Research (agents for codebase/internet) | Existing patterns and approaches [BUILDING only] |
+| 3 | Propose 2-3 approaches with trade-offs | Recommended option [BUILDING only] |
+| 4 | Present design in sections (200-300 words) | Validated architecture [BUILDING only] |
+| 5 | Create bd epic with IMMUTABLE requirements | Epic with anti-patterns [BUILDING only] |
+| 6 | Create ONLY first task | Ready for executing-plans [BUILDING only] |
+| 7 | Hand off to executing-plans | Lead orchestrates executor [BUILDING only] |
 
-**Key:** Epic = contract (immutable), Tasks = adaptive (created as you learn)
+**Key:** Step 0 gates everything. THINKING mode uses only Step 1 (open Socratic questions, no context loading). BUILDING mode uses all steps. Thinking can transition to building; reverse should not happen.
 </quick_reference>
 
 <when_to_use>
@@ -40,9 +41,66 @@ HIGH FREEDOM - Adapt Socratic questioning to context, but always create immutabl
 </when_to_use>
 
 <the_process>
+## 0. Mode Detection Gate
+
+**Announce:** "I'm using the brainstorming skill."
+
+**Before doing ANYTHING else** (no context loading, no agent dispatch, no architecture checks), determine the user's mode from their prompt.
+
+**Evaluate signals IN ORDER — first match wins:**
+
+**BUILDING MODE (check first — specificity wins over uncertainty):**
+- Specific bead ID referenced: 'bd-42', 'the card pool component'
+- Specific feature named: 'let's build the checkout flow'
+- Action language with specifics: 'I want to implement X', 'pull X from the backlog'
+- Architecture component referenced by name
+- Invoked by another skill (using-hyper, executing-plans) with specific task context
+
+**THINKING MODE (check second — uncertainty without specificity):**
+- Open-ended questions WITHOUT specific references: 'what should we...', 'how might we...'
+- Exploratory language: 'I'm thinking about...', 'I'm not sure whether...'
+- No specific component/bead/feature reference
+- Uncertainty expressed: 'what are the tradeoffs of...'
+
+**MIXED SIGNALS RULE:** If prompt contains BOTH uncertainty language AND specific component/feature references, resolve to **BUILDING MODE**. Rationale: specific references indicate the user knows WHAT they want to work on, even if uncertain about HOW.
+
+**AMBIGUOUS (neither set matches):** Use AskUserQuestion — 'Are you exploring an idea or ready to build something specific?'
+
+**After detection, announce the mode:**
+- THINKING: "This sounds like you're exploring — let's think through this together."
+- BUILDING: "You have something specific in mind — let me load context and help you design it."
+
+---
+
 ## 1. Understanding the Idea
 
-**Announce:** "I'm using the brainstorming skill to refine your idea into a design."
+### THINKING MODE path
+
+**Do NOT:**
+- Load architecture context
+- Dispatch codebase-investigator or internet-researcher preemptively
+- Check for architecture nodes
+- Produce backlog triage or bd commands
+
+**Do:**
+- Start with ONE open Socratic question using AskUserQuestion:
+  - 'What problem are you trying to solve?' (if user described a solution without a problem)
+  - 'What are you trying to learn?' (if user expressed general uncertainty)
+  - 'What would change if you knew the answer?' (if user asked a specific question)
+  - 'What constraints are you working within?' (if user described options without context)
+- Only dispatch agents if conversation reveals need for codebase/external knowledge
+- Continue Socratic exploration as long as the user is exploring
+
+**Transition to building mode when user names a specific deliverable:**
+- 'okay let's build X', 'I want to implement Y'
+- Makes a decision: 'let's go with approach A'
+- References specific component/bead: 'the card pool needs Z'
+
+When transitioning: announce 'Switching to building mode — let me load context.' Then proceed with building mode path from the top of Step 1.
+
+**Thinking mode can end without producing an epic.** Not every brainstorm leads to building. Do NOT nudge toward building mode.
+
+### BUILDING MODE path
 
 **Check current state:**
 - Recent commits, existing docs, codebase structure
@@ -892,18 +950,26 @@ Manual signup has 40% abandonment rate. Google OAuth reduces friction.
 <critical_rules>
 ## Rules That Have No Exceptions
 
-1. **Use AskUserQuestion tool** → Don't just print questions and wait
-2. **Research BEFORE proposing** → Use agents to understand context
-3. **Propose 2-3 approaches** → Don't jump to single solution
-4. **Epic requirements IMMUTABLE** → Tasks adapt, requirements don't
-5. **Include anti-patterns section** → Prevents watering down requirements
-6. **Create ONLY first task** → Subsequent tasks created iteratively
-7. **Run SRE refinement** → Before handoff to executing-plans
+1. **Mode detection FIRST** → Before ANY context loading, agent dispatch, or architecture checks
+2. **Thinking mode = no context loading** → No bd commands, no agent dispatch, no architecture checks until conversation reveals need
+3. **Thinking mode can end without epic** → Not every brainstorm produces artifacts. Do NOT nudge toward building.
+4. **Building mode checks specificity first** → Specific references override uncertainty language (mixed signals = building)
+5. **Use AskUserQuestion tool** → Don't just print questions and wait
+6. **Research BEFORE proposing** → Use agents to understand context [BUILDING only]
+7. **Propose 2-3 approaches** → Don't jump to single solution [BUILDING only]
+8. **Epic requirements IMMUTABLE** → Tasks adapt, requirements don't
+9. **Include anti-patterns section** → Prevents watering down requirements
+10. **Create ONLY first task** → Subsequent tasks created iteratively
+11. **Run SRE refinement** → Before handoff to executing-plans
 
 ## Common Excuses
 
 All of these mean: **STOP. Follow the process.**
 
+- "Let me just quickly check the codebase first" (Mode detection FIRST — no context loading in thinking mode)
+- "The user probably wants to build something" (Check signals — uncertainty without specifics = thinking mode)
+- "I should load architecture context to give a better answer" (Thinking mode is Socratic exploration, not backlog triage)
+- "This open question implies a feature request" (Open questions = thinking mode, not building mode)
 - "Requirements obvious, don't need questions" (Questions reveal hidden complexity)
 - "I know this pattern, don't need research" (Research might show better way)
 - "Can plan all tasks upfront" (Plans become brittle, tasks adapt as you learn)
@@ -915,8 +981,18 @@ All of these mean: **STOP. Follow the process.**
 </critical_rules>
 
 <verification_checklist>
-Before handing off to executing-plans:
+**Step 0 (both modes):**
+- [ ] Mode detection performed BEFORE any context loading or agent dispatch
+- [ ] Mode announced to user (thinking or building)
+- [ ] If ambiguous, asked user with AskUserQuestion
 
+**Thinking mode exit checklist (if session ended in thinking mode):**
+- [ ] No bd commands were run
+- [ ] No agents were dispatched preemptively
+- [ ] Open Socratic questions were asked (not requirement-eliciting)
+- [ ] User was NOT nudged toward building mode
+
+**Building mode checklist (before handing off to executing-plans):**
 - [ ] Used AskUserQuestion tool for clarifying questions (one at a time)
 - [ ] Researched codebase patterns (if applicable)
 - [ ] Researched external docs/libraries (if applicable)
