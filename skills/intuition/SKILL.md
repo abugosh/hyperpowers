@@ -4,13 +4,13 @@ description: "Brand-informed empirical audit of architecture — finds complecti
 ---
 
 <skill_overview>
-Examine an architecture model (if one exists) and codebase for complection, hidden coupling, temporal coupling, structural dependency violations, state/identity conflation, and dynamic view drift using Hickey's simplicity framework and Brand's empirical observation. Produce a structured tension report that surfaces both pulls of every tension without resolving them. The architect reads the report and decides.
+Examine an architecture model (if one exists) and codebase for complection, hidden coupling, temporal coupling, structural dependency violations, state/identity conflation, dynamic view drift, and rate-of-change mismatches using Hickey's simplicity framework and Brand's empirical observation. Produce a structured tension report that surfaces both pulls of every tension without resolving them. The architect reads the report and decides.
 
 When no architecture model exists, run a codebase-only audit to find tensions in raw code structure.
 </skill_overview>
 
 <rigidity_level>
-RIGID - Same 7 analysis passes every time (Passes 1-6 + Pass 7: dynamic view drift), same output format, same self-check procedure. No adaptation, no shortcuts, no skipping passes. The analytical rigor IS the value.
+RIGID - Same 8 analysis passes every time (Passes 1-7 + Pass 8: rate-of-change mismatch), same output format, same self-check procedure. No adaptation, no shortcuts, no skipping passes. The analytical rigor IS the value.
 </rigidity_level>
 
 <quick_reference>
@@ -18,7 +18,7 @@ RIGID - Same 7 analysis passes every time (Passes 1-6 + Pass 7: dynamic view dri
 |------|--------|-------------|
 | 0 | Mode gate: check for architecture model | Mode 1 (model + codebase) or Mode 2 (codebase only) |
 | 1 | Gather evidence (codebase-investigator) | Module structure, imports, co-change data; request paths and undeclared flows |
-| 2 | Run 7 analysis passes | Raw tension findings (Passes 1-6 + Pass 7: dynamic view drift) |
+| 2 | Run 8 analysis passes | Raw tension findings (Passes 1-7 + Pass 8: rate-of-change mismatch) |
 | 3 | Self-check + present | Tension report (no recommendations) |
 
 **Key:** This skill is ANALYTICAL. No AskUserQuestion during analysis. Load, analyze, report.
@@ -204,7 +204,7 @@ The flow evidence from Step 1b feeds into passes 1, 3, and 4 — it does NOT rep
 
 ---
 
-## Step 2 -- Run 7 Analysis Passes
+## Step 2 -- Run 8 Analysis Passes
 
 Run each pass using both model evidence (Mode 1) and codebase evidence. In Mode 2, model-level analysis is "N/A — no model" and passes run on codebase evidence only. Each pass may produce zero or more tensions.
 
@@ -357,6 +357,54 @@ Structural observation: [specific discrepancy — e.g., "documented path has 3 h
 Evidence: [from codebase-investigator dispatch]
 ```
 
+### Pass 8: Rate-of-Change Mismatch (Brand's Shearing Layers)
+
+**What to look for:** Modules within the same component that change at significantly different rates — empirical evidence that shearing layers are misaligned with component boundaries.
+
+**Skip if:** fewer than 10 non-filtered commits in the repository. **Warn if:** shallow clone detected (fewer than 100 commits available) — results may be unreliable.
+
+**Step 8a — Gather change frequency data:**
+
+Dispatch `hyperpowers:codebase-investigator` with:
+```
+Analyze git history to determine change frequency per module/directory.
+
+NOISE FILTERING (apply all before counting):
+1. Exclude commits touching 50+ files (bulk operations like renames, migrations)
+2. Exclude changes to generated files: *.lock, *.generated.*, dist/, build/, vendor/, node_modules/
+3. Exclude commits whose message matches: /^(rename|migrate|bulk|refactor all|chore: bump|update deps)/i
+4. Exclude dependency-manifest-only commits (e.g., commits that touch only package.json, Cargo.toml, go.mod without any source file changes)
+
+After filtering, for each top-level module/directory:
+- Count how many commits touched files in that module in the last 6 months
+- Report the total commit count before and after filtering
+
+Output format:
+- "Analyzed N commits (excluded M bulk, K generated-only, J manifest-only)"
+- Per-module change counts, sorted by frequency
+- Flag any modules where ALL commits were filtered out (report as "no signal after filtering")
+```
+
+**Check for insufficient history:**
+- `git rev-list --count HEAD` — if fewer than 10: skip Pass 8 entirely, note "Insufficient commit history for rate-of-change analysis (N commits). Pass 8 skipped."
+- If fewer than 100: warn "Shallow history (N commits) — rate-of-change analysis may be unreliable."
+
+**Step 8b — Identify mismatches:**
+
+Compare change frequencies of modules that belong to the same component (Mode 1) or that share the same parent directory / apparent boundary (Mode 2).
+
+**Model evidence (Mode 1 only):**
+- Modules mapped to the same component that change at dramatically different rates (e.g., one module changed 30 times, another changed 2 times, both inside the same component boundary)
+- Components whose described scope spans modules with divergent change rates
+
+**Codebase evidence:**
+- Modules under the same parent directory with significantly different change counts (use 5:1 ratio as a signal — e.g., 25 changes vs 5 changes)
+- Co-located modules where one is effectively stable and another is highly active
+
+**Tension pattern:** "[Module A] and [Module B] are in the same [component/directory] but change at different rates — [A] changed N times in last 6 months, [B] changed M times"
+
+**Filtering stats (include in report header):** "Analyzed N commits (excluded M bulk, K generated-only, J manifest-only)"
+
 ---
 
 ## Step 3 -- Self-Check and Present
@@ -415,7 +463,7 @@ Ordering language (rewrite if found):
 
 ## Tension: [Descriptive Name]
 **Components/Modules:** [Component A], [Component B]
-**Analysis pass:** [which of the 7 passes found this]
+**Analysis pass:** [which of the 8 passes found this]
 **Pull 1:** [Structural choice] -- Gain: [what you get]. Cost: [what you pay].
 **Pull 2:** [Alternative choice] -- Gain: [what you get]. Cost: [what you pay].
 **If you assume:** [condition that makes Pull 1 correct].
@@ -455,6 +503,8 @@ Ordering language (rewrite if found):
 **Accepted (via ADRs):** [count]
 **Drift detected (ADR):** [count]
 **View drift detected (Pass 7):** [count, or "N/A — Mode 2"]
+**Rate-of-change mismatches (Pass 8):** [count, or "skipped — insufficient history"]
+**Pass 8 filtering stats:** [Analyzed N commits (excluded M bulk, K generated-only, J manifest-only)]
 **Clean (no tensions, no drift):** [yes/no]
 
 [If clean:]
@@ -486,7 +536,7 @@ Claude loads architecture model:
 Claude dispatches codebase-investigator:
   [Evidence gathered: import graphs, co-change patterns, call patterns, shared state]
 
-Claude runs 7 analysis passes:
+Claude runs 8 analysis passes:
 
 Pass 3 (Temporal Coupling) finds:
   Pricing Engine and Fulfillment Engine changed together in 7 of last 10 commits.
@@ -501,6 +551,7 @@ Pass 2 (Interface Analysis) finds nothing.
 Pass 5 (Structural Dependency Direction) finds nothing.
 Pass 6 (State/Identity) finds nothing.
 Pass 7 (Dynamic View Drift) finds nothing.
+Pass 8 (Rate-of-Change Mismatch) finds nothing.
 
 Claude self-checks output:
   No recommendation keywords found. Neutral language confirmed.
@@ -591,7 +642,7 @@ None.
 </code>
 
 <why_it_works>
-- All 7 passes executed (even those with no findings)
+- All 8 passes executed (even those with no findings)
 - Tensions use exact structured format with both pulls
 - No recommendations -- both options presented equally with gain/cost
 - Conditional assumptions state when each pull is correct
@@ -631,7 +682,7 @@ Claude dispatches codebase-investigator (Step 1b — data flows):
    GET /reports flows through api/ -> storage/ directly (bypasses core/)
    storage/cache.rs calls api/middleware::get_auth_context() for cache key]
 
-Claude runs 7 analysis passes:
+Claude runs 8 analysis passes:
 
 Pass 3 (Temporal Coupling):
   api/ and core/ changed together in 8 of 12 recent commits.
@@ -642,6 +693,12 @@ Pass 4 (Hidden Dependencies):
 Pass 5 (Structural Dependency Direction):
   storage/cache.rs imports from api/middleware — lower abstraction
   depends on higher abstraction.
+
+Pass 8 (Rate-of-Change Mismatch):
+  Analyzed 45 commits (excluded 3 bulk, 2 generated-only, 1 manifest-only).
+  api/ changed 30 times, utils/ changed 2 times — but they share no boundary,
+  no tension. core/ and storage/ both changed ~15 times — no mismatch within
+  any shared boundary.
 
 Passes 1, 2, 6: nothing found.
 Pass 7: N/A — Mode 2 (no model).
@@ -745,9 +802,10 @@ None (no ADRs to drift from).
 
 <why_it_works>
 - Mode 2 correctly identified and announced
-- All 7 passes executed (Pass 7 correctly skipped as N/A for Mode 2)
+- All 8 passes executed (Pass 7 correctly skipped as N/A for Mode 2, Pass 8 ran with filtering stats)
 - Tensions found from codebase evidence alone — no model needed
 - Pass 5 caught upward dependency without needing layer vocabulary
+- Pass 8 reported filtering stats and found no mismatches within shared boundaries
 - Structural observations use neutral facts
 - No recommendations — both pulls presented equally
 - Report format correctly adapted for Mode 2 (N/A where model would be)
@@ -938,7 +996,7 @@ decision. Options:
 <scenario>BAD -- Audit that skips the self-check step</scenario>
 
 <code>
-Claude runs all 7 analysis passes and finds tensions.
+Claude runs all 8 analysis passes and finds tensions.
 Claude skips self-check ("output looks fine, no need to review").
 Claude presents:
 
@@ -1035,7 +1093,7 @@ presented as structural observations for the architect to evaluate.
 
 4. **Run self-check EVERY TIME.** Scan all output for recommendation, severity, and ordering keywords before presenting. This step is mandatory and non-negotiable. "Output looks fine" is a rationalization for skipping it.
 
-5. **Run ALL 7 passes.** Never skip a pass, even if early passes found nothing. Each pass looks for a different category of problem. Skipping passes misses problems. Pass 7 (dynamic view drift) is skipped only in Mode 2 or when no dynamic views exist.
+5. **Run ALL 8 passes.** Never skip a pass, even if early passes found nothing. Each pass looks for a different category of problem. Skipping passes misses problems. Pass 7 (dynamic view drift) is skipped only in Mode 2 or when no dynamic views exist. Pass 8 (rate-of-change mismatch) is skipped only when fewer than 10 non-filtered commits are available.
 
 6. **ANALYTICAL, not Socratic.** No AskUserQuestion during analysis. Load model/codebase, gather evidence, run passes, present report. The architect reads and decides.
 
@@ -1047,7 +1105,7 @@ presented as structural observations for the architect to evaluate.
 
 10. **Think in components and boundaries, NOT classes and functions.** If the analysis descends to implementation details (class hierarchies, function signatures), you have crossed into inner-loop territory. Stay at the component/module level.
 
-11. **Mode 2 is a full audit.** Codebase-only mode runs all passes using codebase evidence. It is not a degraded mode — it finds real tensions. The only difference is model-level analysis says "N/A — no model" and Pass 7 is skipped.
+11. **Mode 2 is a full audit.** Codebase-only mode runs all passes using codebase evidence. It is not a degraded mode — it finds real tensions. The only difference is model-level analysis says "N/A — no model" and Pass 7 is skipped. Pass 8 still runs (git history is available without a model).
 
 ## Common Excuses
 
@@ -1055,12 +1113,12 @@ All of these mean: **STOP. Follow the process.**
 
 - "This tension is obviously more important" (You are recommending. Present both pulls equally.)
 - "Output looks fine, skip self-check" (Self-check exists because output never looks fine on first pass.)
-- "Only 2 passes are relevant here" (Run all 7. The passes you skip are where surprises hide.)
+- "Only 2 passes are relevant here" (Run all 8. The passes you skip are where surprises hide.)
 - "No need for codebase investigation, model is clear" (Model is declared intent. Codebase is reality. Always check.)
 - "I can see which pull is correct" (Your job is to present, not to judge. The architect decides.)
 - "The severity is objectively higher" (There is no objective severity. There are structural observations.)
 - "Self-check is redundant, I was careful" (Careful people still write recommendation language unconsciously.)
-- "No model means limited audit" (Mode 2 finds real tensions from codebase alone. Run all passes.)
+- "No model means limited audit" (Mode 2 finds real tensions from codebase alone. Run all passes — especially Pass 8 which needs only git history.)
 </critical_rules>
 
 <verification_checklist>
@@ -1074,8 +1132,9 @@ Before presenting the audit report:
 - [ ] Codebase-investigator dispatched (if codebase exists)
 - [ ] Evidence gathered covers: module structure, imports, co-change, call patterns, interfaces, shared state
 - [ ] Flow evidence gathered (Step 1b): request paths, undeclared data flows, implicit ordering (if codebase exists)
-- [ ] All 7 analysis passes executed (complection, interfaces, temporal coupling, hidden deps, structural dependency direction, state/identity, dynamic view drift)
+- [ ] All 8 analysis passes executed (complection, interfaces, temporal coupling, hidden deps, structural dependency direction, state/identity, dynamic view drift, rate-of-change mismatch)
 - [ ] Pass 7 compared documented flows to actual codebase paths (Mode 1 with views) or marked N/A (Mode 2)
+- [ ] Pass 8 analyzed git change frequencies with noise filtering, or skipped with reason (<10 commits)
 - [ ] Accepted ADR tensions skipped with note
 - [ ] Drift detected where ADRs contradict codebase evidence
 - [ ] Every tension uses structured format (name, components/modules, pass, both pulls, assumptions, observation, evidence)
@@ -1091,7 +1150,7 @@ Before presenting the audit report:
 
 <integration>
 **This skill calls:**
-- hyperpowers:codebase-investigator (when codebase exists — gathers evidence for all 7 passes)
+- hyperpowers:codebase-investigator (when codebase exists — gathers evidence for all 8 passes)
 
 **This skill is called by:**
 - User (via /hyperpowers:intuition command)
@@ -1114,7 +1173,7 @@ HANDOFF (all tensions resolved/accepted):
 ```
 
 **Agents used:**
-- codebase-investigator (Step 1a: gather module structure, imports, co-change, call patterns, interfaces, shared state; Step 1b: gather request paths, undeclared data flows, implicit ordering; Pass 7: trace actual request paths for dynamic view comparison)
+- codebase-investigator (Step 1a: gather module structure, imports, co-change, call patterns, interfaces, shared state; Step 1b: gather request paths, undeclared data flows, implicit ordering; Pass 7: trace actual request paths for dynamic view comparison; Pass 8: analyze git change frequencies per module with noise filtering)
 - NO internet-researcher (audit uses only model + codebase evidence)
 
 **Tools required:**
