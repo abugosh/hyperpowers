@@ -16,12 +16,14 @@ RIGID - Same 8 analysis passes every time (Passes 1-7 + Pass 8: rate-of-change m
 <quick_reference>
 | Step | Action | Deliverable |
 |------|--------|-------------|
-| 0 | Mode gate: check for architecture model | Mode 1 (model + codebase) or Mode 2 (codebase only) |
+| 0 | Mode gate: check for architecture model, load ADRs (with age check) | Mode 1 (model + codebase) or Mode 2 (codebase only) |
 | 1 | Gather evidence (codebase-investigator) | Module structure, imports, co-change data; request paths and undeclared flows |
 | 2 | Run 8 analysis passes | Raw tension findings (Passes 1-7 + Pass 8: rate-of-change mismatch) |
 | 3 | Self-check + present | Tension report (no recommendations) |
+| 4 | Resolution protocol (interactive) | Per-tension resolution: accept / resolve / brainstorm / investigate |
 
-**Key:** This skill is ANALYTICAL. No AskUserQuestion during analysis. Load, analyze, report.
+**Key:** Steps 0-3 are ANALYTICAL. No AskUserQuestion during analysis. Load, analyze, report.
+**Key:** Step 4 is INTERACTIVE. Walk through each tension with the architect.
 **Key:** Tensions surface both pulls. NO recommendations, NO severity rankings.
 </quick_reference>
 
@@ -43,6 +45,26 @@ RIGID - Same 8 analysis passes every time (Passes 1-7 + Pass 8: rate-of-change m
 ## Step 0 -- Mode Gate
 
 **Announce:** "I'm using the intuition skill to examine your architecture for complection, coupling, and structural tensions."
+
+### Optional: Forward Audit Scope
+
+If the user provides a scope hint, the audit narrows its focus while still running all 8 passes:
+
+**Module-scoped:** `/intuition src/payments/` or `/intuition --scope src/payments/`
+- Focus evidence gathering on the named module(s) and their direct dependency graph (imports from + imported by)
+- All 8 passes run, but only report tensions involving the scoped modules or their immediate neighbors
+- Useful for: "I feel friction in this area, what's wrong?"
+
+**Epic-scoped:** `/intuition bd-42` or `/intuition --epic bd-42`
+- Load the epic's requirements via `bd show bd-42`
+- Identify which components/modules the epic's work will touch (from the epic's Architecture section or implementation checklist)
+- Focus evidence gathering on those components and their dependency graph
+- All 8 passes run, but only report tensions involving components the epic will touch
+- Useful for: "Before I start this epic, what structural tensions will I encounter?"
+
+**Default (no scope):** Full audit of entire codebase/model. All tensions reported.
+
+When scoped, announce the scope: "Auditing with focus on [scope] and its dependency neighborhood."
 
 **Check for architecture model:**
 
@@ -103,7 +125,14 @@ If ADRs exist, read each one. Record:
 - Decision title and status (accepted, deprecated, superseded)
 - What was decided (the structural choice)
 - Consequences stated
-- These will be used to: (a) skip already-accepted tensions, (b) detect drift
+- Date of last modification (from git log or file metadata)
+- These will be used to: (a) skip already-accepted tensions, (b) detect drift, (c) flag stale ADRs
+
+**ADR age check:** For each accepted ADR, check when it was last modified:
+```bash
+git log -1 --format="%ai" -- doc/arch/adr-NNN.md
+```
+If an ADR has not been modified in 6+ months, flag it as a maintenance note in the report (not a tension — just a reminder for the architect to review whether the decision still holds). Format: "ADR-NNN: [title] — last updated [date] (6+ months ago, consider reviewing)"
 
 If no ADRs exist, note this and proceed -- analysis uses model and codebase evidence.
 
@@ -114,11 +143,13 @@ No architecture model found. Running codebase-only audit to find
 structural tensions from empirical observation of the code.
 ```
 
-**Load existing ADRs** (same as Mode 1):
+**Load existing ADRs** (same as Mode 1, including ADR age check):
 
 ```bash
 ls doc/arch/adr-*.md 2>/dev/null
 ```
+
+If ADRs exist, read each one and check age (same procedure as Mode 1). Flag any accepted ADRs older than 6 months as maintenance notes.
 
 Proceed directly to Step 1 — evidence gathering will use codebase only. All model-level analysis in passes will be marked "N/A — no model." Codebase evidence drives the audit.
 
@@ -502,6 +533,12 @@ Ordering language (rewrite if found):
 
 [Repeat for each drift]
 
+### ADR Maintenance Notes
+
+- ADR-NNN: [title] — last updated [date] (6+ months ago, consider reviewing)
+
+[Omit section if no ADRs are stale, or if no ADRs exist]
+
 ### Module Summary
 
 | Component/Module | Tensions | View Drift | Notes |
@@ -516,17 +553,123 @@ Ordering language (rewrite if found):
 **View drift detected (Pass 7):** [count, or "N/A — Mode 2"]
 **Rate-of-change mismatches (Pass 8):** [count, or "skipped — insufficient history"]
 **Pass 8 filtering stats:** [Analyzed N commits (excluded M bulk, K generated-only, J manifest-only)]
+**Stale ADRs (6+ months):** [count, or "none"]
 **Clean (no tensions, no drift):** [yes/no]
 
 [If clean:]
 All components/modules passed audit. No structural tensions detected.
 
 [If tensions found:]
-[count] tensions require architect resolution. Options for each tension:
-- Accept the tension (create ADR documenting the acceptance)
-- Create ADR + bd ticket to restructure
-- Investigate further (dispatch codebase-investigator for deeper analysis)
+[count] tensions require architect resolution. See Step 4 for resolution protocol.
 ```
+
+---
+
+## Step 4 -- Resolution Protocol
+
+After presenting the tension report, guide the architect through resolution of each tension. This step IS interactive — use AskUserQuestion for each tension.
+
+**For each tension, present the four options:**
+
+```
+AskUserQuestion:
+  question: "How do you want to resolve: [Tension Name]?"
+  header: "Tension Resolution"
+  options:
+    - label: "Accept"
+      description: "Create ADR documenting why this tension is acceptable. No code changes."
+    - label: "Resolve"
+      description: "Create ADR documenting the decision + bd ticket to restructure."
+    - label: "Brainstorm"
+      description: "This tension is complex — hand off to /brainstorm with tension as context."
+    - label: "Investigate"
+      description: "Need deeper evidence before deciding — dispatch codebase-investigator for targeted analysis."
+    - label: "Skip"
+      description: "Defer this tension to a future audit."
+```
+
+**Handle each response:**
+
+### Accept
+Create an ADR using the template from `skills/common-patterns/adr-template.md`:
+- Title: "Accept [tension name]"
+- Context: the tension's structural observation and evidence
+- Decision: accept the tension, with reasoning from the architect
+- Consequences: what remains true as a result of acceptance
+- Write to `doc/arch/adr-NNN.md`
+
+### Resolve
+Create an ADR + bd ticket:
+- ADR: documents the structural decision (what the model will look like after the work is done)
+- bd ticket: describes the restructuring work needed to resolve the tension
+- `bd create "[Resolve tension: description]" --type task --priority 2 --design "[ADR reference, specific modules to change, expected outcome]"`
+- If this is the first boundary being created and no model exists: trigger **Model Bootstrapping** (see below)
+
+### Brainstorm
+Hand off to brainstorming with tension context:
+- "This tension requires design exploration. Handing off to /brainstorm with this context:"
+- Include: tension name, both pulls, structural observation, evidence
+- The brainstorm will produce a design that resolves the tension, resulting in an epic
+
+### Investigate
+Dispatch targeted codebase-investigator:
+- Formulate specific questions based on what the architect wants to know
+- Present findings and re-ask the resolution question with new evidence
+
+### Skip
+Note the tension as deferred and move to the next one.
+
+---
+
+### Model Bootstrapping
+
+When a "Resolve" decision creates the first architectural boundary and no architecture model exists (Mode 2 audit):
+
+1. Create the initial model directory and spec file:
+```bash
+mkdir -p arch
+```
+
+2. Create `arch/spec.c4`:
+```
+specification {
+  element component
+  element system
+
+  relationship blocks
+  relationship relatesTo
+}
+```
+
+3. Create `arch/model.c4` with the first components derived from the resolution:
+```
+model {
+  system = system '[System Name]' {
+    [componentA] = component '[Component A]' {
+      description '[from tension evidence]'
+    }
+    [componentB] = component '[Component B]' {
+      description '[from tension evidence]'
+    }
+
+    [componentA] -> [componentB] '[relationship from resolution]'
+  }
+}
+```
+
+4. Create a landscape view in `arch/views/landscape.c4`:
+```
+views {
+  view landscape of system {
+    include * -> *
+  }
+}
+```
+
+5. Validate: `likec4 validate arch/`
+6. Announce: "Architecture model bootstrapped from audit resolution. Future audits will run in Mode 1."
+
+**Only bootstrap when:** (a) no arch/*.c4 files exist, AND (b) a Resolve decision creates a meaningful boundary between modules. Do not bootstrap for Accept or Skip decisions.
 
 </the_process>
 
@@ -1106,9 +1249,9 @@ presented as structural observations for the architect to evaluate.
 
 5. **Run ALL 8 passes.** Never skip a pass, even if early passes found nothing. Each pass looks for a different category of problem. Skipping passes misses problems. Pass 7 (dynamic view drift) is skipped only in Mode 2 or when no dynamic views exist. Pass 8 (rate-of-change mismatch) is skipped only when fewer than 10 non-filtered commits are available.
 
-6. **ANALYTICAL, not Socratic.** No AskUserQuestion during analysis. Load model/codebase, gather evidence, run passes, present report. The architect reads and decides.
+6. **ANALYTICAL in Steps 0-3, INTERACTIVE in Step 4.** No AskUserQuestion during analysis (Steps 0-3). Step 4 (resolution protocol) IS interactive — use AskUserQuestion to walk the architect through each tension's resolution.
 
-7. **ADR-aware.** Read existing ADRs before analysis. Skip tensions that match accepted ADR decisions. Report drift when codebase contradicts ADRs.
+7. **ADR-aware.** Read existing ADRs before analysis. Skip tensions that match accepted ADR decisions. Report drift when codebase contradicts ADRs. Flag ADRs older than 6 months as maintenance notes.
 
 8. **Dispatch codebase-investigator when codebase exists.** Evidence from the codebase feeds ALL analysis passes, not just drift detection. Never skip codebase investigation when there is code to examine.
 
@@ -1155,6 +1298,11 @@ Before presenting the audit report:
 - [ ] Structural observations use neutral facts (counts, affected components, file paths)
 - [ ] No implementation-level detail (classes, functions, data structures)
 - [ ] Report includes module summary table and audit outcome
+- [ ] ADR age check: stale ADRs (6+ months) flagged as maintenance notes (not tensions)
+- [ ] Step 4: each tension presented to architect with resolution options (accept/resolve/brainstorm/investigate/skip)
+- [ ] Step 4: ADRs created for Accept and Resolve paths
+- [ ] Step 4: bd tickets created for Resolve path
+- [ ] Step 4: model bootstrapping triggered if first Resolve on Mode 2 audit (arch/spec.c4, arch/model.c4, landscape view)
 
 **Can't check all boxes?** Return to the relevant step and complete it.
 </verification_checklist>
@@ -1174,22 +1322,26 @@ Before presenting the audit report:
 ARCHITECTURE CYCLE:
   /brainstorm → build → update model
               ↕
-  /intuition → find tensions → resolve → update model
+  /intuition → find tensions → Step 4 resolve → update model
 
-RESOLUTION:
-  tension → ADR (accept) or ADR + bd ticket (restructure) or /brainstorm (complex)
+RESOLUTION (Step 4 per-tension):
+  tension → accept (ADR) / resolve (ADR + bd ticket) / brainstorm (complex) / investigate (deeper evidence) / skip (defer)
+
+MODEL BOOTSTRAPPING (first Resolve on Mode 2 audit):
+  resolve tension → create arch/spec.c4 + arch/model.c4 + landscape view → future audits run Mode 1
 
 HANDOFF (all tensions resolved/accepted):
   clean architecture → /brainstorm (loads arch context from LikeC4 MCP)
 ```
 
 **Agents used:**
-- codebase-investigator (Step 1a: gather module structure, imports, co-change, call patterns, interfaces, shared state; Step 1b: gather request paths, undeclared data flows, implicit ordering; Pass 7: trace actual request paths for dynamic view comparison; Pass 8: analyze git change frequencies per module with noise filtering)
+- codebase-investigator (Step 1a: gather module structure, imports, co-change, call patterns, interfaces, shared state; Step 1b: gather request paths, undeclared data flows, implicit ordering; Pass 7: trace actual request paths for dynamic view comparison; Pass 8: analyze git change frequencies per module with noise filtering; Step 4 Investigate: targeted deep-dive on specific tensions)
 - NO internet-researcher (audit uses only model + codebase evidence)
 
 **Tools required:**
 - LikeC4 MCP (Mode 1: load model, read elements, read views — required for Mode 1, not needed for Mode 2)
-- Edit (update .c4 files if needed)
+- Edit (update .c4 files if needed; create model files during bootstrapping)
+- Write (create new ADR files during resolution; create arch/*.c4 during bootstrapping)
 - Read (load ADR files, load linked component markdown docs)
 
 **Artifacts consumed:**
@@ -1198,10 +1350,14 @@ HANDOFF (all tensions resolved/accepted):
 - Dynamic views (arch/views/data-flows/*.c4 — Mode 1 only)
 - ADR files in doc/arch/ (both modes)
 - Codebase (both modes)
+- bd epics (when epic-scoped forward audit)
 
 **Artifacts produced:**
 - Tension report (presented to architect, not persisted)
 - Drift report including dynamic view drift (presented to architect, not persisted)
+- ADR files (created during Step 4 resolution — Accept or Resolve paths)
+- bd tickets (created during Step 4 Resolve path)
+- Architecture model files (created during model bootstrapping — first Resolve on Mode 2)
 </integration>
 
 <resources>
