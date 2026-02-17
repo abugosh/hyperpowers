@@ -401,7 +401,18 @@ Compare change frequencies of modules that belong to the same component (Mode 1)
 - Modules under the same parent directory with significantly different change counts (use 5:1 ratio as a signal — e.g., 25 changes vs 5 changes)
 - Co-located modules where one is effectively stable and another is highly active
 
-**Tension pattern:** "[Module A] and [Module B] are in the same [component/directory] but change at different rates — [A] changed N times in last 6 months, [B] changed M times"
+**Tension format (same structure as Passes 1-7, with quantitative evidence):**
+```
+Name: Rate-of-change mismatch between [A] and [B]
+Components: [A] (fast: N commits/month), [B] (slow: M commits/month)
+Analysis Pass: 8 — Rate-of-Change Mismatch (Brand's Shearing Layers)
+Pull A: Keep coupled — simpler architecture, fewer interfaces
+Pull B: Decouple — let [A] move at its natural rate without dragging [B]
+If you assume: [A]'s rate will slow as the feature stabilizes, coupling is temporary
+If you assume: [A]'s rate reflects a real shearing layer, coupling is structural
+Structural observation: [N] co-changes in last [period] where [A] changed independently [M] times
+Evidence: [from git history analysis]
+```
 
 **Filtering stats (include in report header):** "Analyzed N commits (excluded M bulk, K generated-only, J manifest-only)"
 
