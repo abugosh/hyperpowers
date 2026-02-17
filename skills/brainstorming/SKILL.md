@@ -134,7 +134,7 @@ search-element <user's component reference>
 ```
 # Read element with metadata
 read-element <element-id>
-# Returns: metadata (volatility_axis, layer, stability_state), description, tags, links
+# Returns: metadata (layer, stability_state), description, tags, links
 
 # Get adjacent components
 find-relationships <element-id>
@@ -144,7 +144,7 @@ find-relationships <element-id>
 3. Find relevant ADRs:
 ```bash
 ls doc/arch/adr-*.md 2>/dev/null
-# Read ADRs that mention the component or its volatility axis
+# Read ADRs that mention the component or its rate of change
 ```
 
 4. Load data flow context from dynamic views:
@@ -175,7 +175,7 @@ If no codebase exists (greenfield/design phase), skip this dispatch entirely —
 6. Present the loaded context before proceeding with Socratic questioning:
 ```
 Architecture context loaded for [component name]:
-- Volatility axis: [from element metadata.volatility_axis]
+- Change rate: [from git history — fast/medium/slow, commits/month]
 - Layer: [from element metadata.layer]
 - Stability state: [from element metadata.stability_state]
 - Interface contract: [from doc/arch/components/<name>.md]
@@ -192,9 +192,7 @@ These ADRs represent architectural decisions that may inform
 anti-patterns for this epic.
 ```
 
-If stability_state is 'pre-fit': note "Volatility axis is a hypothesis — see ADR-NNN for falsification criteria."
-
-If the component has #target tag: note "This is a greenfield component — no code exists yet."
+If stability_state is 'pre-fit': note "Component boundaries are new — see ADR-NNN for the rationale and what would cause revisiting."
 
 If the flow dispatch was skipped (no codebase), omit the codebase-derived data flow from the presentation.
 
@@ -204,8 +202,7 @@ The architect decides during the brainstorm which architectural tradeoffs become
 - No architecture model exists (no arch/*.c4): skip detection, proceed with normal brainstorming
 - No codebase but model exists: skip codebase-investigator dispatch, present architectural context only
 - Multiple components referenced: load context for all matched (search-element for each)
-- Component has #target tag (greenfield, no code): still load context, note no code exists yet
-- Component is pre-fit: load context, note volatility axis is a hypothesis
+- Component is pre-fit: load context, note boundaries are new and may be revisited
 - No ADRs found for the component: note "No ADRs found for this component"
 - User doesn't reference any component: skip detection, proceed normally
 - LikeC4 MCP not running: fail with "LikeC4 MCP server required. Run: likec4 mcp --stdio"
@@ -390,7 +387,7 @@ bd create "Feature: [Feature Name]" \
 ## Architecture Context
 (Include this section when architecture model exists — populated from LikeC4 MCP context loaded in Step 1)
 - Component: [LikeC4 element name]
-- Volatility axis: [from metadata]
+- Change rate: [from git history — fast/medium/slow, commits/month]
 - Layer: [from metadata]
 - Stability state: [from metadata]
 - Adjacent components: [from relationships]
@@ -406,7 +403,7 @@ After inner-loop work completes, review-implementation runs these 5 questions:
 4. Did this work move responsibility from one component to another?
 5. Did this work create a new request path through 2+ components?
 
-If any yes: update .c4 files, update linked markdown, remove #target if component now matches intent, propose dynamic view if Q5, confirm with architect.
+If any yes: update .c4 files, update linked markdown, propose dynamic view if Q5, confirm with architect.
 
 ## Design Rationale
 ### Problem

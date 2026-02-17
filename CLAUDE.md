@@ -169,12 +169,23 @@ Skills reference these rather than duplicating content.
 
 Complete workflow from idea to PR:
 
-1. **Brainstorming** (`/hyperpowers:brainstorm`) - Socratic questioning to refine requirements
+1. **Brainstorming** (`/hyperpowers:brainstorm`) - Primary entry point. Socratic questioning to refine requirements, research codebase/external docs, produce bd epic with immutable requirements
 2. **SRE Task Refinement** (optional) - Uses Opus 4.1 to identify corner cases
 3. **Writing Plans** (`/hyperpowers:write-plan`) - Creates detailed bd epic with tasks
 4. **Executing Plans** (`/hyperpowers:execute-plan`) - Lead orchestrates executor teammate who implements tasks with TDD; lead validates proposals against epic
 5. **Review Implementation** (`/hyperpowers:review-implementation`) - Verifies against spec
 6. **Finishing Branch** - Creates PR, handles cleanup
+
+### Architecture (Empirical, Brand-based)
+
+Architecture uses Brand's empirical approach — observe actual change rates through git history rather than predicting forces upfront:
+
+1. **Brainstorm** (`/hyperpowers:brainstorm`) - Primary entry point for new work. Loads architecture context (current state + change rates) when model exists
+2. **Build** - Implement the feature (executing-plans)
+3. **Intuition** (`/hyperpowers:intuition`) - Intermittent diagnostic. Runs 8 structured analysis passes to find tensions (complection, coupling, dependency direction, rate-of-change mismatches). Resolution protocol guides per-tension decisions (accept via ADR, resolve via ADR + ticket, brainstorm for complex cases, investigate for deeper evidence)
+4. **Update model** - Architecture model describes what IS after work completes, never aspirational targets
+
+The architecture model (LikeC4 `.c4` files in `arch/`) represents current codebase reality. ADR trail IS the architectural strategy.
 
 ### Test-Driven Development
 
