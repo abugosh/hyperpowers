@@ -168,7 +168,7 @@ Dispatch codebase-investigator with prompt:
 Reference the component's interface contract from: doc/arch/components/[name].md"
 ```
 
-This dispatch is COMPONENT-SCOPED — it asks about ONE component's data flow, not the entire system. Fresh derivation catches drift since the outer-loop decomposition without stale artifacts.
+This dispatch is COMPONENT-SCOPED — it asks about ONE component's data flow, not the entire system. Fresh derivation catches drift without stale artifacts.
 
 If no codebase exists (greenfield/design phase), skip this dispatch entirely — the architecture model can exist before code does.
 
@@ -1082,8 +1082,10 @@ All of these mean: **STOP. Follow the process.**
 
 **Call chain:**
 ```
-OUTER LOOP (when architecture node is stable):
-  /decompose → /audit-arch → stable node → brainstorming (auto-loads arch context)
+ARCHITECTURE CYCLE:
+  /brainstorm → build → update model
+              ↕
+  /intuition → find tensions → resolve → update model
 
 INNER LOOP:
   brainstorming → sre-task-refinement → executing-plans
@@ -1093,7 +1095,7 @@ INNER LOOP:
 - hyperpowers:using-hyper (mandatory before writing code)
 - User requests for new features
 - Beginning of greenfield development
-- Stable architecture node handoff from outer loop (/decompose -> /audit-arch -> stable -> /brainstorm)
+- Architecture tension resolution (via /intuition)
 
 **Agents used:**
 - codebase-investigator (understand existing code)
