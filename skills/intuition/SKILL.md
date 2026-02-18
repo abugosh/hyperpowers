@@ -245,7 +245,7 @@ Trace data flows at module level:
 Report at module level.
 ```
 
-The flow evidence from Step 1b feeds into passes 1, 3, and 4 — it does NOT replace the structural evidence from Step 1a.
+The flow evidence from Step 1b feeds into passes 1, 3, 4, and 9 — it does NOT replace the structural evidence from Step 1a.
 
 ---
 
@@ -504,6 +504,106 @@ Cascade members:
   ...
 ```
 
+### Pass 10: Mechanism Bypass Detection
+
+**What to look for:** A subsystem achieving the same outcome through a parallel path instead of the standard mechanism — the root cause behind a workaround cascade. Pass 10 does not scan independently; it takes each cascade cluster from Pass 9 as input and probes for the underlying bypass.
+
+**Skip if:** Pass 9 found zero cascades (nothing to trace).
+
+**Note:** Pass 10 is the first linked pass — it depends on Pass 9 output. This is by design: blind parallel-mechanism scanning produces false positives. Pass 9's cascade findings focus Pass 10 on areas where a bypass is likely.
+
+**For each cascade from Pass 9, dispatch targeted `hyperpowers:codebase-investigator`:**
+
+**Mode 1 (model exists):**
+```
+Pass 9 found a workaround cascade in [area] compensating for [subsystem].
+Cascade members:
+  [list cascade members from Pass 9 output]
+
+Investigate:
+1. What is the STANDARD mechanism that other subsystems use for the same
+   outcome in this area? (e.g., the standard event system, the standard
+   data pipeline, the standard API pattern)
+2. How does [subsystem] achieve that same outcome? Trace its actual code path.
+3. Where do the two paths DIVERGE? Identify the fork point — the place
+   where [subsystem]'s path splits from the standard mechanism.
+4. Check the architecture model: does [subsystem] have edges that duplicate
+   an existing interaction pattern through a different mechanism?
+
+Report:
+- Standard path: [entry point] -> [module A] -> [module B] -> [outcome]
+- Bypass path: [entry point] -> [different modules] -> [same outcome]
+- Fork point: [where the paths diverge]
+- Or: "No parallel path found — cascade exists but root cause is unclear"
+```
+
+**Mode 2 (no model):**
+```
+Pass 9 found a workaround cascade in [area] compensating for [subsystem].
+Cascade members:
+  [list cascade members from Pass 9 output]
+
+Investigate:
+1. What is the STANDARD mechanism that other subsystems use for the same
+   outcome in this area? (e.g., the standard event system, the standard
+   data pipeline, the standard API pattern)
+2. How does [subsystem] achieve that same outcome? Trace its actual code path.
+3. Where do the two paths DIVERGE? Identify the fork point — the place
+   where [subsystem]'s path splits from the standard mechanism.
+
+Report:
+- Standard path: [entry point] -> [module A] -> [module B] -> [outcome]
+- Bypass path: [entry point] -> [different modules] -> [same outcome]
+- Fork point: [where the paths diverge]
+- Or: "No parallel path found — cascade exists but root cause is unclear"
+```
+
+**Model evidence (Mode 1 only):**
+- Components with parallel edges achieving the same outcome through different paths (e.g., subsystem A reaches storage through the event system, subsystem B reaches storage through direct database calls)
+- Edges that duplicate an existing interaction pattern through a different mechanism
+
+**Codebase evidence:**
+- Two code paths achieving the same outcome: one using the standard mechanism (used by most subsystems) and one using an alternative path (used by the cascade-producing subsystem)
+- Fork point where the bypass diverges from the standard path
+- The bypass path's output requiring downstream compensating code (the cascade members from Pass 9)
+
+**Tension format (bypass found):**
+```
+Name: Mechanism bypass in [subsystem] (causing cascade in [area])
+Components: [subsystem modules using bypass], [modules on standard path]
+Analysis Pass: 10 — Mechanism Bypass (linked to Pass 9 cascade)
+Pull A: The bypass is intentional — [subsystem] has requirements that the standard mechanism cannot serve. Gain: [subsystem] operates without standard mechanism constraints. Cost: N workarounds downstream (see linked cascade).
+Pull B: The bypass is an architectural shortcut — [subsystem] could use the standard mechanism. Gain: eliminates N downstream workarounds. Cost: requires reworking [subsystem] to use standard mechanism.
+If you assume: [subsystem]'s requirements genuinely cannot be met by the standard mechanism, the bypass is necessary
+If you assume: [subsystem]'s requirements can be met by the standard mechanism with adaptation, the bypass is unnecessary
+Structural observation: [subsystem] achieves [outcome] via [bypass path] instead of [standard path]. Fork point: [where paths diverge]. This bypass produces [N] downstream workarounds (Pass 9 cascade).
+Evidence:
+  Standard path: [entry] -> [module A] -> [module B] -> [outcome]
+  Bypass path: [entry] -> [different modules] -> [same outcome]
+  Fork point: [specific file/module where paths diverge]
+Linked cascade (Pass 9):
+  [cascade name from Pass 9]
+  Cascade members:
+    1. [file:line] — [what this workaround compensates for]
+    2. [file:line] — [what this workaround compensates for]
+    ...
+```
+
+**Tension format (no bypass found — root cause unclear):**
+```
+Name: Workaround cascade in [area] — root cause unclear
+Components: [list from Pass 9 cascade]
+Analysis Pass: 10 — Mechanism Bypass (linked to Pass 9 cascade)
+Pull A: The cascade has a root cause not visible in the current codebase — investigate further (e.g., historical decisions, external constraints, or removed code). Gain: may uncover actionable root cause. Cost: investigation effort.
+Pull B: The cascade members are independent issues that coincidentally cluster in the same area — no single root cause exists. Gain: each workaround can be evaluated independently. Cost: may miss a hidden systemic cause.
+If you assume: the clustering is not coincidental, there is a root cause worth finding
+If you assume: the clustering is coincidental, individual evaluation is sufficient
+Structural observation: [N] compensating patterns in [area] for [subsystem] (from Pass 9). Codebase-investigator found no parallel path bypassing the standard mechanism.
+Evidence: [codebase-investigator findings — what was searched and not found]
+Linked cascade (Pass 9):
+  [cascade name from Pass 9]
+```
+
 ---
 
 ## Step 3 -- Self-Check and Present
@@ -611,6 +711,7 @@ Ordering language (rewrite if found):
 **Rate-of-change mismatches (Pass 8):** [count, or "skipped — insufficient history"]
 **Pass 8 filtering stats:** [Analyzed N commits (excluded M bulk, K generated-only, J manifest-only)]
 **Workaround cascades (Pass 9):** [count, or "none"]
+**Mechanism bypass (Pass 10):** [count, or "skipped — no cascades" or "none — cascades without identified bypass"]
 **Stale ADRs (6+ months):** [count, or "none"]
 **Clean (no tensions, no drift):** [yes/no]
 
@@ -676,6 +777,23 @@ Dispatch targeted codebase-investigator:
 
 ### Skip
 Note the tension as deferred and move to the next one.
+
+---
+
+### Linked Pass 9+10 Findings
+
+When Pass 10 identifies a mechanism bypass for a Pass 9 cascade, present them together as a linked finding:
+
+**Presentation:** Show the Pass 10 tension (which includes the linked Pass 9 cascade evidence) as a single resolution item. The architect sees both the bypass and its downstream cascade in one view.
+
+**Resolution semantics:**
+- **Resolving the bypass** (Pass 10) resolves the cascade (Pass 9) — the cascade is a symptom of the bypass. One ADR + one bd ticket addresses both.
+- **Accepting the bypass** also accepts the cascade — if the bypass is intentional, its downstream workarounds are accepted consequences.
+- **Brainstorming the bypass** includes the cascade as context — the brainstorm addresses the root cause, not individual workarounds.
+
+**When no bypass found ("root cause unclear"):** Present the Pass 9 cascade as a standalone tension for resolution. The "root cause unclear" Pass 10 finding is informational — it tells the architect that investigation found no parallel path, so the cascade members may need individual evaluation or deeper investigation.
+
+**Do NOT present Pass 9 cascades separately when a Pass 10 bypass was found.** The linked finding replaces both individual findings. This prevents the architect from resolving the cascade and bypass independently (which would be contradictory — the cascade is caused by the bypass).
 
 ---
 
@@ -764,6 +882,8 @@ Pass 5 (Structural Dependency Direction) finds nothing.
 Pass 6 (State/Identity) finds nothing.
 Pass 7 (Dynamic View Drift) finds nothing.
 Pass 8 (Rate-of-Change Mismatch) finds nothing.
+Pass 9 (Workaround Cascade) finds nothing.
+Pass 10 (Mechanism Bypass) skipped — no cascades from Pass 9.
 
 Claude self-checks output:
   No recommendation keywords found. Neutral language confirmed.
@@ -914,6 +1034,8 @@ Pass 8 (Rate-of-Change Mismatch):
 
 Passes 1, 2, 6: nothing found.
 Pass 7: N/A — Mode 2 (no model).
+Pass 9 (Workaround Cascade): nothing found.
+Pass 10 (Mechanism Bypass): skipped — no cascades from Pass 9.
 
 Claude self-checks: no recommendation language found.
 
@@ -1014,7 +1136,7 @@ None (no ADRs to drift from).
 
 <why_it_works>
 - Mode 2 correctly identified and announced
-- All 10 passes executed (Pass 7 correctly skipped as N/A for Mode 2, Pass 8 ran with filtering stats)
+- All 10 passes executed (Pass 7 correctly skipped as N/A for Mode 2, Pass 8 ran with filtering stats, Pass 10 correctly skipped when Pass 9 found no cascades)
 - Tensions found from codebase evidence alone — no model needed
 - Pass 5 caught upward dependency without needing layer vocabulary
 - Pass 8 reported filtering stats and found no mismatches within shared boundaries
@@ -1317,7 +1439,7 @@ presented as structural observations for the architect to evaluate.
 
 10. **Think in components and boundaries, NOT classes and functions.** If the analysis descends to implementation details (class hierarchies, function signatures), you have crossed into inner-loop territory. Stay at the component/module level.
 
-11. **Mode 2 is a full audit.** Codebase-only mode runs all passes using codebase evidence. It is not a degraded mode — it finds real tensions. The only difference is model-level analysis says "N/A — no model" and Pass 7 is skipped. Pass 8 still runs (git history is available without a model).
+11. **Mode 2 is a full audit.** Codebase-only mode runs all passes using codebase evidence. It is not a degraded mode — it finds real tensions. The only difference is model-level analysis says "N/A — no model" and Pass 7 is skipped. Pass 8 still runs (git history is available without a model). Pass 9 and 10 run on codebase evidence (compensating code patterns, fix clustering, code path tracing).
 
 ## Common Excuses
 
@@ -1347,6 +1469,9 @@ Before presenting the audit report:
 - [ ] All 10 analysis passes executed (complection, interfaces, temporal coupling, hidden deps, structural dependency direction, state/identity, dynamic view drift, rate-of-change mismatch, workaround cascade, mechanism bypass)
 - [ ] Pass 7 compared documented flows to actual codebase paths (Mode 1 with views) or marked N/A (Mode 2)
 - [ ] Pass 8 analyzed git change frequencies with noise filtering, or skipped with reason (<10 commits)
+- [ ] Pass 9 scanned for workaround cascades, or skipped (no codebase)
+- [ ] Pass 10 dispatched targeted codebase-investigator per cascade, or skipped (no cascades from Pass 9)
+- [ ] Linked Pass 9+10 findings presented together in Step 4 (bypass resolves cascade)
 - [ ] Accepted ADR tensions skipped with note
 - [ ] Drift detected where ADRs contradict codebase evidence
 - [ ] Every tension uses structured format (name, components/modules, pass, both pulls, assumptions, observation, evidence)
