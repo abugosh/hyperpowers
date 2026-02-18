@@ -1,16 +1,16 @@
 ---
 name: intuition
-description: "Brand-informed empirical audit of architecture — finds complection, coupling, shearing layer mismatches, and drift through structured observation of codebase and model"
+description: "Brand-informed empirical audit of architecture — finds complection, coupling, shearing layer mismatches, workaround cascades, mechanism bypass, and drift through structured observation of codebase and model"
 ---
 
 <skill_overview>
-Examine an architecture model (if one exists) and codebase for complection, hidden coupling, temporal coupling, structural dependency violations, state/identity conflation, dynamic view drift, and rate-of-change mismatches using Hickey's simplicity framework and Brand's empirical observation. Produce a structured tension report that surfaces both pulls of every tension without resolving them. The architect reads the report and decides.
+Examine an architecture model (if one exists) and codebase for complection, hidden coupling, temporal coupling, structural dependency violations, state/identity conflation, dynamic view drift, rate-of-change mismatches, workaround cascades, and mechanism bypass using Hickey's simplicity framework and Brand's empirical observation. Produce a structured tension report that surfaces both pulls of every tension without resolving them. The architect reads the report and decides.
 
 When no architecture model exists, run a codebase-only audit to find tensions in raw code structure.
 </skill_overview>
 
 <rigidity_level>
-RIGID - Same 8 analysis passes every time (Passes 1-7 + Pass 8: rate-of-change mismatch), same output format, same self-check procedure. No adaptation, no shortcuts, no skipping passes. The analytical rigor IS the value.
+RIGID - Same 10 analysis passes every time (Passes 1-10), same output format, same self-check procedure. No adaptation, no shortcuts, no skipping passes. The analytical rigor IS the value.
 </rigidity_level>
 
 <quick_reference>
@@ -18,7 +18,7 @@ RIGID - Same 8 analysis passes every time (Passes 1-7 + Pass 8: rate-of-change m
 |------|--------|-------------|
 | 0 | Mode gate: check for architecture model, load ADRs (with age check) | Mode 1 (model + codebase) or Mode 2 (codebase only) |
 | 1 | Gather evidence (codebase-investigator) | Module structure, imports, co-change data; request paths and undeclared flows |
-| 2 | Run 8 analysis passes | Raw tension findings (Passes 1-7 + Pass 8: rate-of-change mismatch) |
+| 2 | Run 10 analysis passes | Raw tension findings (Passes 1-10) |
 | 3 | Self-check + present | Tension report (no recommendations) |
 | 4 | Resolution protocol (interactive) | Per-tension resolution: accept / resolve / brainstorm / investigate |
 
@@ -48,18 +48,18 @@ RIGID - Same 8 analysis passes every time (Passes 1-7 + Pass 8: rate-of-change m
 
 ### Optional: Forward Audit Scope
 
-If the user provides a scope hint, the audit narrows its focus while still running all 8 passes:
+If the user provides a scope hint, the audit narrows its focus while still running all 10 passes:
 
 **Module-scoped:** `/intuition src/payments/` or `/intuition --scope src/payments/`
 - Focus evidence gathering on the named module(s) and their direct dependency graph (imports from + imported by)
-- All 8 passes run, but only report tensions involving the scoped modules or their immediate neighbors
+- All 10 passes run, but only report tensions involving the scoped modules or their immediate neighbors
 - Useful for: "I feel friction in this area, what's wrong?"
 
 **Epic-scoped:** `/intuition bd-42` or `/intuition --epic bd-42`
 - Load the epic's requirements via `bd show bd-42`
 - Identify which components/modules the epic's work will touch (from the epic's Architecture section or implementation checklist)
 - Focus evidence gathering on those components and their dependency graph
-- All 8 passes run, but only report tensions involving components the epic will touch
+- All 10 passes run, but only report tensions involving components the epic will touch
 - Useful for: "Before I start this epic, what structural tensions will I encounter?"
 
 **Default (no scope):** Full audit of entire codebase/model. All tensions reported.
@@ -196,6 +196,20 @@ not class/function level.
    - Global variables, singletons, shared mutable state between modules
    - Configuration that multiple modules depend on
    - Any state that creates hidden coupling between otherwise independent modules
+
+7. COMPENSATING CODE PATTERNS
+   - Special-case filters, exception lists, or conditional branches that handle
+     one subsystem differently from all others
+   - Adapter or translation layers between components that should speak the
+     same interface
+   - Code whose purpose is to suppress, filter, or work around effects from
+     a specific code path rather than to deliver end-user value
+
+8. FIX CLUSTERING (from git history)
+   - Clusters of related fixes in the same area within short time windows
+     (e.g., 3+ related commits in the same module within 2 weeks)
+   - Areas where commit messages reference workarounds, fixes for side effects,
+     or handling special cases
 ```
 
 **If no codebase exists (design-phase model only — Mode 1 only):** Skip this step. Analysis will use only model evidence. Note in the report: "Audit based on model evidence only — no codebase to verify against."
@@ -235,7 +249,7 @@ The flow evidence from Step 1b feeds into passes 1, 3, and 4 — it does NOT rep
 
 ---
 
-## Step 2 -- Run 8 Analysis Passes
+## Step 2 -- Run 10 Analysis Passes
 
 Run each pass using both model evidence (Mode 1) and codebase evidence. In Mode 2, model-level analysis is "N/A — no model" and passes run on codebase evidence only. Each pass may produce zero or more tensions.
 
@@ -447,6 +461,49 @@ Evidence: [from git history analysis]
 
 **Filtering stats (include in report header):** "Analyzed N commits (excluded M bulk, K generated-only, J manifest-only)"
 
+### Pass 9: Workaround Cascade Detection
+
+**What to look for:** Code that exists to compensate rather than to build value — the structural fingerprint of accumulated workarounds. A single workaround is not a cascade; look for clusters of 2+ compensating patterns in the same area, all handling special cases for the same subsystem or code path.
+
+**Note:** Pass 9 may flag modules also flagged by Pass 1 (Complection). This is expected — a module can braid concerns (Pass 1) AND contain compensating code (Pass 9). Pass 9 adds the cascade framing: these are not independent concerns but symptoms of accumulated workarounds.
+
+**Skip if:** no codebase (design-phase model only).
+
+**Model evidence (Mode 1 only):**
+- Components with adapter relationships that exist solely to bridge one subsystem to a standard interface used by all other subsystems
+- Components appearing in edges that duplicate an existing interaction pattern through a different mechanism
+
+**Codebase evidence:**
+- Special-case filtering: code that filters or handles data differently based on source/origin rather than content (e.g., 'if this came from subsystem X, exclude from Y')
+- Description/label branching: different messages, labels, or descriptions depending on which code path produced the data
+- Noise suppression: code that hides or suppresses effects that would not exist if the standard mechanism were used
+- Exception lists: hardcoded lists of things to exclude or handle specially for one subsystem
+- Adapter layers: translation between components that should already speak the same interface
+- Fix clustering (from Step 1a item 8): 3+ related commits in the same area within a short timeframe, especially with commit messages referencing workarounds or side effects
+
+**Flow evidence (from Step 1b, when available):**
+- Request paths that route through extra adapter or filter modules that other paths do not need
+- Data flows where one path requires transformation/translation layers that parallel paths skip
+
+**Grouping rule:** Cluster workarounds by area and subsystem. A cascade requires 2+ compensating patterns in the same neighborhood, all related to the same subsystem or code path. Report each cluster as one cascade, not individual workarounds.
+
+**Tension format:**
+```
+Name: Workaround cascade in [area] (compensating for [subsystem])
+Components: [list of files/modules containing compensating code]
+Analysis Pass: 9 — Workaround Cascade
+Pull A: Accommodations are necessary — [subsystem] has legitimately different needs than other subsystems. Gain: handles real differences. Cost: maintenance burden of N workarounds.
+Pull B: Accommodations compensate for an architectural shortcut in [subsystem] — address at the source. Gain: eliminates N workarounds. Cost: requires reworking [subsystem]'s approach.
+If you assume: [subsystem]'s differences are inherent and permanent, the workarounds are justified
+If you assume: [subsystem] could use the same mechanism as other subsystems, the workarounds are unnecessary
+Structural observation: [N] compensating patterns in [area], all handling special cases for [subsystem]
+Evidence: [specific files with workaround code, git history fix clusters]
+Cascade members:
+  1. [file:line] — [what this workaround compensates for]
+  2. [file:line] — [what this workaround compensates for]
+  ...
+```
+
 ---
 
 ## Step 3 -- Self-Check and Present
@@ -505,7 +562,7 @@ Ordering language (rewrite if found):
 
 ## Tension: [Descriptive Name]
 **Components/Modules:** [Component A], [Component B]
-**Analysis pass:** [which of the 8 passes found this]
+**Analysis pass:** [which of the 10 passes found this]
 **Pull 1:** [Structural choice] -- Gain: [what you get]. Cost: [what you pay].
 **Pull 2:** [Alternative choice] -- Gain: [what you get]. Cost: [what you pay].
 **If you assume:** [condition that makes Pull 1 correct].
@@ -553,6 +610,7 @@ Ordering language (rewrite if found):
 **View drift detected (Pass 7):** [count, or "N/A — Mode 2"]
 **Rate-of-change mismatches (Pass 8):** [count, or "skipped — insufficient history"]
 **Pass 8 filtering stats:** [Analyzed N commits (excluded M bulk, K generated-only, J manifest-only)]
+**Workaround cascades (Pass 9):** [count, or "none"]
 **Stale ADRs (6+ months):** [count, or "none"]
 **Clean (no tensions, no drift):** [yes/no]
 
@@ -690,7 +748,7 @@ Claude loads architecture model:
 Claude dispatches codebase-investigator:
   [Evidence gathered: import graphs, co-change patterns, call patterns, shared state]
 
-Claude runs 8 analysis passes:
+Claude runs 10 analysis passes:
 
 Pass 3 (Temporal Coupling) finds:
   Pricing Engine and Fulfillment Engine changed together in 7 of last 10 commits.
@@ -796,7 +854,7 @@ None.
 </code>
 
 <why_it_works>
-- All 8 passes executed (even those with no findings)
+- All 10 passes executed (even those with no findings)
 - Tensions use exact structured format with both pulls
 - No recommendations -- both options presented equally with gain/cost
 - Conditional assumptions state when each pull is correct
@@ -836,7 +894,7 @@ Claude dispatches codebase-investigator (Step 1b — data flows):
    GET /reports flows through api/ -> storage/ directly (bypasses core/)
    storage/cache.rs calls api/middleware::get_auth_context() for cache key]
 
-Claude runs 8 analysis passes:
+Claude runs 10 analysis passes:
 
 Pass 3 (Temporal Coupling):
   api/ and core/ changed together in 8 of 12 recent commits.
@@ -956,7 +1014,7 @@ None (no ADRs to drift from).
 
 <why_it_works>
 - Mode 2 correctly identified and announced
-- All 8 passes executed (Pass 7 correctly skipped as N/A for Mode 2, Pass 8 ran with filtering stats)
+- All 10 passes executed (Pass 7 correctly skipped as N/A for Mode 2, Pass 8 ran with filtering stats)
 - Tensions found from codebase evidence alone — no model needed
 - Pass 5 caught upward dependency without needing layer vocabulary
 - Pass 8 reported filtering stats and found no mismatches within shared boundaries
@@ -1150,7 +1208,7 @@ decision. Options:
 <scenario>BAD -- Audit that skips the self-check step</scenario>
 
 <code>
-Claude runs all 8 analysis passes and finds tensions.
+Claude runs all 10 analysis passes and finds tensions.
 Claude skips self-check ("output looks fine, no need to review").
 Claude presents:
 
@@ -1247,13 +1305,13 @@ presented as structural observations for the architect to evaluate.
 
 4. **Run self-check EVERY TIME.** Scan all output for recommendation, severity, and ordering keywords before presenting. This step is mandatory and non-negotiable. "Output looks fine" is a rationalization for skipping it.
 
-5. **Run ALL 8 passes.** Never skip a pass, even if early passes found nothing. Each pass looks for a different category of problem. Skipping passes misses problems. Pass 7 (dynamic view drift) is skipped only in Mode 2 or when no dynamic views exist. Pass 8 (rate-of-change mismatch) is skipped only when fewer than 10 non-filtered commits are available.
+5. **Run ALL 10 passes.** Never skip a pass, even if early passes found nothing. Each pass looks for a different category of problem. Skipping passes misses problems. Pass 7 (dynamic view drift) is skipped only in Mode 2 or when no dynamic views exist. Pass 8 (rate-of-change mismatch) is skipped only when fewer than 10 non-filtered commits are available. Pass 9 (workaround cascade) is skipped only when no codebase exists. Pass 10 (mechanism bypass) is skipped only when Pass 9 finds zero cascades.
 
 6. **ANALYTICAL in Steps 0-3, INTERACTIVE in Step 4.** No AskUserQuestion during analysis (Steps 0-3). Step 4 (resolution protocol) IS interactive — use AskUserQuestion to walk the architect through each tension's resolution.
 
 7. **ADR-aware.** Read existing ADRs before analysis. Skip tensions that match accepted ADR decisions. Report drift when codebase contradicts ADRs. Flag ADRs older than 6 months as maintenance notes.
 
-8. **Dispatch codebase-investigator when codebase exists.** Evidence from the codebase feeds ALL analysis passes, not just drift detection. Never skip codebase investigation when there is code to examine.
+8. **Dispatch codebase-investigator when codebase exists.** Evidence from the codebase feeds ALL analysis passes, not just drift detection. Never skip codebase investigation when there is code to examine. Step 1a items 7-8 gather compensating code patterns and fix clustering specifically for Pass 9.
 
 9. **Use structured tension format.** Every tension follows the exact format: tension name, components/modules, analysis pass, Pull 1 (gain/cost), Pull 2 (gain/cost), conditional assumptions, structural observation, evidence. No free-form commentary.
 
@@ -1267,12 +1325,12 @@ All of these mean: **STOP. Follow the process.**
 
 - "This tension is obviously more important" (You are recommending. Present both pulls equally.)
 - "Output looks fine, skip self-check" (Self-check exists because output never looks fine on first pass.)
-- "Only 2 passes are relevant here" (Run all 8. The passes you skip are where surprises hide.)
+- "Only 2 passes are relevant here" (Run all 10. The passes you skip are where surprises hide.)
 - "No need for codebase investigation, model is clear" (Model is declared intent. Codebase is reality. Always check.)
 - "I can see which pull is correct" (Your job is to present, not to judge. The architect decides.)
 - "The severity is objectively higher" (There is no objective severity. There are structural observations.)
 - "Self-check is redundant, I was careful" (Careful people still write recommendation language unconsciously.)
-- "No model means limited audit" (Mode 2 finds real tensions from codebase alone. Run all passes — especially Pass 8 which needs only git history.)
+- "No model means limited audit" (Mode 2 finds real tensions from codebase alone. Run all passes — especially Pass 8 which needs only git history, and Pass 9 which detects cascades from codebase evidence.)
 </critical_rules>
 
 <verification_checklist>
@@ -1286,7 +1344,7 @@ Before presenting the audit report:
 - [ ] Codebase-investigator dispatched (if codebase exists)
 - [ ] Evidence gathered covers: module structure, imports, co-change, call patterns, interfaces, shared state
 - [ ] Flow evidence gathered (Step 1b): request paths, undeclared data flows, implicit ordering (if codebase exists)
-- [ ] All 8 analysis passes executed (complection, interfaces, temporal coupling, hidden deps, structural dependency direction, state/identity, dynamic view drift, rate-of-change mismatch)
+- [ ] All 10 analysis passes executed (complection, interfaces, temporal coupling, hidden deps, structural dependency direction, state/identity, dynamic view drift, rate-of-change mismatch, workaround cascade, mechanism bypass)
 - [ ] Pass 7 compared documented flows to actual codebase paths (Mode 1 with views) or marked N/A (Mode 2)
 - [ ] Pass 8 analyzed git change frequencies with noise filtering, or skipped with reason (<10 commits)
 - [ ] Accepted ADR tensions skipped with note
@@ -1309,7 +1367,7 @@ Before presenting the audit report:
 
 <integration>
 **This skill calls:**
-- hyperpowers:codebase-investigator (when codebase exists — gathers evidence for all 8 passes)
+- hyperpowers:codebase-investigator (when codebase exists — gathers evidence for all 10 passes)
 
 **This skill is called by:**
 - User (via /hyperpowers:intuition command)
@@ -1335,7 +1393,7 @@ HANDOFF (all tensions resolved/accepted):
 ```
 
 **Agents used:**
-- codebase-investigator (Step 1a: gather module structure, imports, co-change, call patterns, interfaces, shared state; Step 1b: gather request paths, undeclared data flows, implicit ordering; Pass 7: trace actual request paths for dynamic view comparison; Pass 8: analyze git change frequencies per module with noise filtering; Step 4 Investigate: targeted deep-dive on specific tensions)
+- codebase-investigator (Step 1a: gather module structure, imports, co-change, call patterns, interfaces, shared state, compensating code patterns, fix clustering; Step 1b: gather request paths, undeclared data flows, implicit ordering; Pass 7: trace actual request paths for dynamic view comparison; Pass 8: analyze git change frequencies per module with noise filtering; Pass 10: trace bypass paths for cascade root cause; Step 4 Investigate: targeted deep-dive on specific tensions)
 - NO internet-researcher (audit uses only model + codebase evidence)
 
 **Tools required:**
