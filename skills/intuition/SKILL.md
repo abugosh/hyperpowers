@@ -136,6 +136,30 @@ If an ADR has not been modified in 6+ months, flag it as a maintenance note in t
 
 If no ADRs exist, note this and proceed -- analysis uses model and codebase evidence.
 
+**Model freshness check:**
+
+Check whether the architecture model may be stale:
+
+```bash
+# Find most recent .c4 file modification
+c4_age=$(stat -f %m arch/*.c4 2>/dev/null | sort -rn | head -1)
+
+# Count code commits since last .c4 modification
+if [ -n "$c4_age" ]; then
+  commits_since=$(git log --since="@$c4_age" --oneline -- '*.ts' '*.js' '*.rs' '*.py' '*.go' '*.java' '*.rb' '*.swift' '*.kt' 2>/dev/null | wc -l | tr -d ' ')
+  echo "Code commits since last model update: $commits_since"
+fi
+```
+
+If more than 10 code-touching commits have occurred since the last .c4 file modification, note in the report:
+
+```
+⚠ Model freshness: [N] code commits since last model update.
+Consider running /ponder review after this audit to verify model accuracy.
+```
+
+This is a suggestion only — the audit proceeds regardless. The freshness check does not block analysis.
+
 ### Mode 2: No Model (no arch/*.c4 found)
 
 ```
@@ -724,6 +748,32 @@ All components/modules passed audit. No structural tensions detected.
 
 ---
 
+### Architect Questions
+
+**Omit this section when zero tensions are found.** The questions are meaningless without tensions to reflect on.
+
+After presenting the tension report and before moving to resolution, present these four questions. They are invitations to reflect — not recommendations. No should/must/recommend language.
+
+```
+### Architect Questions
+
+1. **Meadows (leverage):** Where in this system would a small structural
+   change produce a disproportionately large behavioral shift?
+
+2. **Meadows (fixes-that-fail):** Which of these tensions, if "fixed" in
+   the obvious way, would create a new tension elsewhere?
+
+3. **Alexander (wholeness):** Which component boundaries feel forced rather
+   than discovered — imposed on the code rather than emerging from it?
+
+4. **Rao (legibility):** Which parts of this architecture exist to make the
+   system legible to its maintainers rather than to serve its users?
+```
+
+These questions are part of the ANALYTICAL phase (Step 3). Present them as part of the report. The architect reflects on them during Step 4.
+
+---
+
 ## Step 4 -- Resolution Protocol
 
 After presenting the tension report, guide the architect through resolution of each tension. This step IS interactive — use AskUserQuestion for each tension.
@@ -797,55 +847,34 @@ When Pass 10 identifies a mechanism bypass for a Pass 9 cascade, present them to
 
 ---
 
-### Model Bootstrapping
+### Model Bootstrapping (via Ponder)
 
-When a "Resolve" decision creates the first architectural boundary and no architecture model exists (Mode 2 audit):
-
-1. Create the initial model directory and spec file:
-```bash
-mkdir -p arch
-```
-
-2. Create `arch/spec.c4`:
-```
-specification {
-  element component
-  element system
-
-  relationship blocks
-  relationship relatesTo
-}
-```
-
-3. Create `arch/model.c4` with the first components derived from the resolution:
-```
-model {
-  system = system '[System Name]' {
-    [componentA] = component '[Component A]' {
-      description '[from tension evidence]'
-    }
-    [componentB] = component '[Component B]' {
-      description '[from tension evidence]'
-    }
-
-    [componentA] -> [componentB] '[relationship from resolution]'
-  }
-}
-```
-
-4. Create a landscape view in `arch/views/landscape.c4`:
-```
-views {
-  view landscape of system {
-    include * -> *
-  }
-}
-```
-
-5. Validate: `likec4 validate arch/`
-6. Announce: "Architecture model bootstrapped from audit resolution. Future audits will run in Mode 1."
+When a "Resolve" decision creates the first architectural boundary and no architecture model exists (Mode 2 audit), dispatch the ponder subagent in bootstrap mode.
 
 **Only bootstrap when:** (a) no arch/*.c4 files exist, AND (b) a Resolve decision creates a meaningful boundary between modules. Do not bootstrap for Accept or Skip decisions.
+
+**Construct structured input from tension evidence:**
+
+```
+Mode: BOOTSTRAP
+
+System name: [from codebase or architect input]
+
+Components:
+- [componentA]: [description from tension evidence] (layer: [inferred from role])
+- [componentB]: [description from tension evidence] (layer: [inferred from role])
+
+Known relationships:
+- [componentA] -> [componentB]: [relationship from resolution]
+
+Source: Intuition Mode 2 audit — first Resolve decision
+```
+
+**Dispatch:** `hyperpowers:ponder` agent with the structured input above.
+
+The ponder agent handles all file creation (spec.c4, model.c4, component .c4 files, views, markdown docs), quality criteria enforcement, and validation. It returns a concise summary.
+
+After receiving the summary, announce: "Architecture model bootstrapped via Ponder. Future audits will run in Mode 1."
 
 </the_process>
 
@@ -1485,7 +1514,10 @@ Before presenting the audit report:
 - [ ] Step 4: each tension presented to architect with resolution options (accept/resolve/brainstorm/investigate/skip)
 - [ ] Step 4: ADRs created for Accept and Resolve paths
 - [ ] Step 4: bd tickets created for Resolve path
-- [ ] Step 4: model bootstrapping triggered if first Resolve on Mode 2 audit (arch/spec.c4, arch/model.c4, landscape view)
+- [ ] Step 4: ponder subagent dispatched in bootstrap mode if first Resolve on Mode 2 audit
+- [ ] Mode 1 freshness check: noted stale model (>10 commits) with /ponder review suggestion, or model is fresh
+- [ ] Step 3: architect questions presented (Meadows leverage, Meadows fixes-that-fail, Alexander wholeness, Rao legibility) — or omitted if zero tensions
+- [ ] Step 3: architect questions contain no recommendation language (self-check applies)
 
 **Can't check all boxes?** Return to the relevant step and complete it.
 </verification_checklist>
@@ -1493,6 +1525,7 @@ Before presenting the audit report:
 <integration>
 **This skill calls:**
 - hyperpowers:codebase-investigator (when codebase exists — gathers evidence for all 10 passes)
+- hyperpowers:ponder (Step 4 bootstrap — dispatched as subagent when first Resolve on Mode 2 audit creates initial model)
 
 **This skill is called by:**
 - User (via /hyperpowers:intuition command)
@@ -1511,7 +1544,7 @@ RESOLUTION (Step 4 per-tension):
   tension → accept (ADR) / resolve (ADR + bd ticket) / brainstorm (complex) / investigate (deeper evidence) / skip (defer)
 
 MODEL BOOTSTRAPPING (first Resolve on Mode 2 audit):
-  resolve tension → create arch/spec.c4 + arch/model.c4 + landscape view → future audits run Mode 1
+  resolve tension → dispatch /ponder bootstrap → model created → future audits run Mode 1
 
 HANDOFF (all tensions resolved/accepted):
   clean architecture → /brainstorm (loads arch context from LikeC4 MCP)
@@ -1519,12 +1552,13 @@ HANDOFF (all tensions resolved/accepted):
 
 **Agents used:**
 - codebase-investigator (Step 1a: gather module structure, imports, co-change, call patterns, interfaces, shared state, compensating code patterns, fix clustering; Step 1b: gather request paths, undeclared data flows, implicit ordering; Pass 7: trace actual request paths for dynamic view comparison; Pass 8: analyze git change frequencies per module with noise filtering; Pass 10: trace bypass paths for cascade root cause; Step 4 Investigate: targeted deep-dive on specific tensions)
+- ponder (Step 4: bootstrap mode — dispatched when first Resolve on Mode 2 creates initial model)
 - NO internet-researcher (audit uses only model + codebase evidence)
 
 **Tools required:**
 - LikeC4 MCP (Mode 1: load model, read elements, read views — required for Mode 1, not needed for Mode 2)
-- Edit (update .c4 files if needed; create model files during bootstrapping)
-- Write (create new ADR files during resolution; create arch/*.c4 during bootstrapping)
+- Edit (update .c4 files if needed — via ponder agent for model operations)
+- Write (create new ADR files during resolution)
 - Read (load ADR files, load linked component markdown docs)
 
 **Artifacts consumed:**
@@ -1540,7 +1574,7 @@ HANDOFF (all tensions resolved/accepted):
 - Drift report including dynamic view drift (presented to architect, not persisted)
 - ADR files (created during Step 4 resolution — Accept or Resolve paths)
 - bd tickets (created during Step 4 Resolve path)
-- Architecture model files (created during model bootstrapping — first Resolve on Mode 2)
+- Architecture model files (created via ponder agent bootstrap mode — first Resolve on Mode 2)
 </integration>
 
 <resources>
