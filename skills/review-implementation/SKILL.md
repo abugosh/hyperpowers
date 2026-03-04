@@ -8,7 +8,7 @@ Review completed implementation against bd epic to catch gaps before claiming co
 </skill_overview>
 
 <rigidity_level>
-LOW FREEDOM - Follow the 4-step review process exactly. Review with Google Fellow-level scrutiny. Never skip automated checks, quality gates, or code reading. No approval without evidence for every criterion.
+LOW FREEDOM - Follow the 5-step review process exactly. Review with Google Fellow-level scrutiny. Never skip automated checks, quality gates, or code reading. No approval without evidence for every criterion.
 </rigidity_level>
 
 <evidence_requirements>
@@ -50,6 +50,7 @@ Rate each finding 0.0-1.0:
 | 2 | Review each task (automated checks, quality gates, read code, **audit tests**, verify criteria) | Findings per task |
 | 3 | Report findings (approved / gaps found) | Review decision |
 | 4 | Gate: If approved → STOP for manual validation, If gaps → STOP | Next action |
+| 5 | Architecture update checklist: 5 questions → /ponder update if any yes | Model update (if needed) |
 
 **Review Perspective:** Google Fellow-level SRE with 20+ years experience reviewing junior engineer code.
 
@@ -614,6 +615,66 @@ STOP. Do not proceed to finishing-a-development-branch.
 Fix gaps or discuss with partner.
 Re-run review after fixes.
 ```
+
+---
+
+## Step 5: Architecture Update Checklist
+
+**After Step 4 completes (whether approved or gaps found), run this checklist.** Architecture updates are independent of code quality — even if gaps exist, architectural changes should be noted.
+
+**Ask these 5 questions about the work completed in this epic:**
+
+1. Did this work change a component's public interface?
+2. Did this work add or remove a dependency between components?
+3. Did this work create a new component or remove an existing one?
+4. Did this work move responsibility from one component to another?
+5. Did this work create a new request path through 2+ components?
+
+**If ALL answers are no:** Architecture model is unaffected. Skip ponder dispatch.
+
+**If ANY answer is yes:**
+
+First, check if an architecture model exists:
+
+```bash
+ls arch/*.c4 2>/dev/null
+```
+
+**If model exists:** Dispatch `/ponder` in update mode with structured input:
+
+```
+Mode: UPDATE
+
+What changed:
+- [Q1 yes: describe interface change]
+- [Q2 yes: describe dependency added/removed]
+- [Q3 yes: describe component added/removed]
+- [Q4 yes: describe responsibility shift]
+- [Q5 yes: describe new request path]
+
+Components affected:
+- [component name]: [what specifically changed]
+
+Context:
+- Epic: [epic-id] — [epic title]
+```
+
+The ponder agent will make targeted .c4 edits, run a scoped spot-check, validate, and return a summary.
+
+**If no model exists:** Note the architectural changes in the review report:
+
+```
+### Architecture Changes Noted (No Model)
+
+The following architectural changes occurred but no architecture model
+exists to update:
+- [list changes from questions answered yes]
+
+Consider running /ponder bootstrap or /intuition to create an initial
+architecture model.
+```
+
+Do not dispatch ponder update when no model exists — update mode requires an existing model.
 </the_process>
 
 <examples>
@@ -1059,7 +1120,13 @@ Before approving implementation:
 - [ ] If approved: all criteria met for all tasks
 - [ ] If gaps: documented exactly what missing
 
-**Can't check all boxes?** Return to Step 2 and complete review.
+**Architecture (Step 5):**
+- [ ] 5-question architecture checklist answered
+- [ ] If any yes + model exists: /ponder update dispatched with structured input
+- [ ] If any yes + no model: architectural changes noted in report
+- [ ] If all no: architecture unaffected, ponder dispatch skipped
+
+**Can't check all boxes?** Return to the relevant step and complete it.
 </verification_checklist>
 
 <integration>
@@ -1068,6 +1135,7 @@ Before approving implementation:
 
 **This skill calls:**
 - hyperpowers:test-runner agent (for quality gates)
+- hyperpowers:ponder (Step 5 — architecture update checklist dispatches /ponder update when architectural changes detected)
 
 **This skill uses:**
 - hyperpowers:verification-before-completion principles (evidence before claims)
@@ -1079,6 +1147,11 @@ hyperpowers:executing-plans → hyperpowers:review-implementation → STOP (manu
                                                           User runs /hyperpowers:finish-branch
                                                                       ↓
                                                     hyperpowers:finishing-a-development-branch
+
+ARCHITECTURE UPDATE (Step 5):
+  5-question checklist → any yes + model exists → /ponder update → model updated
+  5-question checklist → any yes + no model → changes noted for future model
+  5-question checklist → all no → skip
 ```
 
 **Why the checkpoint:** Epic stays open during manual validation so user has full context. User explicitly triggers closure when ready.

@@ -344,6 +344,19 @@ AskUserQuestion:
 
 If yes, note the proposed dynamic view in the epic's Architecture Context section: "Proposed dynamic view: [flow name] ([component A] -> [component B] -> [component C])"
 
+**Structural friction detection:**
+If during Socratic questioning the architect expresses structural friction — uncertainty about component boundaries, coupling concerns, "something feels wrong about the structure", or difficulty deciding where responsibility belongs — suggest Intuition:
+
+```
+"This sounds like structural friction — uncertainty about where boundaries belong
+or how components should relate. /intuition can systematically analyze your
+architecture for tensions before you proceed with design.
+
+Would you like to run /intuition first, or continue designing?"
+```
+
+Do not auto-redirect. The architect may prefer to continue the brainstorm and address structural concerns later. This is a suggestion, not a gate.
+
 **CAPTURE for Design Discovery:**
 When user raises concerns, hesitations, or "what if" questions:
 - Record in "Open Concerns Raised" section
@@ -403,7 +416,7 @@ After inner-loop work completes, review-implementation runs these 5 questions:
 4. Did this work move responsibility from one component to another?
 5. Did this work create a new request path through 2+ components?
 
-If any yes: update .c4 files, update linked markdown, propose dynamic view if Q5, confirm with architect.
+If any yes: invoke /ponder update with description of what changed.
 
 ## Design Rationale
 ### Problem
