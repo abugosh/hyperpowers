@@ -88,6 +88,8 @@ Every model operation must maintain these invariants:
    - Add/remove/modify elements in the appropriate .c4 file
    - Add/remove/modify relationships with descriptions
    - Update metadata (layer, stability_state) if affected
+   - If adding a new component: include `link ./[name].md 'Documentation'` property
+   - If adding a new ADR: include `link ./docs/arch/adr/adr-NNN.md 'ADR-NNN'` on relevant component(s)
    - Ensure quality criteria are maintained
 
 4. **Update component markdown docs** if the component's responsibility, interface, or locality changed:

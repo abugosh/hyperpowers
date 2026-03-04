@@ -44,6 +44,7 @@ We will [active voice, full sentences describing the structural choice].
 - **Active voice decisions:** "We will..." not "It was decided..."
 - **Both sides of tradeoffs:** Always state what you gain AND what you give up
 - **Permanent intent:** ADRs outlive the architecture model. The model describes current reality; ADRs capture why structural decisions were made.
+- **Link from model:** When an ADR relates to specific components, add `link ./docs/arch/adr/adr-NNN.md 'ADR-NNN'` to those components' `.c4` files. This makes the decision navigable from the diagram.
 
 ## Example ADRs
 
