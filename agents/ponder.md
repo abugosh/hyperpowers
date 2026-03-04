@@ -59,7 +59,7 @@ Every model operation must maintain these invariants:
    [componentA] -> [componentB] '[what flows across this edge]'
    ```
 
-5. **At least one landscape view** with `include * -> *`
+5. **At least one landscape view** scoped to the system with `include *` (shows all components and their relationships)
 
 6. **Dynamic views only for curated flows** — In UPDATE mode, only create dynamic views when a specific request path is explicitly described. In BOOTSTRAP mode, actively discover the 2-3 primary request paths via codebase-investigator and create views for them. Keep views curated — never more than 5.
 
@@ -189,7 +189,7 @@ Every model operation must maintain these invariants:
    views {
      view landscape of [systemName] {
        title '[System Display Name] — Landscape'
-       include * -> *
+       include *
      }
    }
    ```
@@ -299,7 +299,7 @@ Every model operation must maintain these invariants:
    - Every component has metadata (layer, stability_state)
    - Every component has linked markdown doc (`arch/components/[name].md`)
    - Every relationship has a description
-   - At least one landscape view with `include * -> *`
+   - At least one landscape view scoped to the system with `include *`
    - No target elements or #target tags
    - Model validates via `likec4 validate`
 

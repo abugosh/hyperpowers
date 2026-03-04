@@ -113,7 +113,7 @@ Record for analysis:
 
 **Verify landscape view exists:**
 
-Check that at least one view uses `include * -> *` to show the full component graph with relationships. If no such view exists, warn the architect: "No landscape view showing component relationships found. Consider creating arch/views/landscape.c4 with `include * -> *`." The audit can still proceed using MCP data, but the architecture is not human-readable without a relationship view.
+Check that at least one view scoped to the system uses `include *` to show all components and their relationships. If no such view exists, warn the architect: "No landscape view found. Consider running `/ponder` to create one." The audit can still proceed using MCP data, but the architecture is not human-readable without a landscape view.
 
 **Load existing ADRs:**
 
