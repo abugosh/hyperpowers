@@ -61,7 +61,7 @@ Every model operation must maintain these invariants:
 
 5. **At least one landscape view** with `include * -> *`
 
-6. **Dynamic views only for curated flows** — Do not create dynamic views speculatively. Only create them when a specific request path is understood.
+6. **Dynamic views only for curated flows** — In UPDATE mode, only create dynamic views when a specific request path is explicitly described. In BOOTSTRAP mode, actively discover the 2-3 primary request paths via codebase-investigator and create views for them. Keep views curated — never more than 5.
 
 7. **Model validates cleanly** via `likec4 validate`
 
@@ -213,7 +213,33 @@ Every model operation must maintain these invariants:
    [What kinds of changes should be contained within this component]
    ```
 
-8. **Create dynamic views only for flows that are explicitly understood** from input. Do not speculatively create dynamic views.
+8. **Discover and create dynamic views for primary request paths:**
+
+   Dispatch `hyperpowers:codebase-investigator` to find the main flows:
+   ```
+   "For these components: [list from steps above]
+
+   1. What are the 2-3 most important request paths through this system?
+      (e.g., user login flow, data ingestion pipeline, API request lifecycle)
+   2. For each path: which components does the request touch, in what order?
+   3. What data transforms at each step?
+
+   Report as ordered sequences: ComponentA -> ComponentB -> ComponentC
+   with a one-line description of what triggers each flow."
+   ```
+
+   For each discovered flow, create a dynamic view in `arch/views/`:
+   ```
+   views {
+     dynamic view [flowName] {
+       title '[Flow Description]'
+       [componentA] -> [componentB] '[what happens]'
+       [componentB] -> [componentC] '[what happens]'
+     }
+   }
+   ```
+
+   Create views for the top 2-3 flows. Do not create more than 5 — keep views curated and meaningful. If the codebase-investigator cannot identify clear flows (e.g., the codebase is too small or has no clear entry points), create only the landscape view and note "No primary request paths identified — dynamic views deferred."
 
 9. **Validate:**
    ```bash
