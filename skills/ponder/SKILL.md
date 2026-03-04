@@ -49,13 +49,13 @@ Determine the mode from the invocation context:
 - Architect directly describes a change
 
 ### BOOTSTRAP mode
-**Triggered when:** No `arch/*.c4` files exist AND caller provides component information.
+**Triggered when:** No `docs/arch/*.c4` files exist AND caller provides component information.
 - Intuition Step 4 first Resolve on Mode 2 audit
 - Architect requests initial model creation
-- Check: `ls arch/*.c4 2>/dev/null` — if no files found, this is bootstrap
+- Check: `ls docs/arch/*.c4 2>/dev/null` — if no files found, this is bootstrap
 
 ### REVIEW mode
-**Triggered when:** `arch/*.c4` files exist AND caller requests accuracy/hygiene check.
+**Triggered when:** `docs/arch/*.c4` files exist AND caller requests accuracy/hygiene check.
 - Intuition Step 0 suggests model freshness review
 - Architect requests model review
 - Default when mode is ambiguous (safest — read-only)
@@ -134,7 +134,7 @@ When checking whether the model might be stale (used by Intuition Step 0):
 
 ```bash
 # Find most recent .c4 file modification
-c4_age=$(stat -f %m arch/*.c4 2>/dev/null | sort -rn | head -1)
+c4_age=$(stat -f %m docs/arch/*.c4 2>/dev/null | sort -rn | head -1)
 
 # Find most recent code-touching commit
 code_age=$(git log -1 --format=%ct -- '*.ts' '*.js' '*.rs' '*.py' '*.go' '*.java' '*.rb' '*.swift' '*.kt' 2>/dev/null)
@@ -181,11 +181,11 @@ Dispatch hyperpowers:ponder agent with the input above.
 Agent returns:
 ## Ponder Update Summary
 ### Changes Made
-- Added tokenStore component to arch/components/token-store.c4 (layer: data, stability: exploring)
+- Added tokenStore component to docs/arch/components/token-store.c4 (layer: data, stability: exploring)
 - Added relationship: auth -> tokenStore 'persists and retrieves refresh tokens'
-- Updated auth interface in arch/components/auth.c4 (added refreshToken to description)
-- Created arch/components/token-store.md
-- Updated arch/components/auth.md interface contract
+- Updated auth interface in docs/arch/components/auth.c4 (added refreshToken to description)
+- Created docs/arch/components/token-store.md
+- Updated docs/arch/components/auth.md interface contract
 
 ### Spot-Check Result
 - tokenStore: confirmed src/token-store/ exists with TokenStore class
@@ -210,7 +210,7 @@ Reviewer reports summary to architect.
 
 <code>
 Intuition Step 4: architect resolves first tension with "Resolve" on Mode 2 audit.
-No arch/*.c4 files exist.
+No docs/arch/*.c4 files exist.
 
 Intuition constructs structured input:
 
@@ -247,10 +247,10 @@ Agent returns:
 - api -> storage: direct read queries for reports
 
 ### Files Created
-- arch/spec.c4, arch/model.c4
-- arch/components/api.c4, core.c4, storage.c4, utils.c4
-- arch/views/landscape.c4
-- arch/components/api.md, core.md, storage.md, utils.md
+- docs/arch/spec.c4, docs/arch/model.c4
+- docs/arch/components/api.c4, core.c4, storage.c4, utils.c4
+- docs/arch/views/landscape.c4
+- docs/arch/components/api.md, core.md, storage.md, utils.md
 
 ### Validation
 - likec4 validate: PASS
@@ -271,7 +271,7 @@ Architecture model bootstrapped. Future audits will run in Mode 1.
 
 <code>
 Architect invokes /ponder and asks for model review.
-arch/*.c4 files exist. 15 code commits since last .c4 update.
+docs/arch/*.c4 files exist. 15 code commits since last .c4 update.
 
 Skill constructs structured input:
 
@@ -297,7 +297,7 @@ Agent returns:
 - None
 
 ### Quality Issues
-- storage component missing markdown doc (arch/components/storage.md not found)
+- storage component missing markdown doc (docs/arch/components/storage.md not found)
 
 ### Validation
 - likec4 validate: PASS
@@ -402,8 +402,8 @@ FROM BRAINSTORMING:
 - Bash (run likec4 validate, directory operations)
 
 **Artifacts consumed:**
-- LikeC4 model files (arch/*.c4)
-- Component markdown docs (arch/components/*.md)
+- LikeC4 model files (docs/arch/*.c4)
+- Component markdown docs (docs/arch/components/*.md)
 - Codebase (for spot-check and review)
 
 **Artifacts produced:**

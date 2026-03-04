@@ -69,17 +69,17 @@ When scoped, announce the scope: "Auditing with focus on [scope] and its depende
 **Check for architecture model:**
 
 ```bash
-ls arch/*.c4 2>/dev/null
+ls docs/arch/*.c4 2>/dev/null
 ```
 
-### Mode 1: Model Exists (arch/*.c4 found)
+### Mode 1: Model Exists (docs/arch/*.c4 found)
 
 **Validate then load via LikeC4 MCP:**
 
 First, validate the model syntax:
 
 ```bash
-likec4 validate arch/
+likec4 validate docs/arch/
 ```
 
 If validation fails: report the errors to the architect. Do not proceed with audit until syntax errors are fixed — MCP queries against an invalid model produce unreliable results.
@@ -102,12 +102,12 @@ find-relationships <element-id>
 # Returns: blocks, relatesTo relationships with descriptions
 
 # Load dynamic views (for Pass 7)
-# List and read each view in arch/views/data-flows/
+# List and read each view in docs/arch/views/data-flows/
 read-view <view-id>
 ```
 
 Record for analysis:
-- All components with their descriptions and interface contracts (from linked doc/arch/components/*.md)
+- All components with their descriptions and interface contracts (from linked docs/arch/components/*.md)
 - All relationships (blocks, relatesTo) with their descriptions
 - Dynamic views with their documented flows (for Pass 7)
 
@@ -118,7 +118,7 @@ Check that at least one view scoped to the system uses `include *` to show all c
 **Load existing ADRs:**
 
 ```bash
-ls doc/arch/adr-*.md 2>/dev/null
+ls docs/arch/adr/adr-*.md 2>/dev/null
 ```
 
 If ADRs exist, read each one. Record:
@@ -130,7 +130,7 @@ If ADRs exist, read each one. Record:
 
 **ADR age check:** For each accepted ADR, check when it was last modified:
 ```bash
-git log -1 --format="%ai" -- doc/arch/adr-NNN.md
+git log -1 --format="%ai" -- docs/arch/adr/adr-NNN.md
 ```
 If an ADR has not been modified in 6+ months, flag it as a maintenance note in the report (not a tension — just a reminder for the architect to review whether the decision still holds). Format: "ADR-NNN: [title] — last updated [date] (6+ months ago, consider reviewing)"
 
@@ -142,7 +142,7 @@ Check whether the architecture model may be stale:
 
 ```bash
 # Find most recent .c4 file modification
-c4_age=$(stat -f %m arch/*.c4 2>/dev/null | sort -rn | head -1)
+c4_age=$(stat -f %m docs/arch/*.c4 2>/dev/null | sort -rn | head -1)
 
 # Count code commits since last .c4 modification
 if [ -n "$c4_age" ]; then
@@ -160,7 +160,7 @@ Consider running /ponder review after this audit to verify model accuracy.
 
 This is a suggestion only — the audit proceeds regardless. The freshness check does not block analysis.
 
-### Mode 2: No Model (no arch/*.c4 found)
+### Mode 2: No Model (no docs/arch/*.c4 found)
 
 ```
 No architecture model found. Running codebase-only audit to find
@@ -170,7 +170,7 @@ structural tensions from empirical observation of the code.
 **Load existing ADRs** (same as Mode 1, including ADR age check):
 
 ```bash
-ls doc/arch/adr-*.md 2>/dev/null
+ls docs/arch/adr/adr-*.md 2>/dev/null
 ```
 
 If ADRs exist, read each one and check age (same procedure as Mode 1). Flag any accepted ADRs older than 6 months as maintenance notes.
@@ -394,7 +394,7 @@ The principle: dependencies should flow from orchestration (higher abstraction) 
 
 ### Pass 7: Dynamic View Drift
 
-**What to look for:** Documented data flows (dynamic views in arch/views/data-flows/) that no longer match actual codebase request paths.
+**What to look for:** Documented data flows (dynamic views in docs/arch/views/data-flows/) that no longer match actual codebase request paths.
 
 **Skip if no codebase** (design-phase model only) or **no dynamic views exist** or **Mode 2** (no model to drift from).
 
@@ -805,7 +805,7 @@ Create an ADR using the template from `skills/common-patterns/adr-template.md`:
 - Context: the tension's structural observation and evidence
 - Decision: accept the tension, with reasoning from the architect
 - Consequences: what remains true as a result of acceptance
-- Write to `doc/arch/adr-NNN.md`
+- Write to `docs/arch/adr/adr-NNN.md`
 
 ### Resolve
 Create an ADR + bd ticket:
@@ -851,7 +851,7 @@ When Pass 10 identifies a mechanism bypass for a Pass 9 cascade, present them to
 
 When a "Resolve" decision creates the first architectural boundary and no architecture model exists (Mode 2 audit), dispatch the ponder subagent in bootstrap mode.
 
-**Only bootstrap when:** (a) no arch/*.c4 files exist, AND (b) a Resolve decision creates a meaningful boundary between modules. Do not bootstrap for Accept or Skip decisions.
+**Only bootstrap when:** (a) no docs/arch/*.c4 files exist, AND (b) a Resolve decision creates a meaningful boundary between modules. Do not bootstrap for Accept or Skip decisions.
 
 **Construct structured input from tension evidence:**
 
@@ -885,12 +885,12 @@ After receiving the summary, announce: "Architecture model bootstrapped via Pond
 
 <code>
 Claude loads architecture model:
-  ls arch/*.c4
+  ls docs/arch/*.c4
   [Found: spec.c4, model.c4, components/*.c4]
   Queries LikeC4 MCP: read-project-summary, read-element for each
   [Found: Order Orchestrator, Pricing Engine, Fulfillment Engine,
    Payment Gateway, Order Store]
-  [ADRs: doc/arch/adr-001.md (isolate payment as independent component)]
+  [ADRs: docs/arch/adr/adr-001.md (isolate payment as independent component)]
 
 Claude dispatches codebase-investigator:
   [Evidence gathered: import graphs, co-change patterns, call patterns, shared state]
@@ -1019,7 +1019,7 @@ None.
 
 <code>
 Claude checks for model:
-  ls arch/*.c4
+  ls docs/arch/*.c4
   [No .c4 files found]
 
 Claude announces:
@@ -1027,7 +1027,7 @@ Claude announces:
   structural tensions from empirical observation of the code."
 
 Claude checks for ADRs:
-  ls doc/arch/adr-*.md
+  ls docs/arch/adr/adr-*.md
   [No ADRs found]
 
 Claude dispatches codebase-investigator (Step 1a):
@@ -1562,10 +1562,10 @@ HANDOFF (all tensions resolved/accepted):
 - Read (load ADR files, load linked component markdown docs)
 
 **Artifacts consumed:**
-- LikeC4 model files (arch/*.c4 — Mode 1 only)
-- Component documentation (doc/arch/components/*.md — Mode 1 only)
-- Dynamic views (arch/views/data-flows/*.c4 — Mode 1 only)
-- ADR files in doc/arch/ (both modes)
+- LikeC4 model files (docs/arch/*.c4 — Mode 1 only)
+- Component documentation (docs/arch/components/*.md — Mode 1 only)
+- Dynamic views (docs/arch/views/data-flows/*.c4 — Mode 1 only)
+- ADR files in docs/arch/ (both modes)
 - Codebase (both modes)
 - bd epics (when epic-scoped forward audit)
 

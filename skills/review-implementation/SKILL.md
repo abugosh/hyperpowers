@@ -637,7 +637,7 @@ Re-run review after fixes.
 First, check if an architecture model exists:
 
 ```bash
-ls arch/*.c4 2>/dev/null
+ls docs/arch/*.c4 2>/dev/null
 ```
 
 **If model exists:** Dispatch `/ponder` in update mode with structured input:

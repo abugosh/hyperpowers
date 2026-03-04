@@ -186,7 +186,7 @@ Architecture uses Brand's empirical approach — observe actual change rates thr
 3. **Intuition** (`/hyperpowers:intuition`) - Intermittent diagnostic. Runs 10 structured analysis passes to find tensions (complection, coupling, dependency direction, rate-of-change mismatches, workaround cascades, mechanism bypass). Resolution protocol guides per-tension decisions (accept via ADR, resolve via ADR + ticket, brainstorm for complex cases, investigate for deeper evidence)
 4. **Ponder** (`/hyperpowers:ponder`) - Architecture model ownership. Dispatches ponder subagent for all .c4 file operations (update, bootstrap, review). Called by review-implementation (architecture checklist), Intuition (model bootstrapping), and brainstorming (epic template)
 
-The architecture model (LikeC4 `.c4` files in `arch/`) represents current codebase reality. ADR trail IS the architectural strategy.
+The architecture model (LikeC4 `.c4` files in `docs/arch/`) represents current codebase reality. ADR trail IS the architectural strategy.
 
 ### Test-Driven Development
 

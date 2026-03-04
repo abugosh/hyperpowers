@@ -1,6 +1,6 @@
 # ADR Template (Architecture Decision Records)
 
-ADRs capture architecturally significant decisions using the Nygard format. They are permanent artifacts stored in the repository at `doc/arch/adr-NNN.md`.
+ADRs capture architecturally significant decisions using the Nygard format. They are permanent artifacts stored in the repository at `docs/arch/adr/adr-NNN.md`.
 
 ## Format
 
@@ -32,7 +32,7 @@ We will [active voice, full sentences describing the structural choice].
 
 ## File Naming
 
-- Location: `doc/arch/adr-NNN.md`
+- Location: `docs/arch/adr/adr-NNN.md`
 - Number sequentially: `adr-001.md`, `adr-002.md`, `adr-003.md`
 - Never reuse numbers, even for superseded ADRs
 - Superseded ADRs remain in the repository for historical context

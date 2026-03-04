@@ -112,12 +112,12 @@ When transitioning: announce 'Switching to building mode — let me load context
 If the user's request mentions a component, module, or architecture element, check for an existing LikeC4 architecture model:
 
 ```bash
-ls arch/*.c4 2>/dev/null
+ls docs/arch/*.c4 2>/dev/null
 ```
 
-If no arch/*.c4 files found: skip architecture context loading, proceed with normal brainstorming.
+If no docs/arch/*.c4 files found: skip architecture context loading, proceed with normal brainstorming.
 
-If arch/*.c4 files found, LikeC4 MCP is REQUIRED. If MCP is not available, fail with: "LikeC4 MCP server is required. Run: likec4 mcp --stdio"
+If docs/arch/*.c4 files found, LikeC4 MCP is REQUIRED. If MCP is not available, fail with: "LikeC4 MCP server is required. Run: likec4 mcp --stdio"
 
 **Load architecture context via LikeC4 MCP:**
 
@@ -143,7 +143,7 @@ find-relationships <element-id>
 
 3. Find relevant ADRs:
 ```bash
-ls doc/arch/adr-*.md 2>/dev/null
+ls docs/arch/adr/adr-*.md 2>/dev/null
 # Read ADRs that mention the component or its rate of change
 ```
 
@@ -165,7 +165,7 @@ Dispatch codebase-investigator with prompt:
 3. What data transformations happen inside? (what shape goes in vs what comes out?)
 4. What are the primary request paths that flow through this component?
 
-Reference the component's interface contract from: doc/arch/components/[name].md"
+Reference the component's interface contract from: docs/arch/components/[name].md"
 ```
 
 This dispatch is COMPONENT-SCOPED — it asks about ONE component's data flow, not the entire system. Fresh derivation catches drift without stale artifacts.
@@ -178,7 +178,7 @@ Architecture context loaded for [component name]:
 - Change rate: [from git history — fast/medium/slow, commits/month]
 - Layer: [from element metadata.layer]
 - Stability state: [from element metadata.stability_state]
-- Interface contract: [from doc/arch/components/<name>.md]
+- Interface contract: [from docs/arch/components/<name>.md]
 - Adjacent components: [from find-relationships — blocks and relatesTo]
 - Relevant ADRs:
   - ADR-NNN: [title] — [key decision and consequences]
@@ -199,7 +199,7 @@ If the flow dispatch was skipped (no codebase), omit the codebase-derived data f
 The architect decides during the brainstorm which architectural tradeoffs become anti-patterns in the inner-loop epic. Do NOT auto-insert ADR tradeoffs as anti-patterns.
 
 **Edge cases:**
-- No architecture model exists (no arch/*.c4): skip detection, proceed with normal brainstorming
+- No architecture model exists (no docs/arch/*.c4): skip detection, proceed with normal brainstorming
 - No codebase but model exists: skip codebase-investigator dispatch, present architectural context only
 - Multiple components referenced: load context for all matched (search-element for each)
 - Component is pre-fit: load context, note boundaries are new and may be revisited

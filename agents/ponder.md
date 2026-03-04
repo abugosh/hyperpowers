@@ -49,7 +49,7 @@ Every model operation must maintain these invariants:
    }
    ```
 
-3. **Every component has a linked markdown doc** at `arch/components/[name].md` containing:
+3. **Every component has a linked markdown doc** at `docs/arch/components/[name].md` containing:
    - Responsibility (one paragraph)
    - Interface contract: IN (what it accepts) and OUT (what it produces)
    - What changes should be local to this component
@@ -91,7 +91,7 @@ Every model operation must maintain these invariants:
    - Ensure quality criteria are maintained
 
 4. **Update component markdown docs** if the component's responsibility, interface, or locality changed:
-   - Read existing `arch/components/[name].md`
+   - Read existing `docs/arch/components/[name].md`
    - Update affected sections
    - Create new markdown doc if new component added
 
@@ -142,10 +142,10 @@ Every model operation must maintain these invariants:
 
 2. **Create directory structure:**
    ```bash
-   mkdir -p arch/components arch/views
+   mkdir -p docs/arch/components docs/arch/views
    ```
 
-3. **Create `arch/spec.c4`:**
+3. **Create `docs/arch/spec.c4`:**
    ```
    specification {
      element component
@@ -162,16 +162,16 @@ Every model operation must maintain these invariants:
    }
    ```
 
-4. **Create `arch/model.c4`:**
+4. **Create `docs/arch/model.c4`:**
    ```
    model {
      [systemName] = system '[System Display Name]' {
-       // Component references - actual definitions in arch/components/
+       // Component references - actual definitions in docs/arch/components/
      }
    }
    ```
 
-5. **Create `arch/components/[name].c4` for each component:**
+5. **Create `docs/arch/components/[name].c4` for each component:**
    ```
    // Part of [systemName]
    [name] = component '[Display Name]' {
@@ -184,7 +184,7 @@ Every model operation must maintain these invariants:
    ```
    Include relationships with descriptions between components where known.
 
-6. **Create `arch/views/landscape.c4`:**
+6. **Create `docs/arch/views/landscape.c4`:**
    ```
    views {
      view landscape of [systemName] {
@@ -194,7 +194,7 @@ Every model operation must maintain these invariants:
    }
    ```
 
-7. **Create `arch/components/[name].md` markdown doc for each component:**
+7. **Create `docs/arch/components/[name].md` markdown doc for each component:**
    ```markdown
    # [Display Name]
 
@@ -228,7 +228,7 @@ Every model operation must maintain these invariants:
    with a one-line description of what triggers each flow."
    ```
 
-   For each discovered flow, create a dynamic view in `arch/views/`:
+   For each discovered flow, create a dynamic view in `docs/arch/views/`:
    ```
    views {
      dynamic view [flowName] {
@@ -259,11 +259,11 @@ Every model operation must maintain these invariants:
     - ...
 
     ### Files Created
-    - arch/spec.c4
-    - arch/model.c4
-    - arch/components/[name].c4 (per component)
-    - arch/views/landscape.c4
-    - arch/components/[name].md (per component)
+    - docs/arch/spec.c4
+    - docs/arch/model.c4
+    - docs/arch/components/[name].c4 (per component)
+    - docs/arch/views/landscape.c4
+    - docs/arch/components/[name].md (per component)
 
     ### Validation
     - likec4 validate: [PASS/FAIL with details]
@@ -297,7 +297,7 @@ Every model operation must maintain these invariants:
 3. **Check quality criteria:**
    - Consistent abstraction level across components
    - Every component has metadata (layer, stability_state)
-   - Every component has linked markdown doc (`arch/components/[name].md`)
+   - Every component has linked markdown doc (`docs/arch/components/[name].md`)
    - Every relationship has a description
    - At least one landscape view scoped to the system with `include *`
    - No target elements or #target tags
