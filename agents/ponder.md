@@ -49,7 +49,7 @@ Every model operation must maintain these invariants:
    }
    ```
 
-3. **Every component has a linked markdown doc** at `docs/arch/components/[name].md` containing:
+3. **Every component has a linked markdown doc** at `docs/arch/components/[name].md`, connected via `link ./[name].md 'Documentation'` in the `.c4` file. The markdown doc contains:
    - Responsibility (one paragraph)
    - Interface contract: IN (what it accepts) and OUT (what it produces)
    - What changes should be local to this component
@@ -176,6 +176,7 @@ Every model operation must maintain these invariants:
    // Part of [systemName]
    [name] = component '[Display Name]' {
      description '[from input or codebase evidence]'
+     link ./[name].md 'Documentation'
      metadata {
        layer '[orchestration | domain | data | infrastructure | utility]'
        stability_state 'exploring'
