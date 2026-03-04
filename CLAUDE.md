@@ -89,7 +89,7 @@ The repository is organized as follows:
 
 - **skills/** - Reusable workflow definitions (each in its own directory with SKILL.md)
 - **commands/** - Slash command definitions that invoke skills
-- **agents/** - Specialized agent prompts (executor, reviewer, code-reviewer, codebase-investigator, internet-researcher, test-runner)
+- **agents/** - Specialized agent prompts (executor, reviewer, code-reviewer, codebase-investigator, internet-researcher, test-runner, ponder)
 - **hooks/** - Automatic behaviors triggered by events
 - **.claude-plugin/** - Plugin metadata (plugin.json)
 
@@ -148,6 +148,7 @@ Specialized agents run in separate contexts to handle specific tasks:
 4. **code-reviewer** - Reviews implementations against plans and coding standards
 5. **codebase-investigator** - Explores codebase state and patterns when planning/designing
 6. **internet-researcher** - Researches APIs, libraries, docs when planning/designing
+7. **ponder** (subagent) - Creates, updates, and reviews LikeC4 architecture models. Single owner of all .c4 file operations. Dispatched by the ponder skill in update, bootstrap, or review mode.
 
 **Critical pattern:** Agents keep verbose output (test results, formatting diffs) in their own context, returning only essential info to the main conversation.
 
@@ -182,8 +183,8 @@ Architecture uses Brand's empirical approach — observe actual change rates thr
 
 1. **Brainstorm** (`/hyperpowers:brainstorm`) - Primary entry point for new work. Loads architecture context (current state + change rates) when model exists
 2. **Build** - Implement the feature (executing-plans)
-3. **Intuition** (`/hyperpowers:intuition`) - Intermittent diagnostic. Runs 8 structured analysis passes to find tensions (complection, coupling, dependency direction, rate-of-change mismatches). Resolution protocol guides per-tension decisions (accept via ADR, resolve via ADR + ticket, brainstorm for complex cases, investigate for deeper evidence)
-4. **Update model** - Architecture model describes what IS after work completes, never aspirational targets
+3. **Intuition** (`/hyperpowers:intuition`) - Intermittent diagnostic. Runs 10 structured analysis passes to find tensions (complection, coupling, dependency direction, rate-of-change mismatches, workaround cascades, mechanism bypass). Resolution protocol guides per-tension decisions (accept via ADR, resolve via ADR + ticket, brainstorm for complex cases, investigate for deeper evidence)
+4. **Ponder** (`/hyperpowers:ponder`) - Architecture model ownership. Dispatches ponder subagent for all .c4 file operations (update, bootstrap, review). Called by review-implementation (architecture checklist), Intuition (model bootstrapping), and brainstorming (epic template)
 
 The architecture model (LikeC4 `.c4` files in `arch/`) represents current codebase reality. ADR trail IS the architectural strategy.
 
