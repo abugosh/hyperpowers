@@ -176,8 +176,8 @@ Claude: "Now I'm using hyperpowers:writing-plans to create a detailed implementa
 Claude: "Now I'm using hyperpowers:executing-plans to orchestrate task execution."
 
 [Skill tool loads executing-plans]
-[Creates team, spawns executor teammate who implements with TDD]
-[Lead validates proposals against epic, executor continues]
+[Creates team, spawns fresh executor per task who implements with TDD]
+[Lead validates proposals against epic, shuts down executor, spawns next]
 
 **What you gain:**
 - Clear requirements before coding

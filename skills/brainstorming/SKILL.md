@@ -616,14 +616,14 @@ First task bd-2 has been refined and is ready to execute.
 Ready to start implementation? I'll use executing-plans to orchestrate execution.
 
 The executing-plans skill will:
-1. Create a team and spawn an executor teammate for implementation
-2. The executor implements tasks with TDD (red-green-refactor-commit)
+1. Create a team and spawn a fresh executor for each individual task
+2. The executor implements the task with TDD (red-green-refactor-commit), sends progress messages
 3. I validate each proposed next task against epic requirements and anti-patterns
-4. The executor proposes SRE-refined tasks, I approve or redirect
+4. After each task: executor writes learnings to project memory, shuts down; fresh executor starts next task
 5. When all criteria met, a reviewer agent verifies the implementation
 6. Review-implementation runs the architecture update checklist (5 questions)
 
-This approach preserves epic context and cross-task learnings continuously — no manual /clear cycling needed."
+This approach prevents context exhaustion (bounded per-task executor lifetime) while preserving learnings via project memory — no manual /clear cycling needed."
 ```
 </the_process>
 
