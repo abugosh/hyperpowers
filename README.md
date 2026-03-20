@@ -60,7 +60,7 @@ Quick access to key workflows:
 
 Domain-specific agents for complex tasks:
 
-- **executor** - Implements bd tasks with TDD discipline as a persistent teammate; sends structured summaries to lead
+- **executor** - Implements a single bd task with TDD discipline; sends progress messages at checkpoints and a structured summary to lead; fresh instance spawned per task with project memory bridging cross-task learnings
 - **reviewer** - Verifies implementation against bd epic spec; returns APPROVED or GAPS FOUND verdict
 - **code-reviewer** - Review implementations against plans and coding standards
 - **codebase-investigator** - Understand current codebase state and patterns
