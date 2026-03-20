@@ -58,7 +58,7 @@ Write a specific test for the deliverable. The test must target production behav
 ```
 SendMessage:
   type: "message"
-  recipient: <lead name from spawn context>
+  recipient: team-lead
   content: "[RED] Writing failing test for <deliverable name>"
   summary: "RED checkpoint"
 ```
@@ -87,7 +87,7 @@ Dispatch test-runner agent: "Run: <test command>"
 ```
 SendMessage:
   type: "message"
-  recipient: <lead name from spawn context>
+  recipient: team-lead
   content: "[GREEN] Test passing: <test name>"
   summary: "GREEN checkpoint"
 ```
@@ -100,7 +100,7 @@ Clean up the implementation while keeping all tests green. Run tests after refac
 ```
 SendMessage:
   type: "message"
-  recipient: <lead name from spawn context>
+  recipient: team-lead
   content: "[REFACTOR] Cleanup complete, all tests green"
   summary: "REFACTOR checkpoint"
 ```
@@ -127,7 +127,7 @@ bd: <task-id>"
 ```
 SendMessage:
   type: "message"
-  recipient: <lead name from spawn context>
+  recipient: team-lead
   content: "[COMMIT] Committed: <short hash>: <commit message summary>"
   summary: "COMMIT checkpoint"
 ```
@@ -195,7 +195,7 @@ After memory is written, send the structured completion report to the lead:
 ```
 SendMessage:
   type: "message"
-  recipient: <lead name>
+  recipient: team-lead
   content: |
     ## Task <id> Complete
 

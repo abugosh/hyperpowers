@@ -155,6 +155,8 @@ Task tool:
     Then: bd show <task-id>
 
     Important context:
+    - The lead's name in this team is: team-lead. Send ALL messages
+      (progress, escalation, completion report) to "team-lead".
     - Read project memories matching epic-<epic-id>-* for cross-task
       learnings from prior tasks.
     - Send brief progress messages at TDD checkpoints: when you finish
