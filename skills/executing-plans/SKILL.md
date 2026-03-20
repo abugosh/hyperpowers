@@ -19,15 +19,15 @@ Do not skip proposal validation, health monitoring, reviewer dispatch, or shutdo
 |------|--------|--------------|
 | **Load Epic** | Read immutable requirements + project memory | `bd show <epic-id>` + read memory |
 | **Create Team** | Initialize team for this epic (ONCE per epic) | TeamCreate |
-| **Spawn Executor** | Start fresh executor for ONE task | Task tool with `team_name` and `name` params |
+| **Spawn Executor** | Start fresh executor for ONE task | Agent tool with `team_name` and `name` params |
 | **Monitor** | Track time since last message, reset on any message | Timer (10 min threshold) |
 | **Receive Progress** | Note TDD checkpoint, reset health timer | No response needed (unless anti-pattern spotted) |
 | **Validate Proposal** | Check against epic requirements/anti-patterns | `bd show <epic-id>` + systematic check |
 | **Shutdown Executor** | Gracefully end current executor (per-task) | SendMessage type: "shutdown_request" |
-| **Spawn Next** | Fresh executor for next approved task | Task tool with `team_name` and `name` params |
+| **Spawn Next** | Fresh executor for next approved task | Agent tool with `team_name` and `name` params |
 | **Health Check (Tier 1)** | Status check after 10 min silence | SendMessage status question |
 | **Health Check (Tier 2)** | Assume dead after 5 min no response | Trigger recovery protocol |
-| **Dispatch Reviewer** | Final verification (subagent, not teammate) | Task tool (no `team_name`) |
+| **Dispatch Reviewer** | Final verification (subagent, not teammate) | Agent tool (no `team_name`) |
 | **Shutdown at Epic End** | Terminate executor after reviewer APPROVED | SendMessage type: "shutdown_request" |
 | **Cleanup** | Remove team (epic end only) | TeamDelete |
 
@@ -138,7 +138,7 @@ bd ready  # Find next ready task
 Spawn the executor with a full prompt that includes all required context:
 
 ```
-Task tool:
+Agent tool:
   subagent_type: "general-purpose"
   team_name: "epic-<epic-id>"
   name: "executor"
@@ -243,7 +243,7 @@ bd show <epic-id>
    bd create <next task title> --parent <epic-id>  # If task not yet in bd
    ```
    ```
-   Task tool:
+   Agent tool:
      subagent_type: "general-purpose"
      team_name: "epic-<epic-id>"
      name: "executor"
@@ -407,14 +407,14 @@ When the executor reports all success criteria met and you've verified the compl
 **The executor remains alive during reviewer dispatch** — it may be needed to fix gaps found by the reviewer.
 
 ```
-Task tool:
+Agent tool:
   subagent_type: "general-purpose"
   prompt: "You are the reviewer agent. Review the implementation for epic <epic-id>.
            Follow the reviewer agent definition in agents/reviewer.md exactly.
            Start with: bd show <epic-id>"
 ```
 
-The reviewer is a **subagent** (no `team_name` parameter) — a one-shot analysis that returns its verdict directly in the Task tool output. It is NOT a teammate.
+The reviewer is a **subagent** (no `team_name` parameter) — a one-shot analysis that returns its verdict directly in the Agent tool output. It is NOT a teammate.
 
 **Handle the verdict:**
 
@@ -553,7 +553,7 @@ SendMessage:
 ```
 7. After shutdown confirmed, spawned fresh executor for bd-4:
 ```
-Task tool:
+Agent tool:
   team_name: "epic-bxk"
   name: "executor"
   prompt: "...Your scope is task bd-4 only...
@@ -722,7 +722,7 @@ SendMessage:
 
 7. **Reviewer is a subagent, not a teammate** → One-shot dispatch
    - No `team_name` parameter when dispatching reviewer
-   - Reviewer returns verdict in Task tool output
+   - Reviewer returns verdict in Agent tool output
    - Executor remains alive during reviewer dispatch (for gap fixes)
 
 8. **Epic requirements are immutable** → Lead enforces this on all proposals
@@ -799,8 +799,8 @@ Health monitoring checklist:
 <integration>
 
 **This skill calls:**
-- agents/executor.md (spawned as teammate via Task tool with `team_name` — fresh spawn PER TASK)
-- agents/reviewer.md (dispatched as subagent via Task tool without `team_name`)
+- agents/executor.md (spawned as teammate via Agent tool with `team_name` — fresh spawn PER TASK)
+- agents/reviewer.md (dispatched as subagent via Agent tool without `team_name`)
 
 **Skills used by executor (not invoked by lead directly):**
 - test-driven-development (executor follows TDD cycle)
@@ -846,8 +846,8 @@ Health monitoring checklist:
 
 **Agent teams API tools:**
 - TeamCreate — create team (one per epic, persists until epic end)
-- Task tool with `team_name` + `name` — spawn executor teammate (PER TASK, not per epic)
-- Task tool without `team_name` — spawn subagent (reviewer)
+- Agent tool with `team_name` + `name` — spawn executor teammate (PER TASK, not per epic)
+- Agent tool without `team_name` — spawn subagent (reviewer)
 - SendMessage type: "message" — direct message to executor
 - SendMessage type: "shutdown_request" — graceful executor shutdown (per task and epic end)
 - TeamDelete — cleanup at epic end only
