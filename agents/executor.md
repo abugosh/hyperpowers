@@ -146,6 +146,19 @@ bd close <task-id>
 
 After closing the task, follow these steps in exact order:
 
+### 0. Verify commit exists (GATE — do not proceed without this)
+
+Before writing memory or sending the completion report, verify your work is committed:
+
+```bash
+git log --oneline -3  # Confirm your commit is at the top
+git status            # Confirm no unstaged changes from this task
+```
+
+**If you see uncommitted changes:** STOP. Go back and commit. Do NOT proceed to memory write or completion report with uncommitted work. The lead will reject any completion report without a `### Commits` section containing real commit hashes.
+
+**If your commit is confirmed:** Note the short hash — you will include it in the completion report.
+
 ### 1. Write project memory FIRST
 
 Before sending any completion report, write your key learnings to project memory:

@@ -238,6 +238,15 @@ bd show <epic-id>
    ```
    Wait for shutdown_response with `approve: true`.
 
+   **IMPORTANT — Verify executor cleanup before respawning:**
+   After shutdown is confirmed, the old executor may still be registered in the team for a few seconds. Spawning a new agent with `name: "executor"` while the old one is still listed causes a name collision (the new one gets named "executor-2"), which breaks SendMessage routing.
+
+   Before spawning, read the team config to verify the old executor is gone:
+   ```bash
+   cat ~/.claude/teams/epic-<epic-id>/config.json  # Check members array
+   ```
+   If "executor" is still listed, wait a few seconds and re-check. Only spawn when the name is available. If the name collision has already happened (you see "executor-2" or similar after spawning), use the actual spawned name for all subsequent SendMessage calls to that executor.
+
    Then create the next bd task and spawn fresh executor:
    ```bash
    bd create <next task title> --parent <epic-id>  # If task not yet in bd
