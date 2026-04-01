@@ -318,6 +318,7 @@ Priority: Continue adding collaboration workflows (code review response, inciden
 - The test-runner agent uses Haiku model for cost efficiency
 - The sre-task-refinement skill uses Opus 4.1 for deep analysis
 - Most other operations use the default model (Sonnet)
+- **Always bump the version** in `.claude-plugin/plugin.json` before the final push of any change that modifies files in `skills/`, `agents/`, `commands/`, `hooks/`, `CLAUDE.md`, or `README.md`. Patch bump (x.y.Z) for fixes, minor bump (x.Y.0) for features/rewrites.
 
 ## Contributing Guidelines
 
