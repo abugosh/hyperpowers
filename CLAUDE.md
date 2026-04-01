@@ -142,7 +142,7 @@ bd status bd-3 --status in-progress     # Update task status
 
 Specialized agents run in separate contexts to handle specific tasks:
 
-1. **executor** (teammate) - Implements a single bd task with TDD discipline, sends progress messages at checkpoints and a structured summary to lead after the task. Spawned fresh per task by executing-plans; writes project memory before shutdown so the next executor has cross-task learnings.
+1. **executor** (teammate) - Implements a single bd task with TDD discipline. Uses native TaskCreate/TaskUpdate for TDD sub-step tracking. Spawned fresh per task by executing-plans; writes project memory before completing so the next executor has cross-task learnings. Idles out naturally via native timeout — no explicit shutdown needed.
 2. **reviewer** (subagent) - Verifies implementation against bd epic spec with Google Fellow SRE scrutiny. Returns APPROVED or GAPS FOUND verdict. Dispatched as one-shot subagent.
 3. **test-runner** (uses Haiku) - Runs tests/hooks/commits, returns only summary + failures to keep context clean
 4. **code-reviewer** - Reviews implementations against plans and coding standards
@@ -152,7 +152,7 @@ Specialized agents run in separate contexts to handle specific tasks:
 
 **Critical pattern:** Agents keep verbose output (test results, formatting diffs) in their own context, returning only essential info to the main conversation.
 
-**Delegation pattern:** The executing-plans skill uses agent teams — the lead (main context) orchestrates while a fresh executor teammate implements each individual task. The executor has a bounded single-task lifetime (preventing context exhaustion), writes learnings to project memory before shutdown, and the next executor reads that memory on startup. The lead holds the epic context and validates proposals; cross-task learnings are preserved via project memory rather than a single long-running context.
+**Delegation pattern:** The executing-plans skill uses agent teams — the lead (main context) orchestrates while a fresh executor teammate implements each individual task. The executor has a bounded single-task lifetime (preventing context exhaustion), writes learnings to project memory before completing, and the next executor reads that memory on startup. The old executor idles out naturally via native Claude Code timeout. The lead holds the epic context and validates proposals; cross-task learnings are preserved via project memory rather than a single long-running context.
 
 ### Common Patterns Location
 
@@ -268,7 +268,7 @@ The `using-hyper` skill establishes these non-negotiable rules:
 
 - **Check for relevant skills before ANY task** - If a skill exists for it, use it
 - **Use Skill tool before announcing** - Load the actual skill file, don't rely on memory
-- **Create TodoWrite todos for checklists** - Track progress explicitly
+- **Create TaskCreate tasks for checklists** - Track progress explicitly
 - **Follow brainstorming before coding** - Design first, code second
 - **Use verification-before-completion** - Never claim success without evidence
 

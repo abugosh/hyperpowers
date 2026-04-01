@@ -60,7 +60,7 @@ Quick access to key workflows:
 
 Domain-specific agents for complex tasks:
 
-- **executor** - Implements a single bd task with TDD discipline; sends progress messages at checkpoints and a structured summary to lead; fresh instance spawned per task with project memory bridging cross-task learnings
+- **executor** - Implements a single bd task with TDD discipline; uses native TaskCreate/TaskUpdate for TDD sub-step tracking; fresh instance spawned per task; writes project memory before completing so cross-task learnings are bridged; idles out naturally after task
 - **reviewer** - Verifies implementation against bd epic spec; returns APPROVED or GAPS FOUND verdict
 - **code-reviewer** - Review implementations against plans and coding standards
 - **codebase-investigator** - Understand current codebase state and patterns
@@ -154,8 +154,8 @@ Claude: Now I'm using the writing-plans skill to create a detailed implementatio
 
 Claude: I'm using the executing-plans skill to orchestrate execution.
 
-[Creates team, spawns executor teammate]
-[Executor implements tasks with TDD, sends structured summaries]
+[Spawns fresh executor teammate per task]
+[Executor implements tasks with TDD, uses TaskCreate for sub-step tracking]
 [Lead validates proposals against epic requirements]
 
 Claude: The executor reports all criteria met. Dispatching the reviewer agent.
