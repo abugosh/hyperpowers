@@ -64,6 +64,8 @@ If multiple epics open: ask the user which to execute (AskUserQuestion). One epi
 
 ## 2. Spawn Executor
 
+**The executor MUST be spawned as a teammate in a team (Agent tool with `team_name`), not as a standalone subagent.** Standalone dispatch is fire-and-forget — no mid-flight escalation, no proposal validation, no correction channel. The team model exists because executors hit obstacles, need direction, and should not grade their own work. This applies even for single-task epics.
+
 Spawn a fresh executor for the specific task using this exact briefing template:
 
 ```
@@ -234,6 +236,8 @@ Revisit condition not met. Investigate Option A: breaking changes in v1.0? PKCE 
 
 8. **One epic at a time** — If multiple epics open: ask user which to execute.
 
+9. **Team-based dispatch is mandatory** — Do NOT use the Agent tool without `team_name` to dispatch executors. Standalone dispatch (fire-and-forget) removes mid-flight escalation, proposal validation, and correction channels. Even for single-task epics, the team model is required — executors hit obstacles and should not grade their own work.
+
 ## Common Rationalizations
 
 - "I'll implement this small thing directly" → Lead never implements. Spawn executor.
@@ -241,6 +245,8 @@ Revisit condition not met. Investigate Option A: breaking changes in v1.0? PKCE 
 - "This escalation is clearly right" → Check Design Discovery first.
 - "Reviewer is overkill here" → Dispatch reviewer. No exceptions.
 - "This requirement is unrealistic" → Immutable. Research or ask user.
+- "This is a single-task epic, I don't need a team" → Yes you do. Teams enable escalation, mid-flight correction, and reviewer dispatch.
+- "I'll just use the Agent tool directly, it's simpler" → Standalone dispatch is fire-and-forget. No escalation channel, no correction, no reviewer. Use team_name.
 
 </critical_rules>
 
