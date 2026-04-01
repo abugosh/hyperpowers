@@ -619,7 +619,7 @@ The executing-plans skill will:
 1. Create a team and spawn a fresh executor for each individual task
 2. The executor implements the task with TDD (red-green-refactor-commit), sends progress messages
 3. I validate each proposed next task against epic requirements and anti-patterns
-4. After each task: executor writes learnings to project memory, shuts down; fresh executor starts next task
+4. After each task: executor writes learnings to project memory and idles out naturally; fresh executor starts next task
 5. When all criteria met, a reviewer agent verifies the implementation
 6. Review-implementation runs the architecture update checklist (5 questions)
 
