@@ -617,7 +617,7 @@ Ready to start implementation? I'll use executing-plans to orchestrate execution
 
 The executing-plans skill will:
 1. Create a team and spawn a fresh executor for each individual task
-2. The executor implements the task with TDD (red-green-refactor-commit), sends progress messages
+2. The executor implements the task with TDD (red-green-refactor-commit), tracks sub-steps via TaskCreate/TaskUpdate
 3. I validate each proposed next task against epic requirements and anti-patterns
 4. After each task: executor writes learnings to project memory and idles out naturally; fresh executor starts next task
 5. When all criteria met, a reviewer agent verifies the implementation

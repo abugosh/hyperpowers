@@ -268,7 +268,7 @@ The `using-hyper` skill establishes these non-negotiable rules:
 
 - **Check for relevant skills before ANY task** - If a skill exists for it, use it
 - **Use Skill tool before announcing** - Load the actual skill file, don't rely on memory
-- **Create TaskCreate tasks for checklists** - Track progress explicitly
+- **Create TodoWrite todos for checklists** - Track progress explicitly
 - **Follow brainstorming before coding** - Design first, code second
 - **Use verification-before-completion** - Never claim success without evidence
 
