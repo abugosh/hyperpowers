@@ -1,14 +1,14 @@
 {
-  "name": "abugosh-hyper",
+  "name": "abugosh",
   "description": "Development marketplace for Hyperpowers core skills library",
   "owner": {
     "name": "Alex Bugosh"
   },
   "plugins": [
     {
-      "name": "abugosh-hyper",
+      "name": "hyperpowers",
       "description": "Strong guidance for Claude Code as a software development assistant",
-      "version": "1.6.1",
+      "version": "3.4.3",
       "source": "./",
       "author": {
         "name": "Alex Bugosh"

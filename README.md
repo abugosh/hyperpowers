@@ -117,7 +117,7 @@ Install from the Claude Code plugin marketplace:
 
 ```
 /plugin marketplace add abugosh/hyperpowers
-/plugin install hyperpowers@hyperpowers
+/plugin install hyperpowers@abugosh
 ```
 
 Verify installation by running `/help` - you should see the hyperpowers slash commands listed.
@@ -179,12 +179,16 @@ Hyperpowers embodies several core principles:
 
 ## Contributing
 
-Contributions are welcome! This plugin is inspired by [obra/superpowers](https://github.com/obra/superpowers).
+Feedback and ideas are welcome! This repo doesn't accept direct issues or PRs — fork the repo and experiment on your own copy.
+
+To share feedback, open an issue on your fork and tag [@abugosh](https://github.com/abugosh), or reach out directly.
 
 ### Adding New Skills
 
+If you're extending your own fork:
+
 1. Create a new directory in `skills/`
-2. Add a `skill.md` file with the workflow
+2. Add a `SKILL.md` file with the workflow
 3. Follow the TDD approach in `writing-skills` skill
 4. Test with subagents before deployment
 
