@@ -163,7 +163,7 @@ When executor COMPLETE output indicates all success criteria met:
 
 1. Verify each criterion in the report against the epic's actual success criteria.
 2. Spot-check evidence — does it make sense? Are any criteria missing?
-3. Dispatch reviewer as **subagent** (no `team_name`):
+3. Dispatch reviewer as a **blocking subagent**:
 ```
 Agent tool:
   subagent_type: "hyperpowers:reviewer"
@@ -254,13 +254,13 @@ not met. Investigate Option A: breaking changes in v1.0? PKCE plugin available?"
 
 5. **Memory bridge is mandatory** — Executor writes learnings before returning. Brief executor on this in dispatch prompt. Next executor reads these files.
 
-6. **Reviewer is a subagent** — No `team_name` on reviewer dispatch. One-shot verdict returned in Agent tool output.
+6. **Reviewer is a blocking subagent** — Dispatch as subagent (no team parameter). One-shot verdict returned in Agent tool output.
 
 7. **Epic requirements are immutable** — Redirect any proposal that waters down a requirement. Research or ask user when a requirement seems impossible — never soften it.
 
 8. **One epic at a time** — If multiple epics open: ask user which to execute.
 
-9. **Executor MUST be dispatched as blocking subagent (no team_name)** — Passing `team_name` causes the Agent tool to return immediately, leaving the lead idle and vulnerable to throttling. Blocking dispatch keeps the lead actively computing between tasks.
+9. **Executor MUST be dispatched as blocking subagent** — Using the team dispatch mode causes the Agent tool to return immediately, leaving the lead idle and vulnerable to throttling. Blocking dispatch (no team parameter) keeps the lead actively computing between tasks.
 
 ## Common Rationalizations
 
@@ -270,7 +270,7 @@ not met. Investigate Option A: breaking changes in v1.0? PKCE plugin available?"
 - "Reviewer is overkill here" → Dispatch reviewer. No exceptions.
 - "This requirement is unrealistic" → Immutable. Research or ask user.
 - "This is a single-task epic, blocking dispatch seems unnecessary" → Dispatch blocking subagent. Consistent dispatch model prevents idle throttling on every epic.
-- "I'll pass team_name, it's fine for this one" → No. team_name causes idle throttling. Always dispatch without team_name.
+- "I'll use team dispatch, it's fine for this one" → No. Team dispatch causes idle throttling. Always dispatch as a blocking subagent.
 
 </critical_rules>
 
@@ -298,7 +298,7 @@ After reviewer APPROVED:
 
 <integration>
 
-**Calls:** agents/executor.md (subagent, blocking, fresh per task) · agents/reviewer.md (subagent, no `team_name`)
+**Calls:** agents/executor.md (subagent, blocking, fresh per task) · agents/reviewer.md (subagent, blocking)
 
 **Called by:** User via /hyperpowers:execute-plan · after brainstorming/writing-plans
 
