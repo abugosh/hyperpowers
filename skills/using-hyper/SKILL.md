@@ -98,7 +98,7 @@ Before using a skill, announce it:
 **Before writing ANY code:**
 - Use hyperpowers:brainstorming to refine requirements
 - Use hyperpowers:writing-plans to create detailed plan
-- Use hyperpowers:executing-plans to orchestrate execution via executor teammate
+- Use hyperpowers:executing-plans to orchestrate execution via executor subagent
 
 **When implementing:**
 - Use hyperpowers:test-driven-development (RED-GREEN-REFACTOR cycle)
@@ -176,8 +176,8 @@ Claude: "Now I'm using hyperpowers:writing-plans to create a detailed implementa
 Claude: "Now I'm using hyperpowers:executing-plans to orchestrate task execution."
 
 [Skill tool loads executing-plans]
-[Creates team, spawns fresh executor per task who implements with TDD]
-[Lead validates proposals against epic, old executor idles out naturally, spawns next]
+[Dispatches fresh executor subagent per task who implements with TDD]
+[Lead validates proposals against epic, processes return value, dispatches next]
 
 **What you gain:**
 - Clear requirements before coding
@@ -381,7 +381,7 @@ Before completing ANY task:
 
 **Critical workflows this establishes:**
 - hyperpowers:brainstorming (before writing code)
-- hyperpowers:writing-plans → hyperpowers:executing-plans (plan then orchestrate execution via executor teammate)
+- hyperpowers:writing-plans → hyperpowers:executing-plans (plan then orchestrate execution via executor subagent)
 - hyperpowers:test-driven-development (during implementation)
 - hyperpowers:verification-before-completion (before claiming done)
 </integration>

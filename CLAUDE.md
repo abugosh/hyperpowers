@@ -142,7 +142,7 @@ bd status bd-3 --status in-progress     # Update task status
 
 Specialized agents run in separate contexts to handle specific tasks:
 
-1. **executor** (teammate) - Implements a single bd task with TDD discipline. Uses native TaskCreate/TaskUpdate for TDD sub-step tracking. Spawned fresh per task by executing-plans; writes project memory before completing so the next executor has cross-task learnings. Idles out naturally via native timeout — no explicit shutdown needed.
+1. **executor** (subagent) - Implements a single bd task with TDD discipline. Uses native TaskCreate/TaskUpdate for TDD sub-step tracking. Dispatched fresh per task by executing-plans; writes project memory before returning so the next executor has cross-task learnings. Returns structured output (completion report, escalation, or checkpoint) to the lead.
 2. **reviewer** (subagent) - Verifies implementation against bd epic spec with Google Fellow SRE scrutiny. Returns APPROVED or GAPS FOUND verdict. Dispatched as one-shot subagent.
 3. **test-runner** (uses Haiku) - Runs tests/hooks/commits, returns only summary + failures to keep context clean
 4. **code-reviewer** - Reviews implementations against plans and coding standards
@@ -152,7 +152,7 @@ Specialized agents run in separate contexts to handle specific tasks:
 
 **Critical pattern:** Agents keep verbose output (test results, formatting diffs) in their own context, returning only essential info to the main conversation.
 
-**Delegation pattern:** The executing-plans skill uses agent teams — the lead (main context) orchestrates while a fresh executor teammate implements each individual task. The executor has a bounded single-task lifetime (preventing context exhaustion), writes learnings to project memory before completing, and the next executor reads that memory on startup. The old executor idles out naturally via native Claude Code timeout. The lead holds the epic context and validates proposals; cross-task learnings are preserved via project memory rather than a single long-running context.
+**Delegation pattern:** The executing-plans skill uses blocking subagent dispatch — the lead (main context) dispatches a fresh executor subagent per task via the Agent tool (without team_name), which blocks the lead until the executor returns. The executor has a bounded single-task lifetime (preventing context exhaustion), writes learnings to project memory before returning, and the next executor reads that memory on startup. The lead holds the epic context and validates proposals; cross-task learnings are preserved via project memory rather than a single long-running context.
 
 ### Common Patterns Location
 
@@ -173,7 +173,7 @@ Complete workflow from idea to PR:
 1. **Brainstorming** (`/hyperpowers:brainstorm`) - Primary entry point. Socratic questioning to refine requirements, research codebase/external docs, produce bd epic with immutable requirements
 2. **SRE Task Refinement** (optional) - Uses Opus 4.1 to identify corner cases
 3. **Writing Plans** (`/hyperpowers:write-plan`) - Creates detailed bd epic with tasks
-4. **Executing Plans** (`/hyperpowers:execute-plan`) - Lead orchestrates executor teammate who implements tasks with TDD; lead validates proposals against epic
+4. **Executing Plans** (`/hyperpowers:execute-plan`) - Lead orchestrates executor subagent who implements tasks with TDD; lead validates proposals against epic
 5. **Review Implementation** (`/hyperpowers:review-implementation`) - Verifies against spec
 6. **Finishing Branch** - Creates PR, handles cleanup
 

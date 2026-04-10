@@ -616,10 +616,10 @@ First task bd-2 has been refined and is ready to execute.
 Ready to start implementation? I'll use executing-plans to orchestrate execution.
 
 The executing-plans skill will:
-1. Create a team and spawn a fresh executor for each individual task
+1. Dispatch a fresh executor subagent for each individual task
 2. The executor implements the task with TDD (red-green-refactor-commit), tracks sub-steps via TaskCreate/TaskUpdate
 3. I validate each proposed next task against epic requirements and anti-patterns
-4. After each task: executor writes learnings to project memory and idles out naturally; fresh executor starts next task
+4. After each task: executor writes learnings to project memory and returns; lead dispatches fresh executor for next task
 5. When all criteria met, a reviewer agent verifies the implementation
 6. Review-implementation runs the architecture update checklist (5 questions)
 
@@ -1088,7 +1088,7 @@ All of these mean: **STOP. Follow the process.**
 - hyperpowers:codebase-investigator (for finding existing patterns)
 - hyperpowers:internet-researcher (for external documentation)
 - hyperpowers:sre-task-refinement (REQUIRED before handoff to executing-plans)
-- hyperpowers:executing-plans (handoff — lead orchestrates executor teammate after refinement approved)
+- hyperpowers:executing-plans (handoff — lead orchestrates executor subagent after refinement approved)
 
 **Call chain:**
 ```

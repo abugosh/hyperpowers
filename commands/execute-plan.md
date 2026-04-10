@@ -1,9 +1,9 @@
 ---
-description: Orchestrate plan execution via executor teammates (one per task)
+description: Orchestrate plan execution via executor subagents (one per task)
 ---
 
 Use the hyperpowers:executing-plans skill exactly as written.
 
-**Delegation model:** This command creates an agent team. The lead (main context) orchestrates while a fresh executor teammate implements each individual task with TDD. After each task, the executor writes learnings to project memory and idles out naturally; the lead spawns a fresh executor for the next task. The lead validates proposals against epic requirements and dispatches a reviewer for final verification.
+**Delegation model:** This command uses blocking subagent dispatch. The lead (main context) dispatches a fresh executor subagent per task via the Agent tool, blocking until the executor returns structured output. After each task, the executor writes learnings to project memory and returns; the lead processes the result and dispatches a fresh executor for the next task. The lead validates proposals against epic requirements and dispatches a reviewer for final verification.
 
-**Resumption:** If a team already exists from a previous session, the skill resumes from bd, team state, and project memory automatically.
+**Resumption:** If work was previously started, the skill resumes from bd state and project memory automatically.

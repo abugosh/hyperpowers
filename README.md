@@ -13,7 +13,7 @@ Reusable workflows for common development tasks:
 **Feature Development:**
 - **brainstorming** - Interactive design refinement using Socratic method
 - **writing-plans** - Create detailed implementation plans (single task or multiple tasks)
-- **executing-plans** - Lead orchestrates executor teammate for TDD implementation; validates proposals against epic
+- **executing-plans** - Lead orchestrates executor subagent for TDD implementation; validates proposals against epic
 - **review-implementation** - Verify implementation matches requirements
 - **finishing-a-development-branch** - Complete workflow for PR creation and cleanup
 - **sre-task-refinement** - Ensure all corner cases and requirements are understood (uses Opus 4.1)
@@ -50,7 +50,7 @@ Quick access to key workflows:
 
 - `/hyperpowers:brainstorm` - Start interactive design refinement
 - `/hyperpowers:write-plan` - Create detailed implementation plan
-- `/hyperpowers:execute-plan` - Orchestrate plan execution via executor teammate
+- `/hyperpowers:execute-plan` - Orchestrate plan execution via executor subagent
 - `/hyperpowers:review-implementation` - Review completed implementation
 - `/hyperpowers:refactor-diagnose` - Diagnose code/design smells and refactor targets
 - `/hyperpowers:refactor-design` - Design refactor with composition, DI, and test strategy
@@ -60,7 +60,7 @@ Quick access to key workflows:
 
 Domain-specific agents for complex tasks:
 
-- **executor** - Implements a single bd task with TDD discipline; uses native TaskCreate/TaskUpdate for TDD sub-step tracking; fresh instance spawned per task; writes project memory before completing so cross-task learnings are bridged; idles out naturally after task
+- **executor** - Implements a single bd task with TDD discipline; uses native TaskCreate/TaskUpdate for TDD sub-step tracking; fresh instance dispatched per task; writes project memory before returning so cross-task learnings are bridged; returns structured output to lead after task
 - **reviewer** - Verifies implementation against bd epic spec; returns APPROVED or GAPS FOUND verdict
 - **code-reviewer** - Review implementations against plans and coding standards
 - **codebase-investigator** - Understand current codebase state and patterns
@@ -154,7 +154,7 @@ Claude: Now I'm using the writing-plans skill to create a detailed implementatio
 
 Claude: I'm using the executing-plans skill to orchestrate execution.
 
-[Spawns fresh executor teammate per task]
+[Dispatches fresh executor subagent per task]
 [Executor implements tasks with TDD, uses TaskCreate for sub-step tracking]
 [Lead validates proposals against epic requirements]
 
