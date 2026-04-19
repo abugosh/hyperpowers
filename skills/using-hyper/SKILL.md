@@ -96,6 +96,7 @@ Before using a skill, announce it:
 ## 4. Follow Mandatory Workflows
 
 **Before writing ANY code:**
+- Use hyperpowers:consider to explore ideas when the goal isn't yet clear (optional; routes to brainstorming when ready)
 - Use hyperpowers:brainstorming to refine requirements
 - Use hyperpowers:writing-plans to create detailed plan
 - Use hyperpowers:executing-plans to orchestrate execution via executor subagent
@@ -326,6 +327,7 @@ These have LOW FREEDOM - follow the exact process:
 
 These have HIGH FREEDOM - adapt core principles to context:
 
+- hyperpowers:consider (Socratic exploration; questions and transitions adapt to user's thinking)
 - hyperpowers:brainstorming (Socratic method, but questions vary)
 - hyperpowers:managing-bd-tasks (operations adapt to project)
 - hyperpowers:sre-task-refinement (corner case analysis, but depth varies)

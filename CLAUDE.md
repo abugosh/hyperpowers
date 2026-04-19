@@ -166,11 +166,17 @@ Skills reference these rather than duplicating content.
 
 ## Core Workflows
 
+### Exploration (Pre-Brainstorm)
+
+When the goal isn't yet clear — exploring whether to build something, clarifying problem framing, or thinking through an idea before committing:
+
+1. **Consider** (`/hyperpowers:consider`) - Lightweight Socratic thinking partner. One question at a time, optional research agents on-demand, routes to /brainstorm (commit-to-build) or /intuition (structural friction) when ready. Clean exit valid if no commitment made.
+
 ### Feature Development (Greenfield)
 
 Complete workflow from idea to PR:
 
-1. **Brainstorming** (`/hyperpowers:brainstorm`) - Primary entry point. Socratic questioning to refine requirements, research codebase/external docs, produce bd epic with immutable requirements
+1. **Brainstorming** (`/hyperpowers:brainstorm`) - Primary entry point when ready to build. Socratic questioning to refine requirements, research codebase/external docs, produce bd epic with immutable requirements
 2. **SRE Task Refinement** (optional) - Uses Opus 4.1 to identify corner cases
 3. **Writing Plans** (`/hyperpowers:write-plan`) - Creates detailed bd epic with tasks
 4. **Executing Plans** (`/hyperpowers:execute-plan`) - Lead orchestrates executor subagent who implements tasks with TDD; lead validates proposals against epic
