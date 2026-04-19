@@ -181,10 +181,10 @@ Complete workflow from idea to PR:
 
 Architecture uses Brand's empirical approach — observe actual change rates through git history rather than predicting forces upfront:
 
-1. **Brainstorm** (`/hyperpowers:brainstorm`) - Primary entry point for new work. Loads architecture context (current state + change rates) when model exists
+1. **Brainstorm** (`/hyperpowers:brainstorm`) - Primary entry point for new work. Includes Architecture Impact Check (5 structural questions) and design-time friction detection that routes to /intuition when structural uncertainty arises
 2. **Build** - Implement the feature (executing-plans)
 3. **Intuition** (`/hyperpowers:intuition`) - Intermittent diagnostic. Runs 10 structured analysis passes to find tensions (complection, coupling, dependency direction, rate-of-change mismatches, workaround cascades, mechanism bypass). Resolution protocol guides per-tension decisions (accept via ADR, resolve via ADR + ticket, brainstorm for complex cases, investigate for deeper evidence)
-4. **Ponder** (`/hyperpowers:ponder`) - Architecture model ownership. Dispatches ponder subagent for all .c4 file operations (update, bootstrap, review). Called by review-implementation (architecture checklist), Intuition (model bootstrapping), and brainstorming (epic template)
+4. **Ponder** (`/hyperpowers:ponder`) - Architecture model ownership. Dispatches ponder subagent for all .c4 file operations (update, bootstrap, review). Called by review-implementation (architecture checklist) and Intuition (model bootstrapping)
 
 The architecture model (LikeC4 `.c4` files in `docs/arch/`) represents current codebase reality. ADR trail IS the architectural strategy.
 

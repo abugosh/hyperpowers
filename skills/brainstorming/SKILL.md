@@ -8,22 +8,20 @@ Turn rough ideas into validated designs stored as bd epics with immutable requir
 </skill_overview>
 
 <rigidity_level>
-HIGH FREEDOM - Adapt Socratic questioning to context, but always create immutable epic before code and only create first task (not full tree).
+HIGH FREEDOM - The 8-step order is fixed, but Socratic questioning within steps adapts to context.
 </rigidity_level>
 
 <quick_reference>
 | Step | Action | Deliverable |
 |------|--------|-------------|
-| 0 | **Mode detection gate** | THINKING or BUILDING mode |
-| 1 | Ask questions (one at a time) | Understanding (thinking: open Socratic; building: requirement-eliciting) |
-| 2 | Research (agents for codebase/internet) | Existing patterns and approaches [BUILDING only] |
-| 3 | Propose 2-3 approaches with trade-offs | Recommended option [BUILDING only] |
-| 4 | Present design in sections (200-300 words) | Validated architecture [BUILDING only] |
-| 5 | Create bd epic with IMMUTABLE requirements | Epic with anti-patterns [BUILDING only] |
-| 6 | Create ONLY first task | Ready for executing-plans [BUILDING only] |
-| 7 | Hand off to executing-plans | Lead orchestrates executor [BUILDING only] |
-
-**Key:** Step 0 gates everything. THINKING mode uses only Step 1 (open Socratic questions, no context loading). BUILDING mode uses all steps. Thinking can transition to building; reverse should not happen.
+| 1 | Ask questions (one at a time, AskUserQuestion) | Understanding of the problem and context |
+| 2 | Research codebase and external patterns; propose 2-3 approaches | Recommended option with trade-offs documented |
+| 3 | Present design in sections (200-300 words each); friction detection | Validated architecture; /intuition offered if friction detected |
+| 4 | Architecture Impact Check (5 structural questions) | Impact recorded in epic; /intuition offered if any YES |
+| 5 | Create bd epic with IMMUTABLE requirements | Epic with 7 top-level sections and anti-patterns |
+| 6 | Create ONLY first task | First bd task ready for SRE refinement |
+| 7 | Run SRE refinement | Refined first task ready for handoff |
+| 8 | Hand off to executing-plans | Lead orchestrates executor subagent |
 </quick_reference>
 
 <when_to_use>
@@ -32,6 +30,7 @@ HIGH FREEDOM - Adapt Socratic questioning to context, but always create immutabl
 - About to write code without clear requirements
 - Need to explore approaches before committing
 - Requirements exist but architecture unclear
+- /intuition Resolution Protocol routes here with a tension as context
 
 **Don't use for:**
 - Executing existing plans (use hyperpowers:executing-plans)
@@ -41,253 +40,54 @@ HIGH FREEDOM - Adapt Socratic questioning to context, but always create immutabl
 </when_to_use>
 
 <the_process>
-## 0. Mode Detection Gate
 
 **Announce:** "I'm using the brainstorming skill."
 
-**Before doing ANYTHING else** (no context loading, no agent dispatch, no architecture checks), determine the user's mode from their prompt.
-
-**Evaluate signals IN ORDER — first match wins:**
-
-**BUILDING MODE (check first — specificity wins over uncertainty):**
-- Specific bead ID referenced: 'bd-42', 'the card pool component'
-- Specific feature named: 'let's build the checkout flow'
-- Action language with specifics: 'I want to implement X', 'pull X from the backlog'
-- Architecture component referenced by name
-- Invoked by another skill (using-hyper, executing-plans) with specific task context
-
-**THINKING MODE (check second — uncertainty without specificity):**
-- Open-ended questions WITHOUT specific references: 'what should we...', 'how might we...'
-- Exploratory language: 'I'm thinking about...', 'I'm not sure whether...'
-- No specific component/bead/feature reference
-- Uncertainty expressed: 'what are the tradeoffs of...'
-
-**MIXED SIGNALS RULE:** If prompt contains BOTH uncertainty language AND specific component/feature references, resolve to **BUILDING MODE**. Rationale: specific references indicate the user knows WHAT they want to work on, even if uncertain about HOW.
-
-**AMBIGUOUS (neither set matches):** Use AskUserQuestion — 'Are you exploring an idea or ready to build something specific?'
-
-**After detection, announce the mode:**
-- THINKING: "This sounds like you're exploring — let's think through this together."
-- BUILDING: "You have something specific in mind — let me load context and help you design it."
-
 ---
 
-## 1. Understanding the Idea
+## Step 1 — Understanding the Idea
 
-### THINKING MODE path
+Ask focused questions to understand what the user wants to build and why. Use the AskUserQuestion tool — do not print questions and wait.
 
-**Do NOT:**
-- Load architecture context
-- Dispatch codebase-investigator or internet-researcher preemptively
-- Check for architecture nodes
-- Produce backlog triage or bd commands
+**Question format:**
 
-**Do:**
-- Start with ONE open Socratic question using AskUserQuestion:
-  - 'What problem are you trying to solve?' (if user described a solution without a problem)
-  - 'What are you trying to learn?' (if user expressed general uncertainty)
-  - 'What would change if you knew the answer?' (if user asked a specific question)
-  - 'What constraints are you working within?' (if user described options without context)
-- Only dispatch agents if conversation reveals need for codebase/external knowledge
-- Continue Socratic exploration as long as the user is exploring
-
-**Transition to building mode when user names a specific deliverable:**
-- 'okay let's build X', 'I want to implement Y'
-- Makes a decision: 'let's go with approach A'
-- References specific component/bead: 'the card pool needs Z'
-
-When transitioning: announce 'Switching to building mode — let me load context.' Then proceed with building mode path from the top of Step 1.
-
-**Thinking mode can end without producing an epic.** Not every brainstorm leads to building. Do NOT nudge toward building mode.
-
-### BUILDING MODE path
-
-**Check current state:**
-- Recent commits, existing docs, codebase structure
-- Dispatch `hyperpowers:codebase-investigator` for existing patterns
-- Dispatch `hyperpowers:internet-researcher` for external APIs/libraries
-
-**Check for architecture model context:**
-
-If the user's request mentions a component, module, or architecture element, check for an existing LikeC4 architecture model:
-
-```bash
-ls docs/arch/*.c4 2>/dev/null
-```
-
-If no docs/arch/*.c4 files found: skip architecture context loading, proceed with normal brainstorming.
-
-If docs/arch/*.c4 files found, LikeC4 MCP is REQUIRED. If MCP is not available, fail with: "LikeC4 MCP server is required. Run: likec4 mcp --stdio"
-
-**Load architecture context via LikeC4 MCP:**
-
-1. Find the component matching the user's reference:
-```
-# Get model overview
-read-project-summary
-
-# Search for component by name, kind, tag, or metadata
-search-element <user's component reference>
-```
-
-2. Load full component details:
-```
-# Read element with metadata
-read-element <element-id>
-# Returns: metadata (layer, stability_state), description, tags, links
-
-# Get adjacent components
-find-relationships <element-id>
-# Returns: direct and indirect relationships (blocks, relatesTo)
-```
-
-3. Find relevant ADRs:
-```bash
-ls docs/arch/adr/adr-*.md 2>/dev/null
-# Read ADRs that mention the component or its rate of change
-```
-
-4. Load data flow context from dynamic views:
-```
-# Read dynamic views that include this component
-read-view <view-id>
-# Returns: view definition with component participation in flows
-```
-
-5. If a codebase exists, dispatch `hyperpowers:codebase-investigator` to derive fresh data flow context scoped to the detected component:
-
-```
-Dispatch codebase-investigator with prompt:
-"For component [component name] with these boundaries: [adjacent components from find-relationships]
-
-1. What data enters this component? (from which upstream modules, what shape at module level?)
-2. What data exits this component? (to which downstream modules, what shape?)
-3. What data transformations happen inside? (what shape goes in vs what comes out?)
-4. What are the primary request paths that flow through this component?
-
-Reference the component's interface contract from: docs/arch/components/[name].md"
-```
-
-This dispatch is COMPONENT-SCOPED — it asks about ONE component's data flow, not the entire system. Fresh derivation catches drift without stale artifacts.
-
-If no codebase exists (greenfield/design phase), skip this dispatch entirely — the architecture model can exist before code does.
-
-6. Present the loaded context before proceeding with Socratic questioning:
-```
-Architecture context loaded for [component name]:
-- Change rate: [from git history — fast/medium/slow, commits/month]
-- Layer: [from element metadata.layer]
-- Stability state: [from element metadata.stability_state]
-- Interface contract: [from docs/arch/components/<name>.md]
-- Adjacent components: [from find-relationships — blocks and relatesTo]
-- Relevant ADRs:
-  - ADR-NNN: [title] — [key decision and consequences]
-- Data flow context:
-  - Dynamic views: [views this component participates in]
-  - Inbound: [data from upstream in views + codebase-investigator]
-  - Outbound: [data to downstream in views + codebase-investigator]
-  - Request paths: [entry points flowing through]
-
-These ADRs represent architectural decisions that may inform
-anti-patterns for this epic.
-```
-
-If stability_state is 'pre-fit': note "Component boundaries are new — see ADR-NNN for the rationale and what would cause revisiting."
-
-If the flow dispatch was skipped (no codebase), omit the codebase-derived data flow from the presentation.
-
-The architect decides during the brainstorm which architectural tradeoffs become anti-patterns in the inner-loop epic. Do NOT auto-insert ADR tradeoffs as anti-patterns.
-
-**Edge cases:**
-- No architecture model exists (no docs/arch/*.c4): skip detection, proceed with normal brainstorming
-- No codebase but model exists: skip codebase-investigator dispatch, present architectural context only
-- Multiple components referenced: load context for all matched (search-element for each)
-- Component is pre-fit: load context, note boundaries are new and may be revisited
-- No ADRs found for the component: note "No ADRs found for this component"
-- User doesn't reference any component: skip detection, proceed normally
-- LikeC4 MCP not running: fail with "LikeC4 MCP server required. Run: likec4 mcp --stdio"
-
-**REQUIRED: Use AskUserQuestion tool with scannable format**
-
-**Question Format Guidelines:**
-
-1. **1-5 questions maximum** per round (don't overwhelm)
-2. **Multiple choice preferred** with clear options
-3. **Include suggested default** marked with "(Recommended)"
-4. **Numbered for easy reference**
-5. **Separate critical from nice-to-have**
-
-**Question Structure:**
 ```
 Question: [Clear question ending with ?]
 Options:
-  A. [Option] (Recommended) - [Why this is default]
+  A. [Option] (Recommended) - [Why this is the default]
   B. [Option] - [Trade-off]
-  C. [Option] - [Trade-off]
-  D. Other (please specify)
+  C. Other (please specify)
 
-Priority: [CRITICAL | IMPORTANT | NICE_TO_HAVE]
+Priority: CRITICAL | IMPORTANT | NICE_TO_HAVE
 ```
 
-**Priority Definitions:**
-- **CRITICAL**: Must answer before proceeding (security, core functionality)
-- **IMPORTANT**: Affects design significantly but has reasonable default
-- **NICE_TO_HAVE**: Can defer to implementation phase
+**Guidelines:**
+- 1-5 questions maximum per round (don't overwhelm)
+- Multiple choice preferred; include suggested default marked "(Recommended)"
+- Fast-path: for IMPORTANT/NICE_TO_HAVE questions with good defaults, offer "Reply 'defaults' to accept all recommended options"
+- Ask one CRITICAL question at a time; group IMPORTANT/NICE_TO_HAVE together
+- Stop asking once the design space is clear — unresolved NICE_TO_HAVE questions become Open Questions in the epic
 
-**Example using AskUserQuestion:**
-```
-AskUserQuestion:
-  question: "Where should OAuth tokens be stored?"
-  header: "Token storage"
-  options:
-    - label: "httpOnly cookies (Recommended)"
-      description: "Prevents XSS token theft, industry standard"
-    - label: "sessionStorage"
-      description: "Cleared on tab close, less persistent"
-    - label: "localStorage"
-      description: "Persists across sessions, XSS vulnerable"
-```
-
-**Fast-Path Option:**
-For IMPORTANT/NICE_TO_HAVE questions with good defaults, offer:
-"Reply 'defaults' to accept all recommended options"
-
-**Do NOT just print questions and wait for "yes"** - use the AskUserQuestion tool.
-
-**CAPTURE for Design Discovery:**
-As each question is answered, record in "Key Decisions Made" table:
+**As each question is answered, record in "Key Decisions Made":**
 - Question asked
 - User's answer
-- Implication for requirements/anti-patterns
-
-This preserves the Socratic Q&A for future reference during task creation and obstacle handling.
+- Implication for requirements or anti-patterns
 
 ---
 
-## 2. Exploring Approaches
+## Step 2 — Exploring Approaches
 
-**Research first:**
-- Similar feature exists → dispatch codebase-investigator
-- New integration → dispatch internet-researcher
-- Review findings before proposing
+**Research first, propose second.** Never propose an approach before researching what already exists.
 
-**IMPORTANT: Capture research findings for Design Discovery**
-As you research, note down:
+**When to dispatch which agent:**
+- Similar feature exists in the codebase → dispatch `hyperpowers:codebase-investigator`
+- New integration or unfamiliar library → dispatch `hyperpowers:internet-researcher`
+- Both apply → dispatch both
+
+**Capture research findings** as you go:
 - Codebase findings: file paths, patterns discovered, relevant code
 - External findings: API capabilities, library constraints, doc URLs
-- These will populate the "Research Findings" section of the epic
-
-**CAPTURE for Design Discovery:**
-- **Research Deep-Dives**: For each major research topic, document:
-  - Question explored
-  - Sources consulted with key findings
-  - Conclusion and how it informed the design
-- **Dead-End Paths**: When you abandon an approach during research:
-  - Why you explored it (what made it seem viable)
-  - What investigation revealed
-  - Why abandoned (specific reason linking to requirements/constraints)
-
-Dead-end documentation prevents wasted re-investigation when obstacles arise later.
+- Dead-end paths: what was explored, why abandoned (prevents re-investigation later)
 
 **Propose 2-3 approaches with trade-offs:**
 
@@ -295,152 +95,177 @@ Dead-end documentation prevents wasted re-investigation when obstacles arise lat
 Based on [research findings], I recommend:
 
 1. **[Approach A]** (recommended)
-   - Pros: [benefits, especially "matches existing pattern"]
+   - Pros: [benefits, especially "matches existing pattern at path/to/file.ts"]
    - Cons: [drawbacks]
 
 2. **[Approach B]**
    - Pros: [benefits]
    - Cons: [drawbacks]
 
-3. **[Approach C]**
+3. **[Approach C]** (if applicable)
    - Pros: [benefits]
    - Cons: [drawbacks]
 
-I recommend option 1 because [specific reason, especially codebase consistency].
+I recommend option 1 because [specific reason linking to requirements and codebase patterns].
 ```
 
-**Lead with recommended option and explain why.**
+**Lead with the recommended option and explain why.**
 
 ---
 
-## 3. Presenting the Design
+## Step 3 — Presenting the Design
 
-**Once approach is chosen, present design in sections:**
-- Break into 200-300 word chunks
-- Ask after each: "Does this look right so far?"
-- Cover: architecture, components, data flow, error handling, testing
-- Be ready to go back and clarify
+**Once approach is chosen, present design in 200-300 word sections:**
+- Ask after each section: "Does this look right so far?"
+- Cover in order: architecture, components, data flow, error handling, testing
+- Be ready to go back and clarify any section
 
-**Show research findings:**
-- "Based on codebase investigation: auth/ uses passport.js..."
-- "API docs show OAuth flow requires..."
-- Demonstrate how design builds on existing code
+**Show research findings inline:**
+- "Based on codebase investigation: auth/ uses passport.js at auth/passport-config.ts..."
+- Demonstrate how the design builds on existing code, not around it
 
-**Dynamic view proposal:**
-If the design involves data flowing through 2+ existing architecture components, ask:
+**Design-time friction detection:**
 
-```
-AskUserQuestion:
-  question: "Does this feature create a new request path through 2+ existing components that's worth documenting?"
-  header: "Dynamic View Proposal"
-  options:
-    - label: "Yes — [describe the flow]"
-      description: "This creates a new path worth reasoning about as architecture"
-    - label: "No — uses existing paths only"
-      description: "No new cross-component flow to document"
-    - label: "Not sure"
-      description: "We can decide during implementation"
-```
-
-If yes, note the proposed dynamic view in the epic's Architecture Context section: "Proposed dynamic view: [flow name] ([component A] -> [component B] -> [component C])"
-
-**Structural friction detection:**
-If during Socratic questioning the architect expresses structural friction — uncertainty about component boundaries, coupling concerns, "something feels wrong about the structure", or difficulty deciding where responsibility belongs — suggest Intuition:
+If during design presentation the architect expresses structural friction — uncertainty about where responsibility belongs, coupling concerns, "something feels off about this structure", difficulty deciding between two component boundaries — offer /intuition explicitly:
 
 ```
-"This sounds like structural friction — uncertainty about where boundaries belong
-or how components should relate. /intuition can systematically analyze your
-architecture for tensions before you proceed with design.
+"This sounds like structural friction — uncertainty about where boundaries
+belong or how components should relate. /intuition can systematically
+examine your architecture for tensions before you commit to this design.
 
-Would you like to run /intuition first, or continue designing?"
+Would you like to run /intuition first, or continue with the current design?"
 ```
 
-Do not auto-redirect. The architect may prefer to continue the brainstorm and address structural concerns later. This is a suggestion, not a gate.
+Do NOT auto-redirect. This is a routing offer, not a gate. The architect decides.
 
-**CAPTURE for Design Discovery:**
-When user raises concerns, hesitations, or "what if" questions:
-- Record in "Open Concerns Raised" section
-- Document how each was addressed or deferred
-- Example: "What if Google OAuth is down?" → "Graceful degradation to error message"
-
-These concerns often resurface during implementation - having the resolution documented prevents re-debating.
+**When to detect friction:**
+- Architect says "something feels wrong" or "I'm not sure where this belongs"
+- Two reasonable component boundaries both seem valid with no clear winner
+- Design requires a "shim" or workaround to fit existing structure
+- Architect mentions a pattern contradiction: "we said X but now we're doing Y"
 
 ---
 
-## 4. Creating the bd Epic
+## Step 4 — Architecture Impact Check
 
-**After design validated, create epic as immutable contract:**
+After the design is validated, run the Architecture Impact Check **before** creating the epic. This is a routing mechanism — it surfaces decisions to the architect, not a gate that halts progress.
+
+**Ask these 5 structural questions against the designed solution:**
+
+1. Creates a new component/module?
+2. Changes the public interface of an existing component?
+3. Adds or removes a cross-component dependency?
+4. Creates a new request path through 2 or more components?
+5. Moves responsibility from one component to another?
+
+**Present results:**
+
+```
+## Architecture Impact Check
+
+- [ ] Creates a new component/module — [YES/NO] [brief description if YES]
+- [ ] Changes public interface of existing component — [YES/NO]
+- [ ] Adds/removes cross-component dependency — [YES/NO]
+- [ ] Creates new request path through 2+ components — [YES/NO]
+- [ ] Moves responsibility between components — [YES/NO]
+
+Result: [N] boxes checked.
+```
+
+**Routing logic:**
+- 0 boxes checked: proceed to epic creation
+- 1+ boxes checked: offer /intuition
+
+```
+"This design touches [N] architectural dimension(s). /intuition can examine
+your existing architecture for tensions this change might interact with.
+
+Would you like to run /intuition before creating the epic, or proceed?"
+```
+
+The architect decides. Record the Impact Check result (including the routing decision) in the epic's Architecture Impact section.
+
+---
+
+## Step 5 — Creating the bd Epic
+
+After design is validated and Architecture Impact Check recorded, create the epic as an immutable contract.
+
+**Anti-patterns section is required.** It prevents watering down requirements when blockers occur. Always include reasoning.
+
+**Example anti-patterns:**
+- ❌ NO localStorage tokens (security: httpOnly prevents XSS token theft)
+- ❌ NO new user model (consistency: must integrate with existing db/models/user.ts)
+- ❌ NO mocking OAuth in integration tests (validation: defeats purpose of testing real flow)
+
+**Create the epic:**
 
 ```bash
-bd create "Feature: [Feature Name]" \
+bd create "[Feature Name]" \
   --type epic \
   --priority [0-4] \
-  --design "## Requirements (IMMUTABLE)
-[What MUST be true when complete - specific, testable]
+  --design "$(cat <<'EOF'
+## Requirements (IMMUTABLE)
+[What MUST be true when complete — specific, testable]
 - Requirement 1: [concrete requirement]
 - Requirement 2: [concrete requirement]
-- Requirement 3: [concrete requirement]
 
 ## Success Criteria (MUST ALL BE TRUE)
-- [ ] Criterion 1 (objective, testable - e.g., 'Integration tests pass')
-- [ ] Criterion 2 (objective, testable - e.g., 'Works with existing User model')
+- [ ] Criterion 1 (objective, testable — e.g., 'Integration tests pass')
+- [ ] Criterion 2 (objective, testable)
 - [ ] All tests passing
 - [ ] Pre-commit hooks passing
 
 ## Anti-Patterns (FORBIDDEN)
-- ❌ [Pattern] ([reasoning] - e.g., 'NO localStorage tokens (security: httpOnly prevents XSS token theft)')
-- ❌ [Pattern] ([reasoning] - e.g., 'NO mocking OAuth in integration tests (validation: defeats purpose)')
+- ❌ [Pattern] ([reasoning] — e.g., 'NO localStorage tokens (security: httpOnly prevents XSS token theft)')
+- ❌ [Pattern] ([reasoning])
 
 ## Approach
-[2-3 paragraph summary of chosen approach]
+[2-3 paragraph summary of chosen approach and why it was selected over alternatives]
 
 ## Architecture
-[Key components, data flow, integration points]
+[Key components, data flow, integration points, affected files]
 
-## Architecture Context
-(Include this section when architecture model exists — populated from LikeC4 MCP context loaded in Step 1)
-- Component: [LikeC4 element name]
-- Change rate: [from git history — fast/medium/slow, commits/month]
-- Layer: [from metadata]
-- Stability state: [from metadata]
-- Adjacent components: [from relationships]
-- Relevant ADRs: [ADR-NNN: title]
-- Key data flows: [from dynamic views involving this component]
-- Proposed dynamic view: [if new request path identified in Step 3, else 'None']
+## Architecture Impact
+(Result of Step 4 Architecture Impact Check)
 
-## Architecture Update Checklist
-After inner-loop work completes, review-implementation runs these 5 questions:
-1. Did this work change a component's public interface?
-2. Did this work add or remove a dependency between components?
-3. Did this work create a new component or remove an existing one?
-4. Did this work move responsibility from one component to another?
-5. Did this work create a new request path through 2+ components?
+- [ ] Creates a new component/module — [YES/NO]
+- [ ] Changes public interface of existing component — [YES/NO]
+- [ ] Adds/removes cross-component dependency — [YES/NO]
+- [ ] Creates new request path through 2+ components — [YES/NO]
+- [ ] Moves responsibility between components — [YES/NO]
 
-If any yes: invoke /ponder update with description of what changed.
+Result: [N] boxes checked. /intuition [was offered and run / was offered and deferred / was not offered (0 checks)].
 
 ## Design Rationale
+
 ### Problem
-[1-2 sentences: what problem this solves, why status quo insufficient]
+[1-2 sentences: what problem this solves, why the status quo is insufficient]
 
 ### Research Findings
 **Codebase:**
-- [file.ts:line] - [what it does, why relevant]
+- [file.ts:line] — [what it does, why relevant]
 - [pattern discovered, implications]
 
 **External:**
-- [API/library] - [key capability, constraint discovered]
-- [doc URL] - [relevant guidance found]
+- [API/library] — [key capability or constraint discovered]
+- None because [specific reason — e.g., this is a skill-framework refactor with no external dependencies]
+
+### Key Decisions Made
+
+| Question | User Answer | Implication |
+|----------|-------------|-------------|
+| [Socratic question asked] | [User's response] | [How this shapes requirements or anti-patterns] |
 
 ### Approaches Considered
 
-#### 1. [Chosen Approach] ✓
+#### 1. [Chosen Approach] (chosen)
 
 **What it is:** [2-3 sentence description]
 
 **Investigation:**
-- Researched [X] - found [Y]
-- Tested [pattern] - worked because [Z]
-- Referenced [file:line] - shows [pattern]
+- Researched [X] — found [Y]
+- Referenced [file:line] — shows [pattern]
 
 **Pros:**
 - [benefit with evidence]
@@ -450,15 +275,14 @@ If any yes: invoke /ponder update with description of what changed.
 
 **Chosen because:** [specific reasoning linking to requirements and codebase patterns]
 
-#### 2. [Rejected Approach A] ❌
+#### 2. [Rejected Approach A] (rejected)
 
 **What it is:** [2-3 sentence description]
 
-**Why we looked at this:** [what made this seem viable initially]
+**Why explored:** [what made this seem viable initially]
 
 **Investigation:**
-- Researched [X] - found [Y]
-- [dead-end discovered]
+- [what was researched or tried]
 
 **Pros:**
 - [benefits it would have had]
@@ -466,15 +290,15 @@ If any yes: invoke /ponder update with description of what changed.
 **Cons:**
 - [fatal flaw or significant drawback]
 
-**⚠️ REJECTED BECAUSE:** [specific reasoning, linking to anti-patterns or requirements]
+**REJECTED BECAUSE:** [specific reasoning, linking to anti-patterns or requirements]
 
-**🚫 DO NOT REVISIT UNLESS:** [specific condition that would change this decision]
+**DO NOT REVISIT UNLESS:** [specific condition that would change this decision]
 
-#### 3. [Rejected Approach B] ❌ (if applicable)
+#### 3. [Rejected Approach B] (rejected, if applicable)
 
 **What it is:** [2-3 sentence description]
 
-**Why we looked at this:** [what made this seem viable initially]
+**Why explored:** [what made this seem viable]
 
 **Investigation:**
 - [what was researched]
@@ -483,86 +307,47 @@ If any yes: invoke /ponder update with description of what changed.
 - [benefits it would have had]
 
 **Cons:**
-- [fatal flaw or significant drawback]
+- [fatal flaw]
 
-**⚠️ REJECTED BECAUSE:** [specific reasoning]
+**REJECTED BECAUSE:** [specific reasoning]
 
-**🚫 DO NOT REVISIT UNLESS:** [specific condition that would change this decision]
+**DO NOT REVISIT UNLESS:** [specific condition]
 
 ### Scope Boundaries
+
 **In scope:**
 - [explicit inclusions]
 
-**Out of scope (deferred/never):**
-- [explicit exclusions with reasoning]
+**Out of scope:**
+- [explicit exclusions with reasoning — e.g., "GitHub OAuth: deferred to future epic; single provider is sufficient now"]
+- None because [specific reason if nothing is explicitly excluded]
 
 ### Open Questions
 - [uncertainties to resolve during implementation]
 - [decisions deferred to execution phase]
-
-## Design Discovery (Reference Context)
-
-> This section preserves detailed context from brainstorming for use during task creation.
-> Reference this when defining tasks, handling obstacles, or validating implementation decisions.
-
-### Key Decisions Made
-
-| Question | User Answer | Implication |
-|----------|-------------|-------------|
-| [Socratic question asked] | [User's response] | [How this shapes requirements/anti-patterns] |
-
-### Research Deep-Dives
-
-#### [Topic 1: e.g., OAuth Library Selection]
-**Question explored:** [What question drove this research?]
-**Sources consulted:**
-- [Source 1] - [key finding]
-- [Source 2] - [key finding]
-
-**Findings:**
-- [Detailed finding 1]
-- [Detailed finding 2]
-
-**Conclusion:** [How this informed the design]
-
-### Dead-End Paths
-
-#### [Path: e.g., Custom JWT Implementation]
-**Why explored:** [What made this seem worth investigating]
-**Investigation:**
-- [What was researched/tried]
-
-**Why abandoned:** [Specific reason - links to requirements/anti-patterns]
-
-### Open Concerns Raised
-
-- [User concern 1] → [How it was addressed or deferred]
-- [User concern 2] → [How it was addressed or deferred]"
+- None because [specific reason if all questions were resolved during brainstorm]
+EOF
+)"
 ```
 
-**Critical:** Anti-patterns section prevents watering down requirements when blockers occur. Always include reasoning.
-
-**Example anti-patterns:**
-- ❌ NO localStorage tokens (security: httpOnly prevents XSS token theft)
-- ❌ NO new user model (consistency: must integrate with existing db/models/user.ts)
-- ❌ NO mocking OAuth in integration tests (validation: defeats purpose of testing real flow)
-- ❌ NO TODO stubs for core authentication flow (completeness: core flow must be implemented)
+**Every subsection that could reasonably be empty MUST have a "None because [grounded reason]" entry.** Bare "None" or "N/A" is forbidden — it enables skip-thinking rationalization.
 
 ---
 
-## 5. Creating ONLY First Task
+## Step 6 — Creating ONLY the First Task
 
-**Create one task, not full tree:**
+Create one task, not a full tree.
 
 ```bash
 bd create "Task 1: [Specific Deliverable]" \
   --type feature \
   --priority [match-epic] \
-  --design "## Goal
-[What this task delivers - one clear outcome]
+  --design "$(cat <<'EOF'
+## Goal
+[What this task delivers — one clear outcome]
 
 ## Implementation
-[Detailed step-by-step for this task]
+[Detailed step-by-step for this task only]
 
 1. Study existing code
    [Point to 2-3 similar implementations: file.ts:line]
@@ -571,60 +356,63 @@ bd create "Task 1: [Specific Deliverable]" \
    [Specific test cases for this task]
 
 3. Implementation checklist
-   - [ ] file.ts:line - function_name() - [exactly what it does]
-   - [ ] test.ts:line - test_name() - [what scenario it tests]
+   - [ ] file.ts:line — function_name() — [exactly what it does]
+   - [ ] test.ts:line — test_name() — [what scenario it tests]
 
 ## Success Criteria
 - [ ] [Specific, measurable outcome]
 - [ ] Tests passing
-- [ ] Pre-commit hooks passing"
+- [ ] Pre-commit hooks passing
+EOF
+)"
 
-bd dep add bd-2 bd-1 --type parent-child  # Link to epic
+bd dep add bd-2 bd-1 --type parent-child  # Link task to epic
 ```
 
 **Why only one task?**
-- Subsequent tasks created iteratively by executing-plans
-- Each task reflects learnings from previous
-- Avoids brittle task trees that break when assumptions change
+- Subsequent tasks are created iteratively by executing-plans as each task completes
+- Each task reflects learnings from the previous one
+- Avoids brittle task trees that break when initial assumptions prove wrong
 
 ---
 
-## 6. SRE Refinement and Handoff
+## Step 7 — SRE Refinement
 
-After epic and first task created:
-
-**REQUIRED: Run SRE refinement before handoff**
+**REQUIRED. Do not skip.**
 
 ```
 Use Skill tool: hyperpowers:sre-task-refinement
 ```
 
-SRE refinement will:
-- Apply 7-category corner-case analysis (Opus 4.1)
-- Strengthen success criteria
-- Identify edge cases and failure modes
-- Ensure task is ready for implementation
+SRE refinement applies an 8-category corner-case analysis to the first task: granularity, implementability, success criteria quality, dependency structure, safety standards, edge cases, red flags, and test meaningfulness. It strengthens success criteria and identifies failure modes.
 
-**Do NOT skip SRE refinement.** The first task sets the pattern for the entire epic.
+The first task sets the pattern for the entire epic. Skipping refinement on "feels heavy" grounds is exactly the rationalization the rule guards against.
 
-**After refinement approved, present handoff:**
+---
+
+## Step 8 — Handoff to Executing-Plans
+
+After refinement approved, present the handoff:
 
 ```
-"Epic bd-1 is ready with immutable requirements and success criteria.
-First task bd-2 has been refined and is ready to execute.
+"Epic [bd-N] is ready with immutable requirements and success criteria.
+First task [bd-M] has been refined and is ready to execute.
 
 Ready to start implementation? I'll use executing-plans to orchestrate execution.
 
 The executing-plans skill will:
 1. Dispatch a fresh executor subagent for each individual task
-2. The executor implements the task with TDD (red-green-refactor-commit), tracks sub-steps via TaskCreate/TaskUpdate
+2. The executor implements the task with TDD (red-green-refactor-commit), tracks
+   sub-steps via TaskCreate/TaskUpdate
 3. I validate each proposed next task against epic requirements and anti-patterns
-4. After each task: executor writes learnings to project memory and returns; lead dispatches fresh executor for next task
-5. When all criteria met, a reviewer agent verifies the implementation
-6. Review-implementation runs the architecture update checklist (5 questions)
+4. After each task: executor writes learnings to project memory and returns;
+   lead dispatches fresh executor for next task
+5. When all criteria met, a reviewer agent verifies the implementation against the epic spec
 
-This approach prevents context exhaustion (bounded per-task executor lifetime) while preserving learnings via project memory — no manual /clear cycling needed."
+This approach prevents context exhaustion (bounded per-task executor lifetime) while
+preserving learnings via project memory — no manual /clear cycling needed."
 ```
+
 </the_process>
 
 <examples>
@@ -645,7 +433,6 @@ Claude (without brainstorming):
 - Proposes Auth0 when passport.js already exists in codebase
 - Creates inconsistent architecture (two auth systems)
 - Wastes time implementing when partial solution exists
-- Doesn't leverage existing code
 - User has to redirect to existing pattern
 </why_it_fails>
 
@@ -675,10 +462,10 @@ Claude (without brainstorming):
    ```
 
 **What you gain:**
-- Leverages existing code (faster)
+- Leverages existing code (faster implementation)
 - Consistent architecture (maintainable)
-- Research informs design (correct)
-- User sees you understand codebase (trust)
+- Research informs design (correct assumptions)
+- User sees you understand the codebase (trust)
 </correction>
 </example>
 
@@ -705,20 +492,19 @@ bd create "Task 6: Write integration tests"
 <why_it_fails>
 - Assumptions about implementation prove wrong
 - Task tree becomes incorrect as you learn
-- Wastes time updating/deleting wrong tasks
+- Wastes time updating or deleting wrong tasks
 - Rigid plan fights with reality
-- Context switching between fixing plan and implementing
 </why_it_fails>
 
 <correction>
 **Correct approach (iterative):**
 
 ```bash
-bd create "Epic: Add OAuth" [with immutable requirements]
+bd create "Epic: Add OAuth" # with immutable requirements
 bd create "Task 1: Configure OAuth provider"
 
 # Execute Task 1
-# Learn: OAuth library handles refresh, middleware exists
+# Learn: OAuth library handles refresh; middleware already exists
 
 bd create "Task 2: Integrate with existing middleware"
 # [Created AFTER learning from Task 1]
@@ -731,10 +517,9 @@ bd create "Task 3: Add OAuth button to login UI"
 ```
 
 **What you gain:**
-- Tasks reflect current reality (accurate)
-- No wasted time fixing wrong plans (efficient)
+- Tasks reflect current reality (accurate plan)
+- No wasted time fixing wrong tasks (efficient)
 - Each task informed by previous learnings (adaptive)
-- Plan evolves with understanding (flexible)
 - Epic requirements stay immutable (contract preserved)
 </correction>
 </example>
@@ -795,117 +580,37 @@ bd create "Epic: OAuth Authentication" --design "
 
 ## Approach
 Extend existing passport.js setup at auth/passport-config.ts with Google OAuth2 strategy.
-Use passport-google-oauth20 library. Store tokens in httpOnly cookies via express-session.
-Integrate with existing User model for profile storage.
 
 ## Architecture
-- auth/strategies/google.ts - New OAuth strategy
-- auth/passport-config.ts - Register strategy (existing)
-- db/models/user.ts - Add googleId field (existing)
-- routes/auth.ts - OAuth callback routes
+- auth/strategies/google.ts — New OAuth strategy
+- auth/passport-config.ts — Register strategy (existing)
+- db/models/user.ts — Add googleId field (existing)
+- routes/auth.ts — OAuth callback routes
+
+## Architecture Impact
+- [ ] Creates a new component/module — NO
+- [x] Changes public interface of existing component — YES (User model: add googleId field)
+- [ ] Adds/removes cross-component dependency — NO
+- [ ] Creates new request path through 2+ components — NO
+- [ ] Moves responsibility between components — NO
+
+Result: 1 box checked. /intuition was offered and deferred (user chose to proceed).
 
 ## Design Rationale
+
 ### Problem
-Users currently have no SSO option - must create accounts manually.
-Manual signup has 40% abandonment rate. Google OAuth reduces friction.
+Users must create accounts manually. Manual signup has 40% abandonment rate.
+Google OAuth reduces friction and is the most-requested auth feature.
 
 ### Research Findings
 **Codebase:**
-- auth/passport-config.ts:1-50 - Existing passport setup, uses session-based auth
-- auth/strategies/local.ts:1-30 - Pattern for adding strategies
-- db/models/user.ts:1-80 - User model, already has email field
+- auth/passport-config.ts:1-50 — Existing passport setup, uses session-based auth
+- auth/strategies/local.ts:1-30 — Pattern for adding strategies
+- db/models/user.ts:1-80 — User model, already has email field
 
 **External:**
-- passport-google-oauth20 - Official Google strategy, 2M weekly downloads
-- Google OAuth2 docs - Requires client ID, callback URL, scopes
-
-### Approaches Considered
-
-#### 1. Extend passport.js with google-oauth20 ✓
-
-**What it is:** Add passport-google-oauth20 strategy to existing passport.js setup. Reuses session-based auth, follows existing pattern in auth/strategies/.
-
-**Investigation:**
-- Reviewed auth/passport-config.ts - existing passport setup with session serialization
-- Checked auth/strategies/local.ts:1-30 - pattern for adding strategies
-- passport-google-oauth20 npm - 2M weekly downloads, actively maintained
-
-**Pros:**
-- Matches existing codebase pattern (auth/strategies/)
-- Session handling already works (express-session configured)
-- Well-documented, large community
-
-**Cons:**
-- Adds npm dependency
-
-**Chosen because:** Consistent with auth/strategies/local.ts pattern, minimal changes to existing code
-
-#### 2. Custom JWT-based OAuth ❌
-
-**What it is:** Implement OAuth flow from scratch using JWTs instead of sessions. Would replace existing session-based auth with stateless tokens.
-
-**Why we looked at this:** User mentioned 'maybe we should use JWTs' - seemed potentially simpler
-
-**Investigation:**
-- Counted files using req.session - 15 files would need rewriting
-- Reviewed existing session middleware - deeply integrated
-- Researched JWT security best practices - significant complexity
-
-**Pros:**
-- No new dependencies
-- Stateless (scalability benefit)
-
-**Cons:**
-- Would require rewriting 15 files using req.session
-- Security complexity (token invalidation, refresh logic)
-- Breaks existing session pattern
-
-**⚠️ REJECTED BECAUSE:** Scope creep - OAuth feature shouldn't require rewriting existing auth system. 15 files affected is too much risk.
-
-**🚫 DO NOT REVISIT UNLESS:** We're already rewriting the entire auth system in a separate epic.
-
-#### 3. Auth0 integration ❌
-
-**What it is:** Use Auth0 managed service for OAuth. Would handle tokens, sessions, and multiple providers.
-
-**Why we looked at this:** Third-party service might reduce implementation complexity
-
-**Investigation:**
-- Evaluated Auth0 free tier - 7000 MAU limit
-- Reviewed Auth0 SDK - different auth model than current codebase
-- Estimated migration effort - significant test rewriting
-
-**Pros:**
-- Managed service (less code to maintain)
-- Supports multiple providers out of box
-
-**Cons:**
-- External dependency, cost at scale
-- Different auth model than existing code
-- Test suite would need significant changes
-
-**⚠️ REJECTED BECAUSE:** Overkill for single OAuth provider. Introduces new pattern inconsistent with codebase.
-
-**🚫 DO NOT REVISIT UNLESS:** We need 3+ OAuth providers AND are okay with vendor dependency.
-
-### Scope Boundaries
-**In scope:**
-- Google OAuth login/signup
-- Token storage in httpOnly cookies
-- Profile sync with User model
-
-**Out of scope (deferred/never):**
-- Other OAuth providers (GitHub, Facebook) - deferred to future epic
-- Account linking (connect Google to existing account) - deferred
-- Custom OAuth scopes beyond profile/email - not needed
-
-### Open Questions
-- Should failed OAuth create partial user record? (decide during implementation)
-- Token refresh: silent vs prompt? (default to silent, user can configure)
-
-## Design Discovery (Reference Context)
-
-> Detailed context from brainstorming for task creation and obstacle handling.
+- passport-google-oauth20 — Official Google strategy, 2M weekly downloads
+- Google OAuth2 docs — Requires client ID, callback URL, scopes
 
 ### Key Decisions Made
 
@@ -916,87 +621,106 @@ Manual signup has 40% abandonment rate. Google OAuth reduces friction.
 | Session duration? | 24h inactive timeout | Need refresh token logic |
 | What if Google OAuth is down? | Graceful error message | No fallback auth required |
 
-### Research Deep-Dives
+### Approaches Considered
 
-#### OAuth Library Selection
-**Question explored:** Which OAuth library to use?
-**Sources consulted:**
-- passport-google-oauth20 npm - 2M weekly downloads, well-maintained
-- google-auth-library npm - official but lower-level
-- Stack Overflow threads on passport vs alternatives
+#### 1. Extend passport.js with google-oauth20 (chosen)
 
-**Findings:**
-- passport-google-oauth20 matches existing passport setup at auth/passport-config.ts
-- google-auth-library would require rewriting session handling
-- Passport has built-in session serialization
+**What it is:** Add passport-google-oauth20 strategy to existing passport.js setup.
 
-**Conclusion:** Use passport-google-oauth20 for consistency with existing auth/strategies/ pattern
+**Investigation:**
+- Reviewed auth/passport-config.ts — existing passport setup with session serialization
+- Checked auth/strategies/local.ts:1-30 — shows pattern for adding strategies
+- passport-google-oauth20 npm — 2M weekly downloads, actively maintained
 
-#### Token Storage Strategy
-**Question explored:** Where to store OAuth tokens?
-**Sources consulted:**
-- OWASP token storage guidelines
-- Auth0 best practices article
-- Existing codebase pattern at auth/session.ts
+**Pros:**
+- Matches existing codebase pattern (auth/strategies/)
+- Session handling already works (express-session configured)
 
-**Findings:**
-- localStorage vulnerable to XSS (OWASP warns against)
-- httpOnly cookies prevent JS access
-- Existing session uses express-session with cookies
+**Cons:**
+- Adds one npm dependency
 
-**Conclusion:** httpOnly cookies, documented as anti-pattern to use localStorage
+**Chosen because:** Consistent with auth/strategies/local.ts pattern; minimal delta to existing code.
 
-### Dead-End Paths
+#### 2. Custom JWT-based OAuth (rejected)
 
-#### Custom JWT Implementation
+**What it is:** Implement OAuth flow from scratch using JWTs instead of sessions.
+
 **Why explored:** User mentioned 'maybe we should use JWTs'
+
 **Investigation:**
 - Counted 15 files using req.session pattern
 - Estimated 2 weeks migration effort
-- Identified security complexity with token refresh
 
-**Why abandoned:** Scope creep - OAuth feature shouldn't rewrite auth system
+**Pros:**
+- No new npm dependency
+- Stateless (scalability benefit at larger scale)
 
-#### Auth0 Integration
-**Why explored:** Third-party service might be simpler
+**Cons:**
+- Would require rewriting 15 files using req.session
+- Security complexity (token invalidation, refresh logic)
+
+**REJECTED BECAUSE:** Scope creep — OAuth feature should not require rewriting the auth system.
+
+**DO NOT REVISIT UNLESS:** We are already rewriting the entire auth system in a separate epic.
+
+#### 3. Auth0 integration (rejected)
+
+**What it is:** Use Auth0 managed service for OAuth.
+
+**Why explored:** Third-party service might reduce implementation complexity.
+
 **Investigation:**
-- Evaluated Auth0 free tier limits
-- Reviewed SDK integration requirements
-- Estimated test rewriting effort
+- Evaluated Auth0 free tier — 7000 MAU limit
+- Reviewed Auth0 SDK — different auth model than current codebase
 
-**Why abandoned:** Overkill for single provider, introduces vendor dependency
+**Pros:**
+- Managed service (less code to maintain)
 
-### Open Concerns Raised
+**Cons:**
+- External vendor dependency, cost at scale
+- Inconsistent with existing codebase auth model
 
-- 'What if Google OAuth is down?' → Graceful degradation to error message, no fallback auth
-- 'Should we support account linking later?' → Deferred to future epic, out of scope for now
-- 'Token refresh - silent or prompt?' → Default silent, can configure later
+**REJECTED BECAUSE:** Overkill for single OAuth provider; introduces vendor dependency.
+
+**DO NOT REVISIT UNLESS:** We need 3+ OAuth providers AND are comfortable with vendor dependency.
+
+### Scope Boundaries
+
+**In scope:**
+- Google OAuth login and signup
+- Token storage in httpOnly cookies
+- Profile sync with User model
+
+**Out of scope:**
+- Other OAuth providers (GitHub, Facebook) — deferred to future epic
+- Account linking (connect Google to existing account) — deferred
+- Custom OAuth scopes beyond profile/email — not needed now
+
+### Open Questions
+- None because all questions were resolved during brainstorm; decisions are in Key Decisions Made above.
 "
 ```
 
 **What you gain:**
 - Requirements concrete and specific (testable)
 - Forbidden patterns explicit with reasoning (prevents shortcuts)
-- Agent can't rationalize away requirements (contract enforced)
-- Design rationale preserves context for future tasks
 - Approaches considered show why alternatives were rejected with DO NOT REVISIT conditions
-- Design Discovery preserves full Q&A, research, and dead-ends for obstacle handling
-- Open questions explicitly tracked for implementation decisions
+- Open Questions section explicitly acknowledges nothing was deferred (grounded None)
 </correction>
 </example>
 
 </examples>
 
 <key_principles>
-- **One question at a time** - Don't overwhelm
-- **Multiple choice preferred** - Easier to answer when possible
-- **Delegate research** - Use codebase-investigator and internet-researcher agents
-- **YAGNI ruthlessly** - Remove unnecessary features from all designs
-- **Explore alternatives** - Propose 2-3 approaches before settling
-- **Incremental validation** - Present design in sections, validate each
-- **Epic is contract** - Requirements immutable, tasks adapt
-- **Anti-patterns prevent shortcuts** - Explicit forbidden patterns stop rationalization
-- **One task only** - Subsequent tasks created iteratively (not upfront)
+- **One question at a time** — Don't overwhelm; group only IMPORTANT/NICE_TO_HAVE
+- **Multiple choice preferred** — Easier to answer; include recommended default
+- **Delegate research** — Use codebase-investigator and internet-researcher agents
+- **YAGNI ruthlessly** — Remove unnecessary features from all designs
+- **Explore alternatives** — Propose 2-3 approaches before settling
+- **Incremental validation** — Present design in sections, validate each
+- **Epic is contract** — Requirements immutable, tasks adapt
+- **Anti-patterns prevent shortcuts** — Explicit forbidden patterns stop rationalization under pressure
+- **One task only** — Subsequent tasks created iteratively, not upfront
 </key_principles>
 
 <research_agents>
@@ -1023,107 +747,103 @@ Manual signup has 40% abandonment rate. Google OAuth reduces friction.
 <critical_rules>
 ## Rules That Have No Exceptions
 
-1. **Mode detection FIRST** → Before ANY context loading, agent dispatch, or architecture checks
-2. **Thinking mode = no context loading** → No bd commands, no agent dispatch, no architecture checks until conversation reveals need
-3. **Thinking mode can end without epic** → Not every brainstorm produces artifacts. Do NOT nudge toward building.
-4. **Building mode checks specificity first** → Specific references override uncertainty language (mixed signals = building)
-5. **Use AskUserQuestion tool** → Don't just print questions and wait
-6. **Research BEFORE proposing** → Use agents to understand context [BUILDING only]
-7. **Propose 2-3 approaches** → Don't jump to single solution [BUILDING only]
-8. **Epic requirements IMMUTABLE** → Tasks adapt, requirements don't
-9. **Include anti-patterns section** → Prevents watering down requirements
-10. **Create ONLY first task** → Subsequent tasks created iteratively
-11. **Run SRE refinement** → Before handoff to executing-plans
+1. **Use AskUserQuestion tool** → Don't print questions and wait for answers
+2. **Research BEFORE proposing** → Use agents to understand context before suggesting approaches
+3. **Propose 2-3 approaches with trade-offs** → Don't jump to a single solution
+4. **Epic requirements IMMUTABLE** → Tasks adapt, requirements don't
+5. **Include anti-patterns section** → Prevents watering down requirements when blockers occur
+6. **Create ONLY first task** → Subsequent tasks created iteratively as you learn
+7. **Run SRE refinement before handoff** → The first task sets the pattern for the entire epic
+8. **Offer /intuition when design-time friction detected** → When architect expresses structural uncertainty, shim language, pattern contradiction, or difficulty assigning responsibility
+9. **Architecture Impact Check required before epic finalization** → All 5 questions against the designed solution; record result in epic; offer /intuition if any YES
+10. **Subsection 'None' requires grounded justification** → "None because [specific reason]" is required; bare "None" or "N/A" enables skip-thinking rationalization
 
 ## Common Excuses
 
 All of these mean: **STOP. Follow the process.**
 
-- "Let me just quickly check the codebase first" (Mode detection FIRST — no context loading in thinking mode)
-- "The user probably wants to build something" (Check signals — uncertainty without specifics = thinking mode)
-- "I should load architecture context to give a better answer" (Thinking mode is Socratic exploration, not backlog triage)
-- "This open question implies a feature request" (Open questions = thinking mode, not building mode)
 - "Requirements obvious, don't need questions" (Questions reveal hidden complexity)
-- "I know this pattern, don't need research" (Research might show better way)
-- "Can plan all tasks upfront" (Plans become brittle, tasks adapt as you learn)
-- "Anti-patterns section overkill" (Prevents rationalization under pressure)
-- "Epic can evolve" (Requirements contract, tasks evolve)
-- "Can just print questions" (Use AskUserQuestion tool - it's more interactive)
-- "SRE refinement overkill for first task" (First task sets pattern for entire epic)
-- "User said yes, design is done" (Still need SRE refinement before execution)
+- "I know this pattern, don't need research" (Research might show a better way or a conflict)
+- "Can plan all tasks upfront" (Plans become brittle; tasks adapt as you learn)
+- "Anti-patterns section is overkill" (Prevents rationalization under pressure)
+- "Epic can evolve" (Requirements are a contract; tasks evolve, requirements don't)
+- "Can just print questions" (Use AskUserQuestion tool — it's more interactive and scannable)
+- "SRE refinement is overkill for this task" (First task sets the pattern for the entire epic)
+- "User said yes, design is done" (Still need Architecture Impact Check and SRE refinement)
+- "Only one box checked, /intuition not worth it" (Offer it; the architect decides)
+- "'None' is fine here" (Bare 'None' enables skip-thinking; write the reason)
 </critical_rules>
 
 <verification_checklist>
-**Step 0 (both modes):**
-- [ ] Mode detection performed BEFORE any context loading or agent dispatch
-- [ ] Mode announced to user (thinking or building)
-- [ ] If ambiguous, asked user with AskUserQuestion
+Before handing off to executing-plans, confirm:
 
-**Thinking mode exit checklist (if session ended in thinking mode):**
-- [ ] No bd commands were run
-- [ ] No agents were dispatched preemptively
-- [ ] Open Socratic questions were asked (not requirement-eliciting)
-- [ ] User was NOT nudged toward building mode
-
-**Building mode checklist (before handing off to executing-plans):**
-- [ ] Used AskUserQuestion tool for clarifying questions (one at a time)
+- [ ] Used AskUserQuestion tool for all clarifying questions (one at a time)
 - [ ] Researched codebase patterns (if applicable)
-- [ ] Researched external docs/libraries (if applicable)
+- [ ] Researched external docs or libraries (if applicable)
 - [ ] Proposed 2-3 approaches with trade-offs
 - [ ] Presented design in sections, validated each
-- [ ] Created bd epic with all sections (requirements, success criteria, anti-patterns, approach, architecture, design rationale)
+- [ ] Design-time friction check done in Step 3 (offered /intuition if friction present)
+- [ ] Architecture Impact Check done in Step 4 (all 5 questions against designed solution)
+- [ ] Created bd epic with all 7 sections (Requirements, Success Criteria, Anti-Patterns, Approach, Architecture, Architecture Impact, Design Rationale)
+- [ ] Design Rationale has all 6 subsections (Problem, Research Findings, Key Decisions Made, Approaches Considered, Scope Boundaries, Open Questions)
+- [ ] Every empty-state subsection has "None because [specific reason]" (not bare "None")
 - [ ] Requirements are IMMUTABLE and specific
 - [ ] Anti-patterns include reasoning (not just "NO X" but "NO X (reason: Y)")
-- [ ] Design Rationale complete: problem, research findings, approaches considered, scope boundaries, open questions
 - [ ] Created ONLY first task (not full tree)
 - [ ] First task has detailed implementation checklist
 - [ ] Ran SRE refinement on first task (hyperpowers:sre-task-refinement)
 - [ ] Announced handoff to executing-plans after refinement approved
 
-**Can't check all boxes?** Return to process and complete missing steps.
+**Can't check all boxes?** Return to the process and complete the missing steps.
 </verification_checklist>
 
 <integration>
 **This skill calls:**
-- hyperpowers:codebase-investigator (for finding existing patterns)
-- hyperpowers:internet-researcher (for external documentation)
-- hyperpowers:sre-task-refinement (REQUIRED before handoff to executing-plans)
-- hyperpowers:executing-plans (handoff — lead orchestrates executor subagent after refinement approved)
+- hyperpowers:codebase-investigator (Step 2: finding existing patterns)
+- hyperpowers:internet-researcher (Step 2: external documentation)
+- hyperpowers:sre-task-refinement (Step 7: REQUIRED before handoff to executing-plans)
+- hyperpowers:executing-plans (Step 8: handoff — lead orchestrates executor subagent after refinement approved)
+
+**BIDIRECTIONAL integration with /intuition:**
+- brainstorm → /intuition (two paths):
+  - Step 3: design-time friction detected → offer /intuition before committing to design
+  - Step 4: Architecture Impact Check returns 1+ YES → offer /intuition before creating epic
+- /intuition → brainstorm (Resolution Protocol Step 4):
+  - "Brainstorm" resolution option hands off with tension as context
+  - The brainstorm produces a design that resolves the tension, resulting in an epic
 
 **Call chain:**
 ```
-ARCHITECTURE CYCLE:
-  /brainstorm → build → update model
-              ↕
-  /intuition → find tensions → resolve → update model
-
-INNER LOOP:
+FEATURE DEVELOPMENT:
   brainstorming → sre-task-refinement → executing-plans
+
+ARCHITECTURE CYCLE:
+  /brainstorm → build → /intuition (health check or tension resolution)
+              ↕
+  /intuition → find tensions → Step 4 Resolution Protocol
+               → "Brainstorm" → /brainstorm (with tension as context)
 ```
 
 **This skill is called by:**
+- User requests for new features or designs
 - hyperpowers:using-hyper (mandatory before writing code)
-- User requests for new features
+- /intuition Step 4 Resolution Protocol ("Brainstorm" option)
 - Beginning of greenfield development
-- Architecture tension resolution (via /intuition)
 
 **Agents used:**
-- codebase-investigator (understand existing code)
-- internet-researcher (find external documentation)
+- codebase-investigator (understand existing code patterns)
+- internet-researcher (find external documentation and library options)
 
 **Tools required:**
-- AskUserQuestion (for all clarifying questions)
+- AskUserQuestion (for all clarifying questions — required by Rule 1)
 </integration>
 
 <resources>
-**Detailed guides:**
-- [bd epic template examples](resources/epic-templates.md)
-- [Socratic questioning patterns](resources/questioning-patterns.md)
-- [Anti-pattern examples by domain](resources/anti-patterns.md)
-
 **When stuck:**
-- User gives vague answer → Ask follow-up multiple choice question
+- User gives vague answer → Ask a follow-up multiple choice question with a recommended default
 - Research yields nothing → Ask user for direction explicitly
-- Too many approaches → Narrow to top 2-3, explain why others eliminated
-- User changes requirements mid-design → Acknowledge, return to understanding phase
+- Too many approaches → Narrow to top 2-3; explain why others were eliminated
+- User changes requirements mid-design → Acknowledge, return to Step 1
+- Architecture Impact Check results in debate → Offer /intuition; the architect decides
+- "None" feels right for a subsection → Write "None because [specific reason]"; this is load-bearing
 </resources>
