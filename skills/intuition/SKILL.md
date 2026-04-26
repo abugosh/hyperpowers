@@ -10,13 +10,13 @@ When no architecture model exists, run a codebase-only audit to find tensions in
 </skill_overview>
 
 <rigidity_level>
-RIGID - Same 10 analysis passes every time (Passes 1-10), same output format, same self-check procedure. No adaptation, no shortcuts, no skipping passes. The analytical rigor IS the value.
+RIGID - Same 10 analysis passes every time (Passes 1-10), same output format, same self-check procedure. No adaptation, no shortcuts, no skipping passes. The analytical rigor IS the value. When no architecture model exists, model-level analysis produces "evidence insufficient — codebase only" outputs (not skipped) — the audit still finds real tensions.
 </rigidity_level>
 
 <quick_reference>
 | Step | Action | Deliverable |
 |------|--------|-------------|
-| 0 | Mode gate: check for architecture model, load ADRs (with age check) | Mode 1 (model + codebase) or Mode 2 (codebase only) |
+| 0 | Detect model (load if present); load ADRs (with age check); accept optional prose focus | Evidence sources identified; prose focus recorded if provided |
 | 1 | Gather evidence (codebase-investigator) | Module structure, imports, co-change data; request paths and undeclared flows |
 | 2 | Run 10 analysis passes | Raw tension findings (Passes 1-10) |
 | 3 | Self-check + present | Tension report (no recommendations) |
@@ -42,29 +42,15 @@ RIGID - Same 10 analysis passes every time (Passes 1-10), same output format, sa
 
 <the_process>
 
-## Step 0 -- Mode Gate
+## Step 0 -- Prepare Audit
 
 **Announce:** "I'm using the intuition skill to examine your architecture for complection, coupling, and structural tensions."
 
-### Optional: Forward Audit Scope
+### Optional: Prose Focus
 
-If the user provides a scope hint, the audit narrows its focus while still running all 10 passes:
+Invoker may provide free-form prose (1-3 sentences typical) describing the audit focus, e.g., "Examine the auth/payments boundary for tensions this design might interact with." The prose focus is used to (a) target the codebase-investigator dispatch in Step 1 and (b) filter the tension report in Step 3 — see those steps for specifics.
 
-**Module-scoped:** `/intuition src/payments/` or `/intuition --scope src/payments/`
-- Focus evidence gathering on the named module(s) and their direct dependency graph (imports from + imported by)
-- All 10 passes run, but only report tensions involving the scoped modules or their immediate neighbors
-- Useful for: "I feel friction in this area, what's wrong?"
-
-**Epic-scoped:** `/intuition bd-42` or `/intuition --epic bd-42`
-- Load the epic's requirements via `bd show bd-42`
-- Identify which components/modules the epic's work will touch (from the epic's Architecture section or implementation checklist)
-- Focus evidence gathering on those components and their dependency graph
-- All 10 passes run, but only report tensions involving components the epic will touch
-- Useful for: "Before I start this epic, what structural tensions will I encounter?"
-
-**Default (no scope):** Full audit of entire codebase/model. All tensions reported.
-
-When scoped, announce the scope: "Auditing with focus on [scope] and its dependency neighborhood."
+Default (no prose focus): full audit. All tensions reported; no filtering.
 
 **Check for architecture model:**
 
@@ -72,110 +58,36 @@ When scoped, announce the scope: "Auditing with focus on [scope] and its depende
 ls docs/arch/*.c4 2>/dev/null
 ```
 
-### Mode 1: Model Exists (docs/arch/*.c4 found)
+**If model exists:**
+- Validate syntax: `likec4 validate docs/arch/`. If validation fails, report errors and halt — MCP queries against an invalid model produce unreliable results.
+- Load via LikeC4 MCP (REQUIRED — if MCP not available, fail with: "LikeC4 MCP server required. Run: likec4 mcp --stdio"):
+  ```
+  read-project-summary         # overview
+  search-element (by kind or name)
+  read-element <element-id>    # for each component
+  find-relationships <element-id>
+  read-view <view-id>          # for each view in docs/arch/views/data-flows/
+  ```
+- Record components, relationships, and dynamic views for analysis.
+- If no landscape view exists, soft-warn: "No landscape view found. Consider running /ponder to create one." (audit proceeds regardless)
 
-**Validate then load via LikeC4 MCP:**
+**If no model exists:** announce: "No architecture model found. Audit will use codebase evidence only." Continue.
 
-First, validate the model syntax:
-
-```bash
-likec4 validate docs/arch/
-```
-
-If validation fails: report the errors to the architect. Do not proceed with audit until syntax errors are fixed — MCP queries against an invalid model produce unreliable results.
-
-LikeC4 MCP server is REQUIRED for Mode 1. If MCP is not available, fail with: "LikeC4 MCP server required. Run: likec4 mcp --stdio"
-
-```
-# Get model overview
-read-project-summary
-
-# Find all components
-search-element (by kind or name)
-
-# For each component, load full details
-read-element <element-id>
-# Returns: metadata, description, tags, links
-
-# Get all relationships
-find-relationships <element-id>
-# Returns: blocks, relatesTo relationships with descriptions
-
-# Load dynamic views (for Pass 7)
-# List and read each view in docs/arch/views/data-flows/
-read-view <view-id>
-```
-
-Record for analysis:
-- All components with their descriptions and interface contracts (from linked docs/arch/components/*.md)
-- All relationships (blocks, relatesTo) with their descriptions
-- Dynamic views with their documented flows (for Pass 7)
-
-**Verify landscape view exists:**
-
-Check that at least one view scoped to the system uses `include *` to show all components and their relationships. If no such view exists, warn the architect: "No landscape view found. Consider running `/ponder` to create one." The audit can still proceed using MCP data, but the architecture is not human-readable without a landscape view.
-
-**Load existing ADRs:**
+**Read existing ADRs** (regardless of model presence):
 
 ```bash
 ls docs/arch/adr/adr-*.md 2>/dev/null
 ```
 
-If ADRs exist, read each one. Record:
-- Decision title and status (accepted, deprecated, superseded)
-- What was decided (the structural choice)
-- Consequences stated
-- Date of last modification (from git log or file metadata)
-- These will be used to: (a) skip already-accepted tensions, (b) detect drift, (c) flag stale ADRs
+For each ADR: read the file; record decision title, status, what was decided, consequences, last-modified date. These are used to: skip already-accepted tensions, detect drift, flag stale ADRs.
 
 **ADR age check:** For each accepted ADR, check when it was last modified:
 ```bash
 git log -1 --format="%ai" -- docs/arch/adr/adr-NNN.md
 ```
-If an ADR has not been modified in 6+ months, flag it as a maintenance note in the report (not a tension — just a reminder for the architect to review whether the decision still holds). Format: "ADR-NNN: [title] — last updated [date] (6+ months ago, consider reviewing)"
+If an ADR has not been modified in 6+ months, flag it as a maintenance note in the report (not a tension): "ADR-NNN: [title] — last updated [date] (6+ months ago, consider reviewing)"
 
-If no ADRs exist, note this and proceed -- analysis uses model and codebase evidence.
-
-**Model freshness check:**
-
-Check whether the architecture model may be stale:
-
-```bash
-# Find most recent .c4 file modification
-c4_age=$(stat -f %m docs/arch/*.c4 2>/dev/null | sort -rn | head -1)
-
-# Count code commits since last .c4 modification
-if [ -n "$c4_age" ]; then
-  commits_since=$(git log --since="@$c4_age" --oneline -- '*.ts' '*.js' '*.rs' '*.py' '*.go' '*.java' '*.rb' '*.swift' '*.kt' 2>/dev/null | wc -l | tr -d ' ')
-  echo "Code commits since last model update: $commits_since"
-fi
-```
-
-If more than 10 code-touching commits have occurred since the last .c4 file modification, note in the report:
-
-```
-⚠ Model freshness: [N] code commits since last model update.
-Consider running /ponder review after this audit to verify model accuracy.
-```
-
-This is a suggestion only — the audit proceeds regardless. The freshness check does not block analysis.
-
-### Mode 2: No Model (no docs/arch/*.c4 found)
-
-```
-No architecture model found. Running codebase-only audit to find
-structural tensions from empirical observation of the code.
-```
-
-**Load existing ADRs** (same as Mode 1, including ADR age check):
-
-```bash
-ls docs/arch/adr/adr-*.md 2>/dev/null
-```
-
-If ADRs exist, read each one and check age (same procedure as Mode 1). Flag any accepted ADRs older than 6 months as maintenance notes.
-
-Proceed directly to Step 1 — evidence gathering will use codebase only. All model-level analysis in passes will be marked "N/A — no model." Codebase evidence drives the audit.
+If no ADRs exist, note "no ADRs found" and proceed.
 
 ---
 
@@ -183,7 +95,11 @@ Proceed directly to Step 1 — evidence gathering will use codebase only. All mo
 
 **This step is ANALYTICAL. No AskUserQuestion. Gather evidence silently.**
 
-**Dispatch `hyperpowers:codebase-investigator`** with a comprehensive prompt that gathers evidence for ALL analysis passes:
+**Dispatch `hyperpowers:codebase-investigator`** with a comprehensive prompt that gathers evidence for ALL analysis passes.
+
+**If a prose focus was provided in Step 0**, prepend to the dispatch prompt:
+> "Focus this investigation on: [prose focus verbatim]. Apply the standard module-level investigation but prioritize evidence relevant to the focus area."
+If no prose focus, dispatch with the standard prompt unchanged.
 
 ```
 Examine the codebase and report on the following. Stay at module/package level,
@@ -236,7 +152,7 @@ not class/function level.
      or handling special cases
 ```
 
-**If no codebase exists (design-phase model only — Mode 1 only):** Skip this step. Analysis will use only model evidence. Note in the report: "Audit based on model evidence only — no codebase to verify against."
+**If no codebase exists (design-phase model only):** Skip this step. Analysis will use only model evidence. Note in the report: "Audit based on model evidence only — no codebase to verify against."
 
 Record all evidence for use in Step 2.
 
@@ -244,29 +160,18 @@ Record all evidence for use in Step 2.
 
 After the structural investigation above returns results, dispatch a second `hyperpowers:codebase-investigator` to gather data flow evidence, using the structural findings and the architecture model (if available) to target questions precisely.
 
-**Mode 1 (model exists):**
 ```
 Based on these structural findings: [include Step 1a results]
-And this architecture model: [include elements, relationships from LikeC4 MCP]
-
-Trace data flows at module level:
-1. For each entry point in the codebase, trace the request path through modules. Which modules participate in each request path?
-2. Identify data flows between modules that have no declared relationship in the architecture model (undeclared flows).
-3. Identify implicit ordering: which modules must process data before others, and is this ordering captured in the model relationships?
-
-Report at module level. Reference LikeC4 element names where modules map to components.
-```
-
-**Mode 2 (no model):**
-```
-Based on these structural findings: [include Step 1a results]
+[If model is loaded, also include: elements and relationships from LikeC4 MCP]
 
 Trace data flows at module level:
 1. For each entry point in the codebase, trace the request path through modules. Which modules participate in each request path?
 2. Identify data flows between modules that suggest implicit structural relationships.
+   [When model is loaded: note flows with no declared relationship in the architecture model (undeclared flows).]
 3. Identify implicit ordering: which modules must process data before others?
+   [When model is loaded: note whether this ordering is captured in the model relationships.]
 
-Report at module level.
+Report at module level. [When model is loaded: reference LikeC4 element names where modules map to components.]
 ```
 
 The flow evidence from Step 1b feeds into passes 1, 3, 4, and 9 — it does NOT replace the structural evidence from Step 1a.
@@ -275,7 +180,7 @@ The flow evidence from Step 1b feeds into passes 1, 3, 4, and 9 — it does NOT 
 
 ## Step 2 -- Run 10 Analysis Passes
 
-Run each pass using both model evidence (Mode 1) and codebase evidence. In Mode 2, model-level analysis is "N/A — no model" and passes run on codebase evidence only. Each pass may produce zero or more tensions.
+Run each pass using whatever evidence is available. When an architecture model is loaded, both model-level and codebase-level analysis run. When no model is loaded, model-level analysis produces zero tensions with note "evidence insufficient — codebase only" and codebase-level analysis still runs. Each pass may produce zero or more tensions.
 
 **Before recording a tension:** Check if an existing ADR already accepts this tension. If an accepted ADR covers the exact structural choice, skip the tension and note: "Accepted via ADR-NNN: [title]".
 
@@ -283,7 +188,7 @@ Run each pass using both model evidence (Mode 1) and codebase evidence. In Mode 
 
 **What to look for:** Concerns braided together that should be independent.
 
-**Model evidence (Mode 1 only):**
+**Model evidence (when model is loaded):**
 - Components whose responsibility description mentions multiple unrelated concerns
 - Components that appear in edges for unrelated interaction types
 
@@ -302,7 +207,7 @@ Run each pass using both model evidence (Mode 1) and codebase evidence. In Mode 
 
 **What to look for:** Interfaces that carry more than one concern or leak implementation details.
 
-**Model evidence (Mode 1 only):**
+**Model evidence (when model is loaded):**
 - Interface contracts (IN/OUT) that mix different types of operations
 - Components whose interface exposes internal structure
 - Edges where the interaction description suggests the caller needs implementation knowledge
@@ -318,7 +223,7 @@ Run each pass using both model evidence (Mode 1) and codebase evidence. In Mode 
 
 **What to look for:** Things that must happen in a specific order but are not explicitly sequenced.
 
-**Model evidence (Mode 1 only):**
+**Model evidence (when model is loaded):**
 - Components that interact (relates_to) but have no sequencing (no blocks edge)
 - Initialization order dependencies not captured in the model
 - Components whose interface contracts imply ordering ("call X before Y")
@@ -329,8 +234,8 @@ Run each pass using both model evidence (Mode 1) and codebase evidence. In Mode 
 - Event handlers that assume specific execution order
 
 **Flow evidence (from Step 1b, when available):**
-- Request paths where module A must process data before module B, but no blocks edge exists between the corresponding model nodes (Mode 1)
-- Implicit ordering derived from data flow direction that is not captured in declared relationships (Mode 1) or that suggests undocumented dependencies (Mode 2)
+- Request paths where module A must process data before module B, but no blocks edge exists between the corresponding model nodes (when model is loaded)
+- Implicit ordering derived from data flow direction that is not captured in declared relationships (when model is loaded) or that suggests undocumented dependencies (when no model)
 
 **Tension pattern:** "[A] and [B] have implicit ordering dependency not captured in [model/code structure]"
 
@@ -338,19 +243,19 @@ Run each pass using both model evidence (Mode 1) and codebase evidence. In Mode 
 
 **What to look for:** Dependencies that exist but are not visible in declared structure.
 
-**Model evidence (Mode 1 only):**
+**Model evidence (when model is loaded):**
 - Components with no declared dependencies that seem like they should have some
 - Missing edges between components that clearly interact
 - Components that share concepts (similar vocabulary in their descriptions) without a declared relationship
 
 **Codebase evidence:**
-- Actual imports/calls between modules not reflected in model edges (Mode 1) or not obvious from module structure (Mode 2)
+- Actual imports/calls between modules not reflected in model edges (when model is loaded) or not obvious from module structure (when no model)
 - Shared configuration or environment variables creating invisible coupling
 - Dynamic dispatch or event systems hiding concrete dependencies
 - Shared data formats or schemas without explicit interface contracts
 
 **Flow evidence (from Step 1b, when available):**
-- Data flows between modules that map to model nodes with no declared edge (Mode 1)
+- Data flows between modules that map to model nodes with no declared edge (when model is loaded)
 - Undeclared flows that only become visible when tracing request paths end-to-end
 
 **Tension pattern:** "[A] depends on [B] through [mechanism] but [model shows no relationship / dependency is not structurally visible]"
@@ -361,7 +266,7 @@ Run each pass using both model evidence (Mode 1) and codebase evidence. In Mode 
 
 The principle: dependencies should flow from orchestration (higher abstraction) toward data access and infrastructure (lower abstraction). When lower-abstraction modules call or import from higher-abstraction modules, the dependency direction creates coupling that makes independent change difficult.
 
-**Model evidence (Mode 1 only):**
+**Model evidence (when model is loaded):**
 - Edges where a lower-abstraction component depends on a higher-abstraction component
 - Orchestration components that contain business logic (should only coordinate)
 - Data access components that contain business rules (should only access data)
@@ -379,7 +284,7 @@ The principle: dependencies should flow from orchestration (higher abstraction) 
 
 **What to look for:** Mutable shared state, identity used where value would suffice.
 
-**Model evidence (Mode 1 only):**
+**Model evidence (when model is loaded):**
 - relates_to edges that represent shared mutable state (not just interaction)
 - Components that both read and write the same state
 - Identity-based references where value-based would decouple
@@ -396,7 +301,7 @@ The principle: dependencies should flow from orchestration (higher abstraction) 
 
 **What to look for:** Documented data flows (dynamic views in docs/arch/views/data-flows/) that no longer match actual codebase request paths.
 
-**Skip if no codebase** (design-phase model only) or **no dynamic views exist** or **Mode 2** (no model to drift from).
+**Skip if no codebase** (design-phase model only) or **no dynamic views exist** or **no architecture model** (no model to drift from).
 
 For each dynamic view loaded in Step 0:
 
@@ -460,9 +365,9 @@ Output format:
 
 **Step 8b — Identify mismatches:**
 
-Compare change frequencies of modules that belong to the same component (Mode 1) or that share the same parent directory / apparent boundary (Mode 2).
+Compare change frequencies of modules that belong to the same component (when model is loaded) or that share the same parent directory / apparent boundary (when no model).
 
-**Model evidence (Mode 1 only):**
+**Model evidence (when model is loaded):**
 - Modules mapped to the same component that change at dramatically different rates (e.g., one module changed 30 times, another changed 2 times, both inside the same component boundary)
 - Components whose described scope spans modules with divergent change rates
 
@@ -493,7 +398,7 @@ Evidence: [from git history analysis]
 
 **Skip if:** no codebase (design-phase model only).
 
-**Model evidence (Mode 1 only):**
+**Model evidence (when model is loaded):**
 - Components with adapter relationships that exist solely to bridge one subsystem to a standard interface used by all other subsystems
 - Components appearing in edges that duplicate an existing interaction pattern through a different mechanism
 
@@ -538,7 +443,6 @@ Cascade members:
 
 **For each cascade from Pass 9, dispatch targeted `hyperpowers:codebase-investigator`:**
 
-**Mode 1 (model exists):**
 ```
 Pass 9 found a workaround cascade in [area] compensating for [subsystem].
 Cascade members:
@@ -551,6 +455,7 @@ Investigate:
 2. How does [subsystem] achieve that same outcome? Trace its actual code path.
 3. Where do the two paths DIVERGE? Identify the fork point — the place
    where [subsystem]'s path splits from the standard mechanism.
+[When model is loaded, also:]
 4. Check the architecture model: does [subsystem] have edges that duplicate
    an existing interaction pattern through a different mechanism?
 
@@ -561,28 +466,7 @@ Report:
 - Or: "No parallel path found — cascade exists but root cause is unclear"
 ```
 
-**Mode 2 (no model):**
-```
-Pass 9 found a workaround cascade in [area] compensating for [subsystem].
-Cascade members:
-  [list cascade members from Pass 9 output]
-
-Investigate:
-1. What is the STANDARD mechanism that other subsystems use for the same
-   outcome in this area? (e.g., the standard event system, the standard
-   data pipeline, the standard API pattern)
-2. How does [subsystem] achieve that same outcome? Trace its actual code path.
-3. Where do the two paths DIVERGE? Identify the fork point — the place
-   where [subsystem]'s path splits from the standard mechanism.
-
-Report:
-- Standard path: [entry point] -> [module A] -> [module B] -> [outcome]
-- Bypass path: [entry point] -> [different modules] -> [same outcome]
-- Fork point: [where the paths diverge]
-- Or: "No parallel path found — cascade exists but root cause is unclear"
-```
-
-**Model evidence (Mode 1 only):**
+**Model evidence (when model is loaded):**
 - Components with parallel edges achieving the same outcome through different paths (e.g., subsystem A reaches storage through the event system, subsystem B reaches storage through direct database calls)
 - Edges that duplicate an existing interaction pattern through a different mechanism
 
@@ -667,18 +551,22 @@ Ordering language (rewrite if found):
 
 ### Present Tension Report
 
+**Tension report filtering:** If a prose focus was provided in Step 0, filter the Tensions Found section. Tensions involving components named in or implied by the focus are reported in full. Tensions outside the focus area are listed under a new subsection "Tensions Outside Focus (one-line summaries)" with format: "- [Tension Name] — Components: [A], [B] — Pass [N]". Full detail is suppressed for outside-focus tensions. The architect can re-run /intuition without prose focus to see all tensions in detail. If no prose focus, no filtering — all tensions reported in full.
+
+**Determining "components touched by focus":** Use the prose focus to identify component or module names mentioned. Match against the components/modules in the loaded model (if any) and the modules identified in Step 1a evidence gathering. A tension "touches" the focus if any of its components/modules appears in the focus prose or is in a transitive 1-hop neighborhood of a named component.
+
 **Report format:**
 
 ```
 ## Architectural Intuition Report
 
-**Mode:** [1 — Model + Codebase | 2 — Codebase Only]
-**Model:** [System name from LikeC4, or "N/A — codebase-only audit"]
-**Components audited:** [count from model, or "N/A"]
+**Focus:** [prose focus verbatim, or "full audit (no focus provided)"]
+**Model:** [System name from LikeC4, or "none — codebase-only audit"]
+**Components audited:** [count from model, or "N/A — no model"]
 **Modules analyzed:** [count from codebase]
 **Evidence sources:** [model + codebase | codebase only]
 **ADRs reviewed:** [count, or "none found"]
-**Dynamic views checked:** [count, or "none" / "N/A — Mode 2"]
+**Dynamic views checked:** [count, or "none", or "evidence insufficient — no model"]
 
 ---
 
@@ -731,7 +619,7 @@ Ordering language (rewrite if found):
 **Tensions found:** [count]
 **Accepted (via ADRs):** [count]
 **Drift detected (ADR):** [count]
-**View drift detected (Pass 7):** [count, or "N/A — Mode 2"]
+**View drift detected (Pass 7):** [count, or "evidence insufficient — no model"]
 **Rate-of-change mismatches (Pass 8):** [count, or "skipped — insufficient history"]
 **Pass 8 filtering stats:** [Analyzed N commits (excluded M bulk, K generated-only, J manifest-only)]
 **Workaround cascades (Pass 9):** [count, or "none"]
@@ -849,7 +737,7 @@ When Pass 10 identifies a mechanism bypass for a Pass 9 cascade, present them to
 
 ### Model Bootstrapping (via Ponder)
 
-When a "Resolve" decision creates the first architectural boundary and no architecture model exists (Mode 2 audit), dispatch the ponder subagent in bootstrap mode.
+When a "Resolve" decision creates the first architectural boundary and no architecture model exists, dispatch the ponder subagent in bootstrap mode.
 
 **Only bootstrap when:** (a) no docs/arch/*.c4 files exist, AND (b) a Resolve decision creates a meaningful boundary between modules. Do not bootstrap for Accept or Skip decisions.
 
@@ -867,21 +755,21 @@ Components:
 Known relationships:
 - [componentA] -> [componentB]: [relationship from resolution]
 
-Source: Intuition Mode 2 audit — first Resolve decision
+Source: Intuition audit without architecture model — first Resolve decision
 ```
 
 **Dispatch:** `hyperpowers:ponder` agent with the structured input above.
 
 The ponder agent handles all file creation (spec.c4, model.c4, component .c4 files, views, markdown docs), quality criteria enforcement, and validation. It returns a concise summary.
 
-After receiving the summary, announce: "Architecture model bootstrapped via Ponder. Future audits will run in Mode 1."
+After receiving the summary, announce: "Architecture model bootstrapped via Ponder. Future audits will load the model."
 
 </the_process>
 
 <examples>
 
 <example>
-<scenario>Good audit finding real tensions in an order processing architecture (Mode 1)</scenario>
+<scenario>Good audit finding real tensions in an order processing architecture (with architecture model)</scenario>
 
 <code>
 Claude loads architecture model:
@@ -921,7 +809,7 @@ Claude presents:
 
 ## Architectural Intuition Report
 
-**Mode:** 1 — Model + Codebase
+**Focus:** full audit (no focus provided)
 **Model:** Order Processing Architecture
 **Components audited:** 5
 **Modules analyzed:** 5
@@ -953,22 +841,12 @@ Claude presents:
 ## Tension: Undeclared Pricing-Storage Dependency
 **Components/Modules:** Pricing Engine, Order Store
 **Analysis pass:** Hidden Dependencies
-**Pull 1:** Add explicit edge (Pricing Engine blocks Order Store) --
-  Gain: model accurately reflects reality. Cost: Pricing Engine now has
-  two dependencies (Orchestrator and Store), increasing its coupling.
-**Pull 2:** Remove direct access (Pricing Engine reads data only through
-  Orchestrator) -- Gain: Pricing Engine stays pure business logic with
-  single dependency. Cost: Orchestrator becomes intermediary for data
-  Pricing Engine needs.
-**If you assume:** Pricing Engine's data needs are simple and can be
-  passed by the Orchestrator, then removing direct access is correct.
-**If you assume:** Pricing Engine requires complex queries against order
-  history, then direct access through a declared edge is correct.
-**Structural observation:** Pricing Engine imports from order_store module
-  in 3 files. No model edge exists between these components.
-**Evidence:** src/pricing/calculator.rs:12 imports order_store::OrderRepo.
-  src/pricing/discount.rs:5 imports order_store::OrderHistory.
-  src/pricing/tax.rs:8 imports order_store::TaxRateCache.
+**Pull 1:** Add explicit edge — Gain: model reflects reality. Cost: Pricing Engine gains a second dependency.
+**Pull 2:** Remove direct access, route through Orchestrator — Gain: Pricing Engine stays pure. Cost: Orchestrator mediates all data.
+**If you assume:** Pricing data needs are simple, routing through Orchestrator is correct.
+**If you assume:** Pricing requires complex queries, direct access with declared edge is correct.
+**Structural observation:** Pricing Engine imports from order_store module in 3 files. No model edge exists.
+**Evidence:** src/pricing/calculator.rs:12, src/pricing/discount.rs:5, src/pricing/tax.rs:8.
 
 ### Accepted Tensions (Skipped)
 
@@ -1015,7 +893,7 @@ None.
 </example>
 
 <example>
-<scenario>Good Mode 2 audit — codebase only, no architecture model</scenario>
+<scenario>Good audit — codebase only, no architecture model</scenario>
 
 <code>
 Claude checks for model:
@@ -1062,7 +940,7 @@ Pass 8 (Rate-of-Change Mismatch):
   any shared boundary.
 
 Passes 1, 2, 6: nothing found.
-Pass 7: N/A — Mode 2 (no model).
+Pass 7: evidence insufficient — no model (no architecture model to drift from).
 Pass 9 (Workaround Cascade): nothing found.
 Pass 10 (Mechanism Bypass): skipped — no cascades from Pass 9.
 
@@ -1072,13 +950,13 @@ Claude presents:
 
 ## Architectural Intuition Report
 
-**Mode:** 2 — Codebase Only
-**Model:** N/A — codebase-only audit
-**Components audited:** N/A
+**Focus:** full audit (no focus provided)
+**Model:** none — codebase-only audit
+**Components audited:** N/A — no model
 **Modules analyzed:** 4 (api, core, storage, utils)
 **Evidence sources:** codebase only
 **ADRs reviewed:** none found
-**Dynamic views checked:** N/A — Mode 2
+**Dynamic views checked:** evidence insufficient — no model
 
 ---
 
@@ -1102,34 +980,21 @@ Claude presents:
 ## Tension: Reports Bypass Core
 **Components/Modules:** api/, storage/
 **Analysis pass:** Hidden Dependencies
-**Pull 1:** Route reports through core/ — Gain: all business logic
-  centralized, storage/ accessed only through core/. Cost: extra
-  indirection for read-only queries.
-**Pull 2:** Accept direct api/ -> storage/ path for reads — Gain:
-  simpler read path. Cost: two modules access storage/ with different
-  patterns.
-**If you assume:** reports will gain business logic (filtering, permissions),
-  routing through core is correct.
-**If you assume:** reports remain pure data reads, direct access is correct.
-**Structural observation:** GET /reports request path: api/ -> storage/
-  (bypasses core/). POST /orders request path: api/ -> core/ -> storage/.
+**Pull 1:** Route reports through core/ — Gain: centralized business logic. Cost: extra indirection.
+**Pull 2:** Accept direct api/ -> storage/ for reads — Gain: simpler path. Cost: two access patterns.
+**If you assume:** reports will gain business logic, routing through core is correct.
+**If you assume:** reports remain pure reads, direct access is correct.
+**Structural observation:** GET /reports: api/ -> storage/ (bypasses core/). POST /orders: api/ -> core/ -> storage/.
 **Evidence:** Step 1b data flow trace.
 
 ## Tension: Storage-to-API Upward Dependency
 **Components/Modules:** storage/cache.rs, api/middleware
 **Analysis pass:** Structural Dependency Direction
-**Pull 1:** Move auth context into shared module (e.g., utils/) — Gain:
-  storage/ no longer depends on api/. Cost: auth context becomes
-  cross-cutting concern in utils/.
-**Pull 2:** Pass auth context as parameter from api/ down to storage/ —
-  Gain: explicit dependency direction. Cost: function signatures grow.
-**If you assume:** auth context is a cross-cutting concern, moving to
-  utils/ is correct.
-**If you assume:** auth context is request-scoped, passing as parameter
-  preserves the request lifecycle.
-**Structural observation:** storage/cache.rs imports api/middleware::
-  get_auth_context(). This is a lower-abstraction module (storage)
-  depending on a higher-abstraction module (api).
+**Pull 1:** Move auth context to utils/ — Gain: storage/ no longer depends on api/. Cost: cross-cutting concern.
+**Pull 2:** Pass auth context as parameter — Gain: explicit direction. Cost: function signatures grow.
+**If you assume:** auth context is cross-cutting, utils/ is correct.
+**If you assume:** auth context is request-scoped, passing as parameter is correct.
+**Structural observation:** storage/cache.rs (lower abstraction) imports from api/middleware (higher abstraction).
 **Evidence:** storage/cache.rs:15 — `use api::middleware::get_auth_context;`
 
 ### Accepted Tensions (Skipped)
@@ -1154,7 +1019,7 @@ None (no ADRs to drift from).
 **Tensions found:** 3
 **Accepted (via ADRs):** 0
 **Drift detected:** 0
-**View drift detected:** N/A — Mode 2
+**View drift detected:** evidence insufficient — no model
 **Clean:** no
 
 3 tensions require architect resolution. Options for each tension:
@@ -1164,14 +1029,14 @@ None (no ADRs to drift from).
 </code>
 
 <why_it_works>
-- Mode 2 correctly identified and announced
-- All 10 passes executed (Pass 7 correctly skipped as N/A for Mode 2, Pass 8 ran with filtering stats, Pass 10 correctly skipped when Pass 9 found no cascades)
+- Audit without architecture model correctly identified and announced
+- All 10 passes executed (Pass 7 correctly skipped as evidence insufficient — no model, Pass 8 ran with filtering stats, Pass 10 correctly skipped when Pass 9 found no cascades)
 - Tensions found from codebase evidence alone — no model needed
 - Pass 5 caught upward dependency without needing layer vocabulary
 - Pass 8 reported filtering stats and found no mismatches within shared boundaries
 - Structural observations use neutral facts
 - No recommendations — both pulls presented equally
-- Report format correctly adapted for Mode 2 (N/A where model would be)
+- Report format correctly adapted for audit without model (evidence-insufficient notes where model would be)
 </why_it_works>
 </example>
 
@@ -1247,23 +1112,8 @@ Corrected output:
   last 10 commits.
 **Evidence:** Git log co-change analysis.
 
-## Tension: Undeclared Pricing-Storage Dependency
-**Components/Modules:** Pricing Engine, Order Store
-**Analysis pass:** Hidden Dependencies
-**Pull 1:** Add explicit model edge -- Gain: model reflects reality.
-  Cost: increases Pricing Engine coupling.
-**Pull 2:** Remove direct access, route through Orchestrator -- Gain:
-  Pricing Engine stays pure. Cost: Orchestrator mediates all data.
-**If you assume:** Pricing data needs are simple, then routing through
-  Orchestrator is correct.
-**If you assume:** Pricing needs complex queries, then direct access
-  with declared edge is correct.
-**Structural observation:** 3 files in src/pricing/ import from
-  order_store module.
-**Evidence:** src/pricing/calculator.rs:12, src/pricing/discount.rs:5,
-  src/pricing/tax.rs:8.
-
 No severity rankings. No ordering. Both pulls presented equally.
+(Second tension rewritten similarly — no severity, both pulls, structural observation.)
 </correction>
 </example>
 
@@ -1289,7 +1139,7 @@ Claude presents:
 
 ## Architectural Intuition Report
 
-**Mode:** 1 — Model + Codebase
+**Focus:** full audit (no focus provided)
 **Model:** Order Processing Architecture
 **Components audited:** 5
 **Modules analyzed:** 5
@@ -1428,18 +1278,8 @@ Corrected output:
   Currently coordinates 3 workflows (order, refund, exchange).
 **Evidence:** Model shows 4 blocks edges from Orchestrator.
 
-## Tension: Pricing-Storage Interface Leak
-**Components/Modules:** Pricing Engine, Order Store
-**Analysis pass:** Interface Analysis
-**Pull 1:** ...
-**Pull 2:** ...
-**Structural observation:** 2 internal data types from Order Store appear
-  in Pricing Engine's imports.
-**Evidence:** src/pricing/calculator.rs imports OrderRecord and TaxCache
-  (internal Order Store types).
-
-No severity words. No ordering. No prioritization. Both tensions
-presented as structural observations for the architect to evaluate.
+No severity words. No ordering. No prioritization.
+(Second tension rewritten similarly — "Interface Leak", no severity, structural observation only.)
 </correction>
 </example>
 
@@ -1456,7 +1296,7 @@ presented as structural observations for the architect to evaluate.
 
 4. **Run self-check EVERY TIME.** Scan all output for recommendation, severity, and ordering keywords before presenting. This step is mandatory and non-negotiable. "Output looks fine" is a rationalization for skipping it.
 
-5. **Run ALL 10 passes.** Never skip a pass, even if early passes found nothing. Each pass looks for a different category of problem. Skipping passes misses problems. Pass 7 (dynamic view drift) is skipped only in Mode 2 or when no dynamic views exist. Pass 8 (rate-of-change mismatch) is skipped only when fewer than 10 non-filtered commits are available. Pass 9 (workaround cascade) is skipped only when no codebase exists. Pass 10 (mechanism bypass) is skipped only when Pass 9 finds zero cascades.
+5. **Run ALL 10 passes.** Never skip a pass, even if early passes found nothing. Each pass looks for a different category of problem. Skipping passes misses problems. Pass 7 (dynamic view drift) is skipped only when no architecture model exists or when no dynamic views exist. Pass 8 (rate-of-change mismatch) is skipped only when fewer than 10 non-filtered commits are available. Pass 9 (workaround cascade) is skipped only when no codebase exists. Pass 10 (mechanism bypass) is skipped only when Pass 9 finds zero cascades.
 
 6. **ANALYTICAL in Steps 0-3, INTERACTIVE in Step 4.** No AskUserQuestion during analysis (Steps 0-3). Step 4 (resolution protocol) IS interactive — use AskUserQuestion to walk the architect through each tension's resolution.
 
@@ -1468,7 +1308,7 @@ presented as structural observations for the architect to evaluate.
 
 10. **Think in components and boundaries, NOT classes and functions.** If the analysis descends to implementation details (class hierarchies, function signatures), you have crossed into inner-loop territory. Stay at the component/module level.
 
-11. **Mode 2 is a full audit.** Codebase-only mode runs all passes using codebase evidence. It is not a degraded mode — it finds real tensions. The only difference is model-level analysis says "N/A — no model" and Pass 7 is skipped. Pass 8 still runs (git history is available without a model). Pass 9 and 10 run on codebase evidence (compensating code patterns, fix clustering, code path tracing).
+11. **Audit without architecture model is a full audit.** Codebase-only mode runs all passes using codebase evidence. It is not a degraded mode — it finds real tensions. The only difference is model-level analysis reports "evidence insufficient — codebase only" and Pass 7 (dynamic view drift) is skipped (no model means no views to drift from). Pass 8 still runs (git history is available without a model). Pass 9 and 10 run on codebase evidence (compensating code patterns, fix clustering, code path tracing).
 
 ## Common Excuses
 
@@ -1481,22 +1321,21 @@ All of these mean: **STOP. Follow the process.**
 - "I can see which pull is correct" (Your job is to present, not to judge. The architect decides.)
 - "The severity is objectively higher" (There is no objective severity. There are structural observations.)
 - "Self-check is redundant, I was careful" (Careful people still write recommendation language unconsciously.)
-- "No model means limited audit" (Mode 2 finds real tensions from codebase alone. Run all passes — especially Pass 8 which needs only git history, and Pass 9 which detects cascades from codebase evidence.)
+- "No model means limited audit" (Audit without a model finds real tensions from codebase alone. Run all passes — especially Pass 8 which needs only git history, and Pass 9 which detects cascades from codebase evidence.)
 </critical_rules>
 
 <verification_checklist>
 Before presenting the audit report:
 
-- [ ] Mode gate executed: Mode 1 (model + codebase) or Mode 2 (codebase only) determined
-- [ ] Mode 1: Architecture model loaded from LikeC4 MCP
-- [ ] Mode 2: Codebase-only audit announced, model analysis marked N/A
-- [ ] Dynamic views loaded from LikeC4 model (Mode 1 with views)
+- [ ] Architecture model loaded if present (via LikeC4 MCP); otherwise codebase-only audit announced
+- [ ] Dynamic views loaded from LikeC4 model (when model present and views exist)
 - [ ] Existing ADRs read (or noted as absent)
+- [ ] Prose focus recorded (if provided); evidence gathering and tension report filtering will use it
 - [ ] Codebase-investigator dispatched (if codebase exists)
 - [ ] Evidence gathered covers: module structure, imports, co-change, call patterns, interfaces, shared state
 - [ ] Flow evidence gathered (Step 1b): request paths, undeclared data flows, implicit ordering (if codebase exists)
 - [ ] All 10 analysis passes executed (complection, interfaces, temporal coupling, hidden deps, structural dependency direction, state/identity, dynamic view drift, rate-of-change mismatch, workaround cascade, mechanism bypass)
-- [ ] Pass 7 compared documented flows to actual codebase paths (Mode 1 with views) or marked N/A (Mode 2)
+- [ ] Pass 7 compared documented flows to actual codebase paths (when model and dynamic views present) or noted evidence insufficient
 - [ ] Pass 8 analyzed git change frequencies with noise filtering, or skipped with reason (<10 commits)
 - [ ] Pass 9 scanned for workaround cascades, or skipped (no codebase)
 - [ ] Pass 10 dispatched targeted codebase-investigator per cascade, or skipped (no cascades from Pass 9)
@@ -1514,8 +1353,7 @@ Before presenting the audit report:
 - [ ] Step 4: each tension presented to architect with resolution options (accept/resolve/brainstorm/investigate/skip)
 - [ ] Step 4: ADRs created for Accept and Resolve paths
 - [ ] Step 4: bd tickets created for Resolve path
-- [ ] Step 4: ponder subagent dispatched in bootstrap mode if first Resolve on Mode 2 audit
-- [ ] Mode 1 freshness check: noted stale model (>10 commits) with /ponder review suggestion, or model is fresh
+- [ ] Step 4: ponder subagent dispatched in bootstrap mode if first Resolve on audit without architecture model
 - [ ] Step 3: architect questions presented (Meadows leverage, Meadows fixes-that-fail, Alexander wholeness, Rao legibility) — or omitted if zero tensions
 - [ ] Step 3: architect questions contain no recommendation language (self-check applies)
 
@@ -1525,7 +1363,7 @@ Before presenting the audit report:
 <integration>
 **This skill calls:**
 - hyperpowers:codebase-investigator (when codebase exists — gathers evidence for all 10 passes)
-- hyperpowers:ponder (Step 4 bootstrap — dispatched as subagent when first Resolve on Mode 2 audit creates initial model)
+- hyperpowers:ponder (Step 4 bootstrap — dispatched as subagent when first Resolve on audit without architecture model creates initial model)
 
 **This skill is called by:**
 - User (via /hyperpowers:intuition command)
@@ -1543,8 +1381,8 @@ ARCHITECTURE CYCLE:
 RESOLUTION (Step 4 per-tension):
   tension → accept (ADR) / resolve (ADR + bd ticket) / brainstorm (complex) / investigate (deeper evidence) / skip (defer)
 
-MODEL BOOTSTRAPPING (first Resolve on Mode 2 audit):
-  resolve tension → dispatch /ponder bootstrap → model created → future audits run Mode 1
+MODEL BOOTSTRAPPING (first Resolve on audit without architecture model):
+  resolve tension → dispatch /ponder bootstrap → model created → future audits load the model
 
 HANDOFF (all tensions resolved/accepted):
   clean architecture → /brainstorm (loads arch context from LikeC4 MCP)
@@ -1552,29 +1390,28 @@ HANDOFF (all tensions resolved/accepted):
 
 **Agents used:**
 - codebase-investigator (Step 1a: gather module structure, imports, co-change, call patterns, interfaces, shared state, compensating code patterns, fix clustering; Step 1b: gather request paths, undeclared data flows, implicit ordering; Pass 7: trace actual request paths for dynamic view comparison; Pass 8: analyze git change frequencies per module with noise filtering; Pass 10: trace bypass paths for cascade root cause; Step 4 Investigate: targeted deep-dive on specific tensions)
-- ponder (Step 4: bootstrap mode — dispatched when first Resolve on Mode 2 creates initial model)
+- ponder (Step 4: bootstrap mode — dispatched when first Resolve on audit without architecture model creates initial model)
 - NO internet-researcher (audit uses only model + codebase evidence)
 
 **Tools required:**
-- LikeC4 MCP (Mode 1: load model, read elements, read views — required for Mode 1, not needed for Mode 2)
+- LikeC4 MCP (when model is loaded: read elements, read views — not needed when no model)
 - Edit (update .c4 files if needed — via ponder agent for model operations)
 - Write (create new ADR files during resolution)
 - Read (load ADR files, load linked component markdown docs)
 
 **Artifacts consumed:**
-- LikeC4 model files (docs/arch/*.c4 — Mode 1 only)
-- Component documentation (docs/arch/components/*.md — Mode 1 only)
-- Dynamic views (docs/arch/views/data-flows/*.c4 — Mode 1 only)
-- ADR files in docs/arch/ (both modes)
-- Codebase (both modes)
-- bd epics (when epic-scoped forward audit)
+- LikeC4 model files (docs/arch/*.c4 — when model exists)
+- Component documentation (docs/arch/components/*.md — when model exists)
+- Dynamic views (docs/arch/views/data-flows/*.c4 — when model exists)
+- ADR files in docs/arch/ (always)
+- Codebase (always)
 
 **Artifacts produced:**
 - Tension report (presented to architect, not persisted)
 - Drift report including dynamic view drift (presented to architect, not persisted)
 - ADR files (created during Step 4 resolution — Accept or Resolve paths)
 - bd tickets (created during Step 4 Resolve path)
-- Architecture model files (created via ponder agent bootstrap mode — first Resolve on Mode 2)
+- Architecture model files (created via ponder agent bootstrap mode — first Resolve on audit without architecture model)
 </integration>
 
 <resources>
@@ -1607,6 +1444,6 @@ HANDOFF (all tensions resolved/accepted):
 - Codebase evidence contradicts model -> Report as drift if ADR exists, as tension if not
 - Unsure if something is a tension -> If two pulls exist with legitimate gains/costs, it is a tension
 - Output has recommendation language -> Self-check caught it. Rewrite to neutral observation.
-- No codebase exists -> Run with model evidence only (Mode 1), note the limitation in the report
-- No model exists -> Mode 2, run with codebase evidence only
+- No codebase exists -> Run with model evidence only, note the limitation in the report
+- No model exists -> Run with codebase evidence only; all passes still run (model-level analysis notes "evidence insufficient — codebase only")
 </resources>
