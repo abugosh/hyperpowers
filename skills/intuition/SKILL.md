@@ -540,7 +540,7 @@ Ordering language (rewrite if found):
 
 ## Tension: [Descriptive Name]
 **Components/Modules:** [Component A], [Component B]
-**Analysis pass:** [which of the 10 passes found this]
+**Analysis pass:** [which of the 9 passes found this]
 **Pull 1:** [Structural choice] -- Gain: [what you get]. Cost: [what you pay].
 **Pull 2:** [Alternative choice] -- Gain: [what you get]. Cost: [what you pay].
 **If you assume:** [condition that makes Pull 1 correct].
@@ -701,34 +701,15 @@ When Pass 9 identifies a mechanism bypass for a Pass 8 cascade, present them tog
 
 ---
 
-### Model Bootstrapping (via Ponder)
+### Model Bootstrapping (via /ponder)
 
-When a "Resolve" decision creates the first architectural boundary and no architecture model exists, dispatch the ponder subagent in bootstrap mode.
+When a "Resolve" decision creates the first architectural boundary and no architecture model exists, dispatch /ponder in BOOTSTRAP mode.
 
 **Only bootstrap when:** (a) no docs/arch/*.c4 files exist, AND (b) a Resolve decision creates a meaningful boundary between modules. Do not bootstrap for Accept or Skip decisions.
 
-**Construct structured input from tension evidence:**
+**Dispatch:** Invoke `/hyperpowers:ponder` with the resolved tension's context (component names, descriptions, the relationship just decided). /ponder BOOTSTRAP mode constructs the structured input and handles all file creation, quality criteria enforcement, and validation. See `skills/ponder/SKILL.md` BOOTSTRAP mode for input construction details.
 
-```
-Mode: BOOTSTRAP
-
-System name: [from codebase or architect input]
-
-Components:
-- [componentA]: [description from tension evidence] (layer: [inferred from role])
-- [componentB]: [description from tension evidence] (layer: [inferred from role])
-
-Known relationships:
-- [componentA] -> [componentB]: [relationship from resolution]
-
-Source: Intuition audit without architecture model — first Resolve decision
-```
-
-**Dispatch:** `hyperpowers:ponder` agent with the structured input above.
-
-The ponder agent handles all file creation (spec.c4, model.c4, component .c4 files, views, markdown docs), quality criteria enforcement, and validation. It returns a concise summary.
-
-After receiving the summary, announce: "Architecture model bootstrapped via Ponder. Future audits will load the model."
+After /ponder returns, announce: "Architecture model bootstrapped via /ponder. Future audits will load the model."
 
 </the_process>
 
@@ -1323,7 +1304,7 @@ Before presenting the audit report:
 
 <integration>
 **This skill calls:**
-- hyperpowers:codebase-investigator (when codebase exists — gathers evidence for all 10 passes)
+- hyperpowers:codebase-investigator (when codebase exists — gathers evidence for all 9 passes)
 - hyperpowers:ponder (Step 4 bootstrap — dispatched as subagent when first Resolve on audit without architecture model creates initial model)
 
 **This skill is called by:**
