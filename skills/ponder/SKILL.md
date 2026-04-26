@@ -50,7 +50,7 @@ Determine the mode from the invocation context:
 
 ### BOOTSTRAP mode
 **Triggered when:** No `docs/arch/*.c4` files exist AND caller provides component information.
-- Intuition Step 4 first Resolve on Mode 2 audit
+- Intuition Step 4 first Resolve on audit without architecture model
 - Architect requests initial model creation
 - Check: `ls docs/arch/*.c4 2>/dev/null` — if no files found, this is bootstrap
 
@@ -121,7 +121,7 @@ The agent runs in its own context: loads model via MCP, makes changes (UPDATE/BO
 **For BOOTSTRAP summary:**
 - Announce model creation to the architect
 - Report components, relationships, and validation status
-- Note: "Future audits will run in Mode 1"
+- Note: "Future audits will load the model"
 
 **For REVIEW summary:**
 - Present discrepancies and quality issues to the architect
@@ -209,7 +209,7 @@ Reviewer reports summary to architect.
 <scenario>BOOTSTRAP mode — Intuition first Resolve triggers model creation</scenario>
 
 <code>
-Intuition Step 4: architect resolves first tension with "Resolve" on Mode 2 audit.
+Intuition Step 4: architect resolves first tension with "Resolve" on audit without architecture model.
 No docs/arch/*.c4 files exist.
 
 Intuition constructs structured input:
@@ -229,7 +229,7 @@ Known relationships:
 - core -> storage: persists and retrieves domain data
 - api -> storage: direct read queries for reports (tension noted in ADR)
 
-Source: Intuition Mode 2 audit findings + architect input
+Source: Intuition audit (no architecture model) findings + architect input
 
 Dispatch hyperpowers:ponder agent.
 
@@ -255,7 +255,7 @@ Agent returns:
 ### Validation
 - likec4 validate: PASS
 
-Architecture model bootstrapped. Future audits will run in Mode 1.
+Architecture model bootstrapped. Future audits will load the model.
 </code>
 
 <why_it_works>
@@ -389,7 +389,7 @@ FROM REVIEW-IMPLEMENTATION:
 
 FROM INTUITION:
   Step 0: freshness check → suggest /ponder review
-  Step 4: first Resolve on Mode 2 → /ponder bootstrap → model created → future Mode 1
+  Step 4: first Resolve on audit without model → /ponder bootstrap → model created → future audits load the model
 
 FROM BRAINSTORMING:
   epic template → architecture update → /ponder update → summary
