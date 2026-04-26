@@ -296,6 +296,10 @@ Agent returns:
 ### Stale in Model
 - None
 
+### Dynamic View Drift
+- auth-flow: MATCH — documented flow matches actual code path
+- order-processing: DISCREPANCY — documented flow shows api -> core -> storage, code shows api -> storage directly for read queries
+
 ### Quality Issues
 - storage component missing markdown doc (docs/arch/components/storage.md not found)
 

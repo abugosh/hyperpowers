@@ -297,7 +297,17 @@ Every model operation must maintain these invariants:
    Report: matches, discrepancies, and components in code not represented in model."
    ```
 
-3. **Check quality criteria:**
+3. **Check dynamic view drift** (when `docs/arch/views/data-flows/` contains views):
+
+   For each dynamic view, dispatch `hyperpowers:codebase-investigator`:
+   ```
+   Trace the [flow name] request path starting from [entry point].
+   What modules/components does it actually flow through?
+   Compare to the documented flow: [documented sequence from the view].
+   Report MATCH if equivalent, DISCREPANCY with brief explanation otherwise.
+   ```
+
+4. **Check quality criteria:**
    - Consistent abstraction level across components
    - Every component has metadata (layer, stability_state)
    - Every component has linked markdown doc (`docs/arch/components/[name].md`)
@@ -306,7 +316,7 @@ Every model operation must maintain these invariants:
    - No target elements or #target tags
    - Model validates via `likec4 validate`
 
-4. **Return discrepancy list:**
+5. **Return discrepancy list:**
    ```
    ## Ponder Review Summary
 
@@ -320,6 +330,11 @@ Every model operation must maintain these invariants:
    ### Stale in Model
    - [model components that no longer match code reality]
 
+   ### Dynamic View Drift
+   - [view-name]: MATCH — documented flow matches actual code path
+   - [view-name]: DISCREPANCY — documented flow shows X -> Y, code shows X -> Z -> Y
+   - None — no dynamic views to check
+
    ### Quality Issues
    - [quality criteria violations]
 
@@ -330,7 +345,7 @@ Every model operation must maintain these invariants:
    [N] discrepancies found. [Suggest update mode dispatch if corrections needed.]
    ```
 
-5. **Do NOT make corrections.** Review mode is read-only. Return findings for architect approval. Corrections come via a follow-up UPDATE dispatch after the architect reviews and approves.
+6. **Do NOT make corrections.** Review mode is read-only. Return findings for architect approval. Corrections come via a follow-up UPDATE dispatch after the architect reviews and approves.
 
 ## Rules (No Exceptions)
 

@@ -4,13 +4,13 @@ description: "Brand-informed empirical audit of architecture — finds complecti
 ---
 
 <skill_overview>
-Examine an architecture model (if one exists) and codebase for complection, hidden coupling, temporal coupling, structural dependency violations, state/identity conflation, dynamic view drift, rate-of-change mismatches, workaround cascades, and mechanism bypass using Hickey's simplicity framework and Brand's empirical observation. Produce a structured tension report that surfaces both pulls of every tension without resolving them. The architect reads the report and decides.
+Examine an architecture model (if one exists) and codebase for complection, hidden coupling, temporal coupling, structural dependency violations, state/identity conflation, rate-of-change mismatches, workaround cascades, and mechanism bypass using Hickey's simplicity framework and Brand's empirical observation. Produce a structured tension report that surfaces both pulls of every tension without resolving them. The architect reads the report and decides.
 
-When no architecture model exists, run a codebase-only audit to find tensions in raw code structure.
+When no architecture model exists, run a codebase-only audit to find tensions in raw code structure. Dynamic view drift (model view vs actual code path) is checked via /ponder REVIEW.
 </skill_overview>
 
 <rigidity_level>
-RIGID - Same 10 analysis passes every time (Passes 1-10), same output format, same self-check procedure. No adaptation, no shortcuts, no skipping passes. The analytical rigor IS the value. When no architecture model exists, model-level analysis produces "evidence insufficient — codebase only" outputs (not skipped) — the audit still finds real tensions.
+RIGID - Same 9 analysis passes every time (Passes 1-9), same output format, same self-check procedure. No adaptation, no shortcuts, no skipping passes. The analytical rigor IS the value. When no architecture model exists, model-level analysis produces "evidence insufficient — codebase only" outputs (not skipped) — the audit still finds real tensions.
 </rigidity_level>
 
 <quick_reference>
@@ -18,7 +18,7 @@ RIGID - Same 10 analysis passes every time (Passes 1-10), same output format, sa
 |------|--------|-------------|
 | 0 | Detect model (load if present); load ADRs (with age check); accept optional prose focus | Evidence sources identified; prose focus recorded if provided |
 | 1 | Gather evidence (codebase-investigator) | Module structure, imports, co-change data; request paths and undeclared flows |
-| 2 | Run 10 analysis passes | Raw tension findings (Passes 1-10) |
+| 2 | Run 9 analysis passes | Raw tension findings (Passes 1-9) |
 | 3 | Self-check + present | Tension report (no recommendations) |
 | 4 | Resolution protocol (interactive) | Per-tension resolution: accept / resolve / brainstorm / investigate |
 
@@ -297,47 +297,13 @@ The principle: dependencies should flow from orchestration (higher abstraction) 
 
 **Tension pattern:** "[A] and [B] share mutable state [S] creating hidden coupling"
 
-### Pass 7: Dynamic View Drift
-
-**What to look for:** Documented data flows (dynamic views in docs/arch/views/data-flows/) that no longer match actual codebase request paths.
-
-**Skip if no codebase** (design-phase model only) or **no dynamic views exist** or **no architecture model** (no model to drift from).
-
-For each dynamic view loaded in Step 0:
-
-1. Identify the documented flow: entry point -> component A -> component B -> ... -> exit
-2. Dispatch `hyperpowers:codebase-investigator`:
-   ```
-   Trace the [flow name] request path starting from [entry point].
-   What modules/components does it actually flow through?
-   What data shapes cross each boundary in this path?
-   ```
-3. Compare actual path vs documented path:
-   - Steps differ (different components in path) -> tension
-   - Components renamed/removed from path -> tension
-   - New components in actual path not in documented view -> tension
-   - Path no longer exists in codebase -> tension
-
-**Tension format (same structure as Passes 1-6):**
-```
-Name: Dynamic view [flow-name] drift
-Components: [components involved]
-Analysis Pass: 7 — Dynamic View Drift
-Pull A: Documented flow reflects intended architecture; actual code has drifted
-Pull B: Actual code reflects evolved requirements; documented flow is stale
-If you assume: the documented flow represents the correct architecture, then code should be realigned
-If you assume: the code reflects evolved understanding, then the dynamic view should be updated
-Structural observation: [specific discrepancy — e.g., "documented path has 3 hops, actual has 4"]
-Evidence: [from codebase-investigator dispatch]
-```
-
-### Pass 8: Rate-of-Change Mismatch (Brand's Shearing Layers)
+### Pass 7: Rate-of-Change Mismatch (Brand's Shearing Layers)
 
 **What to look for:** Modules within the same component that change at significantly different rates — empirical evidence that shearing layers are misaligned with component boundaries.
 
 **Skip if:** fewer than 10 non-filtered commits in the repository. **Warn if:** shallow clone detected (fewer than 100 commits available) — results may be unreliable.
 
-**Step 8a — Gather change frequency data:**
+**Step 7a — Gather change frequency data:**
 
 Dispatch `hyperpowers:codebase-investigator` with:
 ```
@@ -360,10 +326,10 @@ Output format:
 ```
 
 **Check for insufficient history:**
-- `git rev-list --count HEAD` — if fewer than 10: skip Pass 8 entirely, note "Insufficient commit history for rate-of-change analysis (N commits). Pass 8 skipped."
+- `git rev-list --count HEAD` — if fewer than 10: skip Pass 7 entirely, note "Insufficient commit history for rate-of-change analysis (N commits). Pass 7 skipped."
 - If fewer than 100: warn "Shallow history (N commits) — rate-of-change analysis may be unreliable."
 
-**Step 8b — Identify mismatches:**
+**Step 7b — Identify mismatches:**
 
 Compare change frequencies of modules that belong to the same component (when model is loaded) or that share the same parent directory / apparent boundary (when no model).
 
@@ -375,11 +341,11 @@ Compare change frequencies of modules that belong to the same component (when mo
 - Modules under the same parent directory with significantly different change counts (use 5:1 ratio as a signal — e.g., 25 changes vs 5 changes)
 - Co-located modules where one is effectively stable and another is highly active
 
-**Tension format (same structure as Passes 1-7, with quantitative evidence):**
+**Tension format (same structure as Passes 1-6, with quantitative evidence):**
 ```
 Name: Rate-of-change mismatch between [A] and [B]
 Components: [A] (fast: N commits/month), [B] (slow: M commits/month)
-Analysis Pass: 8 — Rate-of-Change Mismatch (Brand's Shearing Layers)
+Analysis Pass: 7 — Rate-of-Change Mismatch (Brand's Shearing Layers)
 Pull A: Keep coupled — simpler architecture, fewer interfaces
 Pull B: Decouple — let [A] move at its natural rate without dragging [B]
 If you assume: [A]'s rate will slow as the feature stabilizes, coupling is temporary
@@ -390,11 +356,11 @@ Evidence: [from git history analysis]
 
 **Filtering stats (include in report header):** "Analyzed N commits (excluded M bulk, K generated-only, J manifest-only)"
 
-### Pass 9: Workaround Cascade Detection
+### Pass 8: Workaround Cascade Detection
 
 **What to look for:** Code that exists to compensate rather than to build value — the structural fingerprint of accumulated workarounds. A single workaround is not a cascade; look for clusters of 2+ compensating patterns in the same area, all handling special cases for the same subsystem or code path.
 
-**Note:** Pass 9 may flag modules also flagged by Pass 1 (Complection). This is expected — a module can braid concerns (Pass 1) AND contain compensating code (Pass 9). Pass 9 adds the cascade framing: these are not independent concerns but symptoms of accumulated workarounds.
+**Note:** Pass 8 may flag modules also flagged by Pass 1 (Complection). This is expected — a module can braid concerns (Pass 1) AND contain compensating code (Pass 8). Pass 8 adds the cascade framing: these are not independent concerns but symptoms of accumulated workarounds.
 
 **Skip if:** no codebase (design-phase model only).
 
@@ -420,7 +386,7 @@ Evidence: [from git history analysis]
 ```
 Name: Workaround cascade in [area] (compensating for [subsystem])
 Components: [list of files/modules containing compensating code]
-Analysis Pass: 9 — Workaround Cascade
+Analysis Pass: 8 — Workaround Cascade
 Pull A: Accommodations are necessary — [subsystem] has legitimately different needs than other subsystems. Gain: handles real differences. Cost: maintenance burden of N workarounds.
 Pull B: Accommodations compensate for an architectural shortcut in [subsystem] — address at the source. Gain: eliminates N workarounds. Cost: requires reworking [subsystem]'s approach.
 If you assume: [subsystem]'s differences are inherent and permanent, the workarounds are justified
@@ -433,20 +399,20 @@ Cascade members:
   ...
 ```
 
-### Pass 10: Mechanism Bypass Detection
+### Pass 9: Mechanism Bypass Detection
 
-**What to look for:** A subsystem achieving the same outcome through a parallel path instead of the standard mechanism — the root cause behind a workaround cascade. Pass 10 does not scan independently; it takes each cascade cluster from Pass 9 as input and probes for the underlying bypass.
+**What to look for:** A subsystem achieving the same outcome through a parallel path instead of the standard mechanism — the root cause behind a workaround cascade. Pass 9 does not scan independently; it takes each cascade cluster from Pass 8 as input and probes for the underlying bypass.
 
-**Skip if:** Pass 9 found zero cascades (nothing to trace).
+**Skip if:** Pass 8 found zero cascades (nothing to trace).
 
-**Note:** Pass 10 is the first linked pass — it depends on Pass 9 output. This is by design: blind parallel-mechanism scanning produces false positives. Pass 9's cascade findings focus Pass 10 on areas where a bypass is likely.
+**Note:** Pass 9 is the first linked pass — it depends on Pass 8 output. This is by design: blind parallel-mechanism scanning produces false positives. Pass 8's cascade findings focus Pass 9 on areas where a bypass is likely.
 
-**For each cascade from Pass 9, dispatch targeted `hyperpowers:codebase-investigator`:**
+**For each cascade from Pass 8, dispatch targeted `hyperpowers:codebase-investigator`:**
 
 ```
-Pass 9 found a workaround cascade in [area] compensating for [subsystem].
+Pass 8 found a workaround cascade in [area] compensating for [subsystem].
 Cascade members:
-  [list cascade members from Pass 9 output]
+  [list cascade members from Pass 8 output]
 
 Investigate:
 1. What is the STANDARD mechanism that other subsystems use for the same
@@ -473,24 +439,24 @@ Report:
 **Codebase evidence:**
 - Two code paths achieving the same outcome: one using the standard mechanism (used by most subsystems) and one using an alternative path (used by the cascade-producing subsystem)
 - Fork point where the bypass diverges from the standard path
-- The bypass path's output requiring downstream compensating code (the cascade members from Pass 9)
+- The bypass path's output requiring downstream compensating code (the cascade members from Pass 8)
 
 **Tension format (bypass found):**
 ```
 Name: Mechanism bypass in [subsystem] (causing cascade in [area])
 Components: [subsystem modules using bypass], [modules on standard path]
-Analysis Pass: 10 — Mechanism Bypass (linked to Pass 9 cascade)
+Analysis Pass: 9 — Mechanism Bypass (linked to Pass 8 cascade)
 Pull A: The bypass is intentional — [subsystem] has requirements that the standard mechanism cannot serve. Gain: [subsystem] operates without standard mechanism constraints. Cost: N workarounds downstream (see linked cascade).
 Pull B: The bypass is an architectural shortcut — [subsystem] could use the standard mechanism. Gain: eliminates N downstream workarounds. Cost: requires reworking [subsystem] to use standard mechanism.
 If you assume: [subsystem]'s requirements genuinely cannot be met by the standard mechanism, the bypass is necessary
 If you assume: [subsystem]'s requirements can be met by the standard mechanism with adaptation, the bypass is unnecessary
-Structural observation: [subsystem] achieves [outcome] via [bypass path] instead of [standard path]. Fork point: [where paths diverge]. This bypass produces [N] downstream workarounds (Pass 9 cascade).
+Structural observation: [subsystem] achieves [outcome] via [bypass path] instead of [standard path]. Fork point: [where paths diverge]. This bypass produces [N] downstream workarounds (Pass 8 cascade).
 Evidence:
   Standard path: [entry] -> [module A] -> [module B] -> [outcome]
   Bypass path: [entry] -> [different modules] -> [same outcome]
   Fork point: [specific file/module where paths diverge]
-Linked cascade (Pass 9):
-  [cascade name from Pass 9]
+Linked cascade (Pass 8):
+  [cascade name from Pass 8 output]
   Cascade members:
     1. [file:line] — [what this workaround compensates for]
     2. [file:line] — [what this workaround compensates for]
@@ -500,16 +466,16 @@ Linked cascade (Pass 9):
 **Tension format (no bypass found — root cause unclear):**
 ```
 Name: Workaround cascade in [area] — root cause unclear
-Components: [list from Pass 9 cascade]
-Analysis Pass: 10 — Mechanism Bypass (linked to Pass 9 cascade)
+Components: [list from Pass 8 cascade]
+Analysis Pass: 9 — Mechanism Bypass (linked to Pass 8 cascade)
 Pull A: The cascade has a root cause not visible in the current codebase — investigate further (e.g., historical decisions, external constraints, or removed code). Gain: may uncover actionable root cause. Cost: investigation effort.
 Pull B: The cascade members are independent issues that coincidentally cluster in the same area — no single root cause exists. Gain: each workaround can be evaluated independently. Cost: may miss a hidden systemic cause.
 If you assume: the clustering is not coincidental, there is a root cause worth finding
 If you assume: the clustering is coincidental, individual evaluation is sufficient
-Structural observation: [N] compensating patterns in [area] for [subsystem] (from Pass 9). Codebase-investigator found no parallel path bypassing the standard mechanism.
+Structural observation: [N] compensating patterns in [area] for [subsystem] (from Pass 8). Codebase-investigator found no parallel path bypassing the standard mechanism.
 Evidence: [codebase-investigator findings — what was searched and not found]
-Linked cascade (Pass 9):
-  [cascade name from Pass 9]
+Linked cascade (Pass 8):
+  [cascade name from Pass 8 output]
 ```
 
 ---
@@ -619,11 +585,11 @@ Ordering language (rewrite if found):
 **Tensions found:** [count]
 **Accepted (via ADRs):** [count]
 **Drift detected (ADR):** [count]
-**View drift detected (Pass 7):** [count, or "evidence insufficient — no model"]
-**Rate-of-change mismatches (Pass 8):** [count, or "skipped — insufficient history"]
-**Pass 8 filtering stats:** [Analyzed N commits (excluded M bulk, K generated-only, J manifest-only)]
-**Workaround cascades (Pass 9):** [count, or "none"]
-**Mechanism bypass (Pass 10):** [count, or "skipped — no cascades" or "none — cascades without identified bypass"]
+**Rate-of-change mismatches (Pass 7):** [count, or "skipped — insufficient history"]
+**Pass 7 filtering stats:** [Analyzed N commits (excluded M bulk, K generated-only, J manifest-only)]
+**Workaround cascades (Pass 8):** [count, or "none"]
+**Mechanism bypass (Pass 9):** [count, or "skipped — no cascades" or "none — cascades without identified bypass"]
+**View drift: see /ponder REVIEW (model-vs-code accuracy)**
 **Stale ADRs (6+ months):** [count, or "none"]
 **Clean (no tensions, no drift):** [yes/no]
 
@@ -718,20 +684,20 @@ Note the tension as deferred and move to the next one.
 
 ---
 
-### Linked Pass 9+10 Findings
+### Linked Pass 8+9 Findings
 
-When Pass 10 identifies a mechanism bypass for a Pass 9 cascade, present them together as a linked finding:
+When Pass 9 identifies a mechanism bypass for a Pass 8 cascade, present them together as a linked finding:
 
-**Presentation:** Show the Pass 10 tension (which includes the linked Pass 9 cascade evidence) as a single resolution item. The architect sees both the bypass and its downstream cascade in one view.
+**Presentation:** Show the Pass 9 tension (which includes the linked Pass 8 cascade evidence) as a single resolution item. The architect sees both the bypass and its downstream cascade in one view.
 
 **Resolution semantics:**
-- **Resolving the bypass** (Pass 10) resolves the cascade (Pass 9) — the cascade is a symptom of the bypass. One ADR + one bd ticket addresses both.
+- **Resolving the bypass** (Pass 9) resolves the cascade (Pass 8) — the cascade is a symptom of the bypass. One ADR + one bd ticket addresses both.
 - **Accepting the bypass** also accepts the cascade — if the bypass is intentional, its downstream workarounds are accepted consequences.
 - **Brainstorming the bypass** includes the cascade as context — the brainstorm addresses the root cause, not individual workarounds.
 
-**When no bypass found ("root cause unclear"):** Present the Pass 9 cascade as a standalone tension for resolution. The "root cause unclear" Pass 10 finding is informational — it tells the architect that investigation found no parallel path, so the cascade members may need individual evaluation or deeper investigation.
+**When no bypass found ("root cause unclear"):** Present the Pass 8 cascade as a standalone tension for resolution. The "root cause unclear" Pass 9 finding is informational — it tells the architect that investigation found no parallel path, so the cascade members may need individual evaluation or deeper investigation.
 
-**Do NOT present Pass 9 cascades separately when a Pass 10 bypass was found.** The linked finding replaces both individual findings. This prevents the architect from resolving the cascade and bypass independently (which would be contradictory — the cascade is caused by the bypass).
+**Do NOT present Pass 8 cascades separately when a Pass 9 bypass was found.** The linked finding replaces both individual findings. This prevents the architect from resolving the cascade and bypass independently (which would be contradictory — the cascade is caused by the bypass).
 
 ---
 
@@ -783,7 +749,7 @@ Claude loads architecture model:
 Claude dispatches codebase-investigator:
   [Evidence gathered: import graphs, co-change patterns, call patterns, shared state]
 
-Claude runs 10 analysis passes:
+Claude runs 9 analysis passes:
 
 Pass 3 (Temporal Coupling) finds:
   Pricing Engine and Fulfillment Engine changed together in 7 of last 10 commits.
@@ -797,10 +763,9 @@ Pass 1 (Complection) finds nothing.
 Pass 2 (Interface Analysis) finds nothing.
 Pass 5 (Structural Dependency Direction) finds nothing.
 Pass 6 (State/Identity) finds nothing.
-Pass 7 (Dynamic View Drift) finds nothing.
-Pass 8 (Rate-of-Change Mismatch) finds nothing.
-Pass 9 (Workaround Cascade) finds nothing.
-Pass 10 (Mechanism Bypass) skipped — no cascades from Pass 9.
+Pass 7 (Rate-of-Change Mismatch) finds nothing.
+Pass 8 (Workaround Cascade) finds nothing.
+Pass 9 (Mechanism Bypass) skipped — no cascades from Pass 8.
 
 Claude self-checks output:
   No recommendation keywords found. Neutral language confirmed.
@@ -881,7 +846,7 @@ None.
 </code>
 
 <why_it_works>
-- All 10 passes executed (even those with no findings)
+- All 9 passes executed (even those with no findings)
 - Tensions use exact structured format with both pulls
 - No recommendations -- both options presented equally with gain/cost
 - Conditional assumptions state when each pull is correct
@@ -921,7 +886,7 @@ Claude dispatches codebase-investigator (Step 1b — data flows):
    GET /reports flows through api/ -> storage/ directly (bypasses core/)
    storage/cache.rs calls api/middleware::get_auth_context() for cache key]
 
-Claude runs 10 analysis passes:
+Claude runs 9 analysis passes:
 
 Pass 3 (Temporal Coupling):
   api/ and core/ changed together in 8 of 12 recent commits.
@@ -933,16 +898,15 @@ Pass 5 (Structural Dependency Direction):
   storage/cache.rs imports from api/middleware — lower abstraction
   depends on higher abstraction.
 
-Pass 8 (Rate-of-Change Mismatch):
+Pass 7 (Rate-of-Change Mismatch):
   Analyzed 45 commits (excluded 3 bulk, 2 generated-only, 1 manifest-only).
   api/ changed 30 times, utils/ changed 2 times — but they share no boundary,
   no tension. core/ and storage/ both changed ~15 times — no mismatch within
   any shared boundary.
 
 Passes 1, 2, 6: nothing found.
-Pass 7: evidence insufficient — no model (no architecture model to drift from).
-Pass 9 (Workaround Cascade): nothing found.
-Pass 10 (Mechanism Bypass): skipped — no cascades from Pass 9.
+Pass 8 (Workaround Cascade): nothing found.
+Pass 9 (Mechanism Bypass): skipped — no cascades from Pass 8.
 
 Claude self-checks: no recommendation language found.
 
@@ -956,7 +920,6 @@ Claude presents:
 **Modules analyzed:** 4 (api, core, storage, utils)
 **Evidence sources:** codebase only
 **ADRs reviewed:** none found
-**Dynamic views checked:** evidence insufficient — no model
 
 ---
 
@@ -1019,7 +982,6 @@ None (no ADRs to drift from).
 **Tensions found:** 3
 **Accepted (via ADRs):** 0
 **Drift detected:** 0
-**View drift detected:** evidence insufficient — no model
 **Clean:** no
 
 3 tensions require architect resolution. Options for each tension:
@@ -1030,13 +992,13 @@ None (no ADRs to drift from).
 
 <why_it_works>
 - Audit without architecture model correctly identified and announced
-- All 10 passes executed (Pass 7 correctly skipped as evidence insufficient — no model, Pass 8 ran with filtering stats, Pass 10 correctly skipped when Pass 9 found no cascades)
+- All 9 passes executed (Pass 7 ran with filtering stats, Pass 8 ran with no cascades found, Pass 9 correctly skipped)
 - Tensions found from codebase evidence alone — no model needed
 - Pass 5 caught upward dependency without needing layer vocabulary
-- Pass 8 reported filtering stats and found no mismatches within shared boundaries
+- Pass 7 reported filtering stats and found no mismatches within shared boundaries
 - Structural observations use neutral facts
 - No recommendations — both pulls presented equally
-- Report format correctly adapted for audit without model (evidence-insufficient notes where model would be)
+- Report format correctly adapted for audit without model
 </why_it_works>
 </example>
 
@@ -1131,7 +1093,7 @@ Claude dispatches codebase-investigator:
   Evidence: src/orders/refund.rs:12 directly imports payment::process_refund()
   These bypass the Orchestrator and call Payment Gateway directly from order logic.
 
-Claude runs analysis passes... Pass 4 (Hidden Dependencies) detects the drift.
+Claude runs 9 analysis passes... Pass 4 (Hidden Dependencies) detects the drift.
 
 Claude self-checks: no recommendation language found.
 
@@ -1209,7 +1171,7 @@ decision. Options:
 <scenario>BAD -- Audit that skips the self-check step</scenario>
 
 <code>
-Claude runs all 10 analysis passes and finds tensions.
+Claude runs all 9 analysis passes and finds tensions.
 Claude skips self-check ("output looks fine, no need to review").
 Claude presents:
 
@@ -1296,19 +1258,19 @@ No severity words. No ordering. No prioritization.
 
 4. **Run self-check EVERY TIME.** Scan all output for recommendation, severity, and ordering keywords before presenting. This step is mandatory and non-negotiable. "Output looks fine" is a rationalization for skipping it.
 
-5. **Run ALL 10 passes.** Never skip a pass, even if early passes found nothing. Each pass looks for a different category of problem. Skipping passes misses problems. Pass 7 (dynamic view drift) is skipped only when no architecture model exists or when no dynamic views exist. Pass 8 (rate-of-change mismatch) is skipped only when fewer than 10 non-filtered commits are available. Pass 9 (workaround cascade) is skipped only when no codebase exists. Pass 10 (mechanism bypass) is skipped only when Pass 9 finds zero cascades.
+5. **Run ALL 9 passes.** Never skip a pass, even if early passes found nothing. Each pass looks for a different category of problem. Skipping passes misses problems. Pass 7 (rate-of-change mismatch) is skipped only when fewer than 10 non-filtered commits are available. Pass 8 (workaround cascade) is skipped only when no codebase exists. Pass 9 (mechanism bypass) is skipped only when Pass 8 finds zero cascades.
 
 6. **ANALYTICAL in Steps 0-3, INTERACTIVE in Step 4.** No AskUserQuestion during analysis (Steps 0-3). Step 4 (resolution protocol) IS interactive — use AskUserQuestion to walk the architect through each tension's resolution.
 
 7. **ADR-aware.** Read existing ADRs before analysis. Skip tensions that match accepted ADR decisions. Report drift when codebase contradicts ADRs. Flag ADRs older than 6 months as maintenance notes.
 
-8. **Dispatch codebase-investigator when codebase exists.** Evidence from the codebase feeds ALL analysis passes, not just drift detection. Never skip codebase investigation when there is code to examine. Step 1a items 7-8 gather compensating code patterns and fix clustering specifically for Pass 9.
+8. **Dispatch codebase-investigator when codebase exists.** Evidence from the codebase feeds ALL analysis passes, not just drift detection. Never skip codebase investigation when there is code to examine. Step 1a items 7-8 gather compensating code patterns and fix clustering specifically for Pass 8.
 
 9. **Use structured tension format.** Every tension follows the exact format: tension name, components/modules, analysis pass, Pull 1 (gain/cost), Pull 2 (gain/cost), conditional assumptions, structural observation, evidence. No free-form commentary.
 
 10. **Think in components and boundaries, NOT classes and functions.** If the analysis descends to implementation details (class hierarchies, function signatures), you have crossed into inner-loop territory. Stay at the component/module level.
 
-11. **Audit without architecture model is a full audit.** Codebase-only mode runs all passes using codebase evidence. It is not a degraded mode — it finds real tensions. The only difference is model-level analysis reports "evidence insufficient — codebase only" and Pass 7 (dynamic view drift) is skipped (no model means no views to drift from). Pass 8 still runs (git history is available without a model). Pass 9 and 10 run on codebase evidence (compensating code patterns, fix clustering, code path tracing).
+11. **Audit without architecture model is a full audit.** Codebase-only mode runs all passes using codebase evidence. It is not a degraded mode — it finds real tensions. The only difference is model-level analysis reports "evidence insufficient — codebase only". Pass 7 still runs (git history is available without a model). Pass 8 and 9 run on codebase evidence (compensating code patterns, fix clustering, code path tracing). Dynamic view drift is checked in /ponder REVIEW (not in /intuition).
 
 ## Common Excuses
 
@@ -1316,12 +1278,12 @@ All of these mean: **STOP. Follow the process.**
 
 - "This tension is obviously more important" (You are recommending. Present both pulls equally.)
 - "Output looks fine, skip self-check" (Self-check exists because output never looks fine on first pass.)
-- "Only 2 passes are relevant here" (Run all 10. The passes you skip are where surprises hide.)
+- "Only 2 passes are relevant here" (Run all 9. The passes you skip are where surprises hide.)
 - "No need for codebase investigation, model is clear" (Model is declared intent. Codebase is reality. Always check.)
 - "I can see which pull is correct" (Your job is to present, not to judge. The architect decides.)
 - "The severity is objectively higher" (There is no objective severity. There are structural observations.)
 - "Self-check is redundant, I was careful" (Careful people still write recommendation language unconsciously.)
-- "No model means limited audit" (Audit without a model finds real tensions from codebase alone. Run all passes — especially Pass 8 which needs only git history, and Pass 9 which detects cascades from codebase evidence.)
+- "No model means limited audit" (Audit without a model finds real tensions from codebase alone. Run all passes — especially Pass 7 which needs only git history, and Pass 8 which detects cascades from codebase evidence.)
 </critical_rules>
 
 <verification_checklist>
@@ -1334,12 +1296,11 @@ Before presenting the audit report:
 - [ ] Codebase-investigator dispatched (if codebase exists)
 - [ ] Evidence gathered covers: module structure, imports, co-change, call patterns, interfaces, shared state
 - [ ] Flow evidence gathered (Step 1b): request paths, undeclared data flows, implicit ordering (if codebase exists)
-- [ ] All 10 analysis passes executed (complection, interfaces, temporal coupling, hidden deps, structural dependency direction, state/identity, dynamic view drift, rate-of-change mismatch, workaround cascade, mechanism bypass)
-- [ ] Pass 7 compared documented flows to actual codebase paths (when model and dynamic views present) or noted evidence insufficient
-- [ ] Pass 8 analyzed git change frequencies with noise filtering, or skipped with reason (<10 commits)
-- [ ] Pass 9 scanned for workaround cascades, or skipped (no codebase)
-- [ ] Pass 10 dispatched targeted codebase-investigator per cascade, or skipped (no cascades from Pass 9)
-- [ ] Linked Pass 9+10 findings presented together in Step 4 (bypass resolves cascade)
+- [ ] All 9 analysis passes executed (complection, interfaces, temporal coupling, hidden deps, structural dependency direction, state/identity, rate-of-change mismatch, workaround cascade, mechanism bypass)
+- [ ] Pass 7 analyzed git change frequencies with noise filtering, or skipped with reason (<10 commits)
+- [ ] Pass 8 scanned for workaround cascades, or skipped (no codebase)
+- [ ] Pass 9 dispatched targeted codebase-investigator per cascade, or skipped (no cascades from Pass 8)
+- [ ] Linked Pass 8+9 findings presented together in Step 4 (bypass resolves cascade)
 - [ ] Accepted ADR tensions skipped with note
 - [ ] Drift detected where ADRs contradict codebase evidence
 - [ ] Every tension uses structured format (name, components/modules, pass, both pulls, assumptions, observation, evidence)
@@ -1389,7 +1350,7 @@ HANDOFF (all tensions resolved/accepted):
 ```
 
 **Agents used:**
-- codebase-investigator (Step 1a: gather module structure, imports, co-change, call patterns, interfaces, shared state, compensating code patterns, fix clustering; Step 1b: gather request paths, undeclared data flows, implicit ordering; Pass 7: trace actual request paths for dynamic view comparison; Pass 8: analyze git change frequencies per module with noise filtering; Pass 10: trace bypass paths for cascade root cause; Step 4 Investigate: targeted deep-dive on specific tensions)
+- codebase-investigator (Step 1a: gather module structure, imports, co-change, call patterns, interfaces, shared state, compensating code patterns, fix clustering; Step 1b: gather request paths, undeclared data flows, implicit ordering; Pass 7: analyze git change frequencies per module with noise filtering; Pass 9: trace bypass paths for cascade root cause; Step 4 Investigate: targeted deep-dive on specific tensions)
 - ponder (Step 4: bootstrap mode — dispatched when first Resolve on audit without architecture model creates initial model)
 - NO internet-researcher (audit uses only model + codebase evidence)
 
