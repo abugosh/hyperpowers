@@ -133,7 +133,13 @@ If during design presentation the architect expresses structural friction — un
 belong or how components should relate. /intuition can systematically
 examine your architecture for tensions before you commit to this design.
 
-Would you like to run /intuition first, or continue with the current design?"
+If you'd like to run it, pass prose focus describing the area of friction —
+e.g., 'examine the [component-A]/[component-B] boundary for tensions
+this design might interact with' — so /intuition can target evidence
+gathering and filter the tension report to the relevant area.
+
+Would you like to run /intuition with focus on [specific area], or continue
+with the current design?"
 ```
 
 Do NOT auto-redirect. This is a routing offer, not a gate. The architect decides.
@@ -180,7 +186,13 @@ Result: [N] boxes checked.
 "This design touches [N] architectural dimension(s). /intuition can examine
 your existing architecture for tensions this change might interact with.
 
-Would you like to run /intuition before creating the epic, or proceed?"
+If you'd like to run it, pass prose focus naming the components or boundaries
+this design touches — e.g., 'examine [list-of-affected-components] for tensions
+this epic will interact with' — so /intuition can target evidence gathering
+and filter the tension report to the relevant area.
+
+Would you like to run /intuition with focus on [specific components], or
+proceed to epic creation?"
 ```
 
 The architect decides. Record the Impact Check result (including the routing decision) in the epic's Architecture Impact section.
