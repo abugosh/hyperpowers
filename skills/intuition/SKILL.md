@@ -178,7 +178,7 @@ The flow evidence from Step 1b feeds into passes 1, 3, 4, and 9 — it does NOT 
 
 ---
 
-## Step 2 -- Run 10 Analysis Passes
+## Step 2 -- Run 9 Analysis Passes
 
 Run each pass using whatever evidence is available. When an architecture model is loaded, both model-level and codebase-level analysis run. When no model is loaded, model-level analysis produces zero tensions with note "evidence insufficient — codebase only" and codebase-level analysis still runs. Each pass may produce zero or more tensions.
 
@@ -576,9 +576,9 @@ Ordering language (rewrite if found):
 
 ### Module Summary
 
-| Component/Module | Tensions | View Drift | Notes |
-|------------------|----------|------------|-------|
-| [name] | [count] | [yes/no/N/A] | [blank] |
+| Component/Module | Tensions | Notes |
+|------------------|----------|-------|
+| [name] | [count] | [blank] |
 
 ### Audit Outcome
 
@@ -805,13 +805,13 @@ None.
 
 ### Module Summary
 
-| Component/Module | Tensions | View Drift | Notes |
-|------------------|----------|------------|-------|
-| Order Orchestrator | 0 | N/A | |
-| Pricing Engine | 2 | N/A | |
-| Fulfillment Engine | 1 | N/A | |
-| Payment Gateway | 0 | N/A | |
-| Order Store | 1 | N/A | |
+| Component/Module | Tensions | Notes |
+|------------------|----------|-------|
+| Order Orchestrator | 0 | |
+| Pricing Engine | 2 | |
+| Fulfillment Engine | 1 | |
+| Payment Gateway | 0 | |
+| Order Store | 1 | |
 
 ### Audit Outcome
 
@@ -951,12 +951,12 @@ None (no ADRs to drift from).
 
 ### Module Summary
 
-| Component/Module | Tensions | View Drift | Notes |
-|------------------|----------|------------|-------|
-| api/ | 2 | N/A | |
-| core/ | 1 | N/A | |
-| storage/ | 2 | N/A | |
-| utils/ | 0 | N/A | |
+| Component/Module | Tensions | Notes |
+|------------------|----------|-------|
+| api/ | 2 | |
+| core/ | 1 | |
+| storage/ | 2 | |
+| utils/ | 0 | |
 
 ### Audit Outcome
 
@@ -1116,13 +1116,13 @@ None.
 
 ### Module Summary
 
-| Component/Module | Tensions | View Drift | Notes |
-|------------------|----------|------------|-------|
-| Order Orchestrator | 0 | N/A | drift: ADR-001 |
-| Pricing Engine | 0 | N/A | |
-| Fulfillment Engine | 0 | N/A | |
-| Payment Gateway | 0 | N/A | drift: ADR-001 |
-| Order Store | 0 | N/A | |
+| Component/Module | Tensions | Notes |
+|------------------|----------|-------|
+| Order Orchestrator | 0 | drift: ADR-001 |
+| Pricing Engine | 0 | |
+| Fulfillment Engine | 0 | |
+| Payment Gateway | 0 | drift: ADR-001 |
+| Order Store | 0 | |
 
 ### Audit Outcome
 
