@@ -83,6 +83,10 @@ Agent tool:
     - Read project memories matching epic-<epic-id>-* for cross-task
       learnings from prior tasks.
     - Use TaskCreate to track your TDD sub-steps (RED/GREEN/REFACTOR/COMMIT).
+    - The completion report MUST be one of three envelopes: COMPLETE, ESCALATION,
+      or CONTEXT_LIMIT — see "Final Output Contract" section at the top of
+      agents/executor.md. Do NOT run hyperpowers:sre-task-refinement; the lead
+      runs it on your proposal before dispatching the next executor.
     - Before outputting your completion report, write key learnings to
       project memory using filename: epic-<epic-id>-task-<task-id>-learnings.md
     - If you hit an escalation trigger, commit partial work, write partial
@@ -127,6 +131,16 @@ bd show <epic-id>
    - **APPROVE** — Dispatch fresh executor for next task using briefing template.
    - **MODIFY** — Dispatch fresh executor with adjusted task description. Note what was modified and why in the prompt.
    - **REDIRECT** — Dispatch fresh executor with a different task. Note why proposal was rejected in the prompt.
+
+4. **Run SRE refinement on the approved proposed task before dispatch.**
+
+   If the decision is APPROVE or MODIFY:
+
+   ```
+   Use Skill tool: hyperpowers:sre-task-refinement
+   ```
+
+   Run on the proposed task description. Apply refinement findings to the next-executor dispatch prompt — pass corner cases as additional context. (This responsibility was moved from executor to lead because running heavy analytical skills in the executor's late-life context caused format drift in completion reports — see bd-0he.)
 
 ### 3b. Handling ESCALATION Return
 
@@ -262,6 +276,8 @@ not met. Investigate Option A: breaking changes in v1.0? PKCE plugin available?"
 
 9. **Executor MUST be dispatched as blocking subagent** — Using the team dispatch mode causes the Agent tool to return immediately, leaving the lead idle and vulnerable to throttling. Blocking dispatch (no team parameter) keeps the lead actively computing between tasks.
 
+10. **Run SRE refinement at lead-side, not executor-side** — When approving a proposed next task, run hyperpowers:sre-task-refinement before dispatching the next executor. The refinement adds corner-case context to the dispatch prompt. Never expect the executor to run SRE on its own proposal; that responsibility is the lead's. (Established by bd-6uw fix for bd-0he format drift.)
+
 ## Common Rationalizations
 
 - "I'll implement this small thing directly" → Lead never implements. Dispatch executor.
@@ -271,6 +287,7 @@ not met. Investigate Option A: breaking changes in v1.0? PKCE plugin available?"
 - "This requirement is unrealistic" → Immutable. Research or ask user.
 - "This is a single-task epic, blocking dispatch seems unnecessary" → Dispatch blocking subagent. Consistent dispatch model prevents idle throttling on every epic.
 - "I'll use team dispatch, it's fine for this one" → No. Team dispatch causes idle throttling. Always dispatch as a blocking subagent.
+- "The executor already ran SRE on this proposal" → As of bd-6uw (fix for bd-0he), executors don't run SRE. Lead runs it on approved proposals before dispatch.
 
 </critical_rules>
 
@@ -283,6 +300,7 @@ Before approving any proposal:
 - [ ] Checked proposal against each anti-pattern
 - [ ] Checked Design Discovery if proposal is near rejected approaches
 - [ ] Decision (approve/modify/redirect) noted with reasoning
+- [ ] Ran SRE refinement on the approved proposed task before dispatching next executor
 
 Before dispatching reviewer:
 - [ ] All success criteria reported as met by executor
