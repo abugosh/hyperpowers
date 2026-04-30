@@ -19,9 +19,9 @@ HIGH FREEDOM - The 8-step order is fixed, but Socratic questioning within steps 
 | 3 | Present design in sections (200-300 words each); friction detection | Validated architecture; /intuition offered if friction detected |
 | 4 | Architecture Impact Check (5 structural questions) | Impact recorded in epic; /intuition offered if any YES |
 | 5 | Create bd epic with IMMUTABLE requirements | Epic with 7 top-level sections and anti-patterns |
-| 6 | Create ONLY first task | First bd task ready for SRE refinement |
-| 7 | Run SRE refinement | Refined first task ready for handoff |
-| 8 | Hand off to executing-plans | Lead orchestrates executor subagent |
+| 6 | Sizing gate check, then create complete task tree | All tasks planned upfront with simple/medium classification |
+| 7 | Run SRE batch review on full task tree | Refined task tree ready for handoff |
+| 8 | Hand off to executing-plans | Lead orchestrates executor subagents with dynamic model selection |
 </quick_reference>
 
 <when_to_use>
@@ -271,46 +271,97 @@ EOF
 
 ---
 
-## Step 6 — Creating ONLY the First Task
+## Step 6 — Sizing Gate, Then Complete Task Tree
 
-Create one task, not a full tree.
+### 6a — Sizing Gate
+
+Before creating tasks, check whether this epic is too large for a single leaf epic:
+
+- Estimated tasks exceed 10?
+- Work spans 3 or more distinct components?
+- Multiple independent deliverables that could ship separately?
+
+If any are true, offer escalation to grand planner:
+
+> "This scope looks large for a single epic (~[N] tasks across [M] components). The grand planner can decompose it into leaf epics with dependencies, so each epic stays focused. Continue here, or escalate to /grand-plan?"
+
+This is a gate the user can override — not a hard block. If the user says "proceed anyway," create the task tree and note in the epic that the sizing gate was triggered but overridden.
+
+---
+
+### 6b — Create Complete Task Tree
+
+Create ALL tasks for the epic upfront. Every task must be classified as **simple** (2-10 min, Haiku) or **medium** (10-30 min, Sonnet) and linked to the epic.
+
+**Simple task spec** — Goal, Why, Changes, Verification:
 
 ```bash
-bd create "Task 1: [Specific Deliverable]" \
+bd create "Task N: [Specific Deliverable]" \
   --type feature \
   --priority [match-epic] \
   --design "$(cat <<'EOF'
 ## Goal
 [What this task delivers — one clear outcome]
 
-## Implementation
-[Detailed step-by-step for this task only]
+## Why
+[How this fits the epic — what breaks without it]
 
-1. Study existing code
-   [Point to 2-3 similar implementations: file.ts:line]
+## Changes
+- [file.ts line/function] — [exact change]
+- [file.ts line/function] — [exact change]
 
-2. Write tests first (TDD)
-   [Specific test cases for this task]
-
-3. Implementation checklist
-   - [ ] file.ts:line — function_name() — [exactly what it does]
-   - [ ] test.ts:line — test_name() — [what scenario it tests]
-
-## Success Criteria
+## Verification
 - [ ] [Specific, measurable outcome]
-- [ ] Tests passing
 - [ ] Pre-commit hooks passing
 EOF
 )"
-
-bd dep add bd-2 bd-1 --type parent-child  # Link task to epic
+bd dep add bd-[task] bd-[epic] --type parent-child
 ```
 
-**Why only one task?** Subsequent tasks are created iteratively by executing-plans as each task completes. Each task reflects learnings from the previous one. Avoids brittle task trees that break when initial assumptions prove wrong.
+**Medium task spec** — Goal, Why, Context, Implementation, Tests, Verification, Boundaries:
+
+```bash
+bd create "Task N: [Specific Deliverable]" \
+  --type feature \
+  --priority [match-epic] \
+  --design "$(cat <<'EOF'
+## Goal
+[What this task delivers — one clear outcome]
+
+## Why
+[How this fits the epic — what breaks without it]
+
+## Context
+[Key files, patterns, or interfaces the executor needs to know]
+
+## Implementation
+1. [Step with file path and what to change]
+2. [Step with file path and what to change]
+
+## Tests
+[Test cases to write — scenario and expected behavior]
+
+## Verification
+- [ ] [Specific, measurable outcome]
+- [ ] Tests passing
+- [ ] Pre-commit hooks passing
+
+## Boundaries
+[What is explicitly OUT of scope for this task]
+EOF
+)"
+bd dep add bd-[task] bd-[epic] --type parent-child
+```
+
+**Classification guide:**
+- Simple: rename, config change, single-file edit, documentation update
+- Medium: new component, cross-file change, logic with edge cases, test suite addition
+
+Set task dependencies in bd so execution order is clear: `bd dep add bd-[task-B] bd-[task-A] --type blocking` for tasks that must run in sequence.
 
 ---
 
-## Step 7 — SRE Refinement
+## Step 7 — Batch SRE Review
 
 **REQUIRED. Do not skip.**
 
@@ -318,9 +369,11 @@ bd dep add bd-2 bd-1 --type parent-child  # Link task to epic
 Use Skill tool: hyperpowers:sre-task-refinement
 ```
 
-SRE refinement applies an 8-category corner-case analysis to the first task: granularity, implementability, success criteria quality, dependency structure, safety standards, edge cases, red flags, and test meaningfulness. It strengthens success criteria and identifies failure modes.
+SRE refinement runs **once against the full task tree** — not per-task, not just the first task. It applies an 8-category corner-case analysis across all tasks: granularity, implementability, success criteria quality, dependency structure, safety standards, edge cases, red flags, and test meaningfulness.
 
-The first task sets the pattern for the entire epic. Skipping refinement on "feels heavy" grounds is exactly the rationalization the rule guards against.
+SRE refinement can suggest: splitting tasks that are too large, adding tasks that are missing, reordering dependencies, and strengthening success criteria. The output is a refined task tree ready for execution.
+
+The full task tree review catches systemic gaps (e.g., missing error handling across all tasks). Skipping on "feels heavy" grounds is exactly the rationalization the rule guards against.
 
 ---
 
@@ -330,7 +383,7 @@ After refinement approved, present the handoff:
 
 ```
 "Epic [bd-N] is ready with immutable requirements and success criteria.
-First task [bd-M] has been refined and is ready to execute.
+Full task tree has been batch-reviewed by SRE and is ready to execute.
 
 Ready to start implementation? I'll use executing-plans to orchestrate execution.
 
@@ -363,7 +416,7 @@ Worked examples (skipped-research, upfront-task-tree, missing-anti-patterns) liv
 - **Incremental validation** — Present design in sections, validate each
 - **Epic is contract** — Requirements immutable, tasks adapt
 - **Anti-patterns prevent shortcuts** — Explicit forbidden patterns stop rationalization under pressure
-- **One task only** — Subsequent tasks created iteratively, not upfront
+- **Complete task tree upfront** — All tasks planned before execution; execution order set by dependencies
 </key_principles>
 
 <critical_rules>
@@ -372,8 +425,8 @@ Worked examples (skipped-research, upfront-task-tree, missing-anti-patterns) liv
 3. **Propose 2-3 approaches with trade-offs** → Don't jump to a single solution
 4. **Epic requirements IMMUTABLE** → Tasks adapt, requirements don't
 5. **Include anti-patterns section with reasoning** → Prevents watering down requirements when blockers occur
-6. **Create ONLY first task** → Subsequent tasks created iteratively as you learn
-7. **Run SRE refinement before handoff** → The first task sets the pattern for the entire epic
+6. **Create the complete task tree** → All tasks planned upfront with simple/medium classification; check sizing gate first
+7. **Run SRE batch review before handoff** → Reviews full task tree once; catches systemic gaps and weak criteria
 8. **Offer /intuition when design-time friction detected** → Architect-decides routing, not a gate
 9. **Architecture Impact Check required before epic finalization** → 5 questions, record result in epic, offer /intuition if any YES
 10. **Subsection 'None' requires grounded justification** → "None because [specific reason]"; bare "None" enables skip-thinking
@@ -381,10 +434,10 @@ Worked examples (skipped-research, upfront-task-tree, missing-anti-patterns) liv
 **Common excuses that mean STOP and follow the process:**
 - "Requirements obvious, don't need questions" — Questions reveal hidden complexity
 - "I know this pattern, don't need research" — Research might show a better way or a conflict
-- "Can plan all tasks upfront" — Plans become brittle; tasks adapt as you learn
+- "Scope is small, sizing gate doesn't apply" — Check task count and components anyway; gate is cheap
 - "Anti-patterns section is overkill" — Prevents rationalization under pressure
 - "Epic can evolve" — Requirements are a contract; tasks evolve, requirements don't
-- "SRE refinement is overkill for this task" — First task sets the pattern for the epic
+- "Batch SRE review is overkill for a small plan" — Full-tree review catches systemic gaps a per-task pass misses
 - "Only one box checked, /intuition not worth it" — Offer it; the architect decides
 - "'None' is fine here" — Bare 'None' enables skip-thinking; write the reason
 </critical_rules>
@@ -397,7 +450,8 @@ Before handing off to executing-plans:
 - [ ] Architecture Impact Check done (Step 4); /intuition offered if 1+ YES or friction detected
 - [ ] bd epic has all 7 sections; Design Rationale has 6 subsections; every empty subsection has "None because [reason]"
 - [ ] Anti-patterns include reasoning ("NO X (reason: Y)")
-- [ ] Created ONLY the first task (not full tree); ran SRE refinement on it
+- [ ] Sizing gate checked; all tasks created with simple/medium classification and linked to epic
+- [ ] Batch SRE review run against full task tree; refinements applied
 - [ ] Announced handoff to executing-plans
 
 **Can't check all boxes?** Return to the process and complete the missing steps.
