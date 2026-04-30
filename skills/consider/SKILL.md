@@ -139,79 +139,7 @@ status quo is acceptable given [reason]. Let me know if anything changes.
 </the_process>
 
 <examples>
-
-<example>
-<scenario>User explores a caching idea and commits to building</scenario>
-
-<conversation>
-User: "I'm thinking about adding some kind of caching layer but I'm not sure if it's worth it."
-
-Consider (via AskUserQuestion): "What problem are you trying to solve with caching?"
-
-User: "API response times — users complain about the dashboard being slow."
-
-Consider (via AskUserQuestion): "How volatile is the data on the dashboard? Does it change per request or could it be stale for a few seconds?"
-
-User: "Most of it is aggregated stats that only update every few minutes."
-
-Consider (via AskUserQuestion): "Is the slowness from the query itself, or from downstream services the API calls?"
-
-User: "The main query hits several tables. I've seen 800ms responses."
-
-Consider (via AskUserQuestion): "Do you have a sense of how many users hit the dashboard concurrently?"
-
-User: "Maybe 50-100 at peak. Okay I think I want to add a Redis cache for the dashboard endpoint."
-
-Consider: "Sounds like you're ready to build — want to run /hyperpowers:brainstorm?"
-</conversation>
-</example>
-
-<example>
-<scenario>User explores refactoring and concludes it isn't worth doing</scenario>
-
-<conversation>
-User: "Should we refactor the auth module?"
-
-Consider (via AskUserQuestion): "What would change if you did?"
-
-User: "Mostly cleaner code. The current structure is a bit hard to follow."
-
-Consider (via AskUserQuestion): "Is the difficulty causing actual problems — bugs, slow feature work, onboarding friction?"
-
-User: "Not really. It's just not pretty."
-
-Consider (via AskUserQuestion): "What's the cost of not refactoring right now?"
-
-User: "Nothing is broken. The team is tight on time before the release."
-
-Consider: "You explored refactoring auth — the value is cleanup, but nothing is broken and timing is poor. Status quo is acceptable. Let me know if the friction becomes a real problem."
-</conversation>
-
-The session ends without a handoff. Clean exit.
-</example>
-
-<example>
-<scenario>User's uncertainty reveals structural friction — routed to /intuition</scenario>
-
-<conversation>
-User: "I want to add rate limiting but I can't figure out where it should live."
-
-Consider (via AskUserQuestion): "What are the candidates you're considering?"
-
-User: "Either the API gateway layer or inside the service itself. Both feel awkward."
-
-Consider (via AskUserQuestion): "What makes the API gateway placement awkward?"
-
-User: "It would need to know about per-user limits, which means it needs auth context — that feels like it's pulling in too much."
-
-Consider (via AskUserQuestion): "And the service placement?"
-
-User: "The service layer is already tangled with business logic. Adding rate limiting there feels like complection."
-
-Consider: "Sounds like structural friction — both placements have coupling concerns, which suggests the design needs examination before committing. Want to run /hyperpowers:intuition?"
-</conversation>
-</example>
-
+Three worked conversations (caching commit-to-build, refactor clean-exit, rate-limiting friction-to-intuition) live in `examples.md`. Read that file when you need a concrete reference.
 </examples>
 
 <critical_rules>
@@ -251,30 +179,19 @@ Before claiming Consider is complete for a session:
 </verification_checklist>
 
 <integration>
-**This skill offers (on transition):**
-- /hyperpowers:brainstorm — when user commits to building something specific
-- /hyperpowers:intuition — when user expresses structural friction about existing code
+**Offers (never auto-invokes):** /hyperpowers:brainstorm on commit-to-build, /hyperpowers:intuition on structural friction.
 
-**This skill may be reached from:**
-- Direct invocation by user
-- /hyperpowers:intuition Step 4 Resolution Protocol ("Brainstorm" option routes here for exploratory thinking before committing to tension resolution)
+**Reached from:** direct user invocation, or /hyperpowers:intuition Step 4 Resolution Protocol ("Brainstorm" option may route here for exploratory thinking before committing to tension resolution).
 
-**Handoff pattern:** Consider never hard-calls another skill. It signals intent ("Sounds like you're ready to build") and waits for the user to confirm. The user runs the next skill; Consider does not dispatch it.
-
-**Inbound from /intuition:** When /intuition's Resolution Protocol surfaces a tension that needs exploratory thinking before committing (e.g., architect wants to think through whether to accept or resolve a complection tension), it may route to /consider. Consider then acts as a thinking partner for that specific tension.
+**Handoff pattern:** Consider signals intent and waits for user confirmation. The user runs the next skill; Consider does not dispatch it.
 </integration>
 
 <resources>
-**When the conversation stalls:**
-- Return to "what would change if you knew the answer?" — almost always re-energizes a stuck conversation
-- If the user keeps giving vague answers, make the question more concrete: "name one thing you'd change if you could"
+**When the conversation stalls:** "What would change if you knew the answer?" — almost always re-energizes. If the user keeps giving vague answers, make the question concrete: "name one thing you'd change if you could."
 
-**When unsure if research is needed:**
-- Ask yourself: is the user stuck on a factual unknown (Y/N, exists/doesn't exist)? If yes, dispatch the agent.
-- Is the user still figuring out what they want? If yes, more Socratic questions — not research.
+**Research dispatch test:** Is the user stuck on a factual unknown (does X exist? does Y support Z?)? Dispatch. Still figuring out what they want? More Socratic questions, not research.
 
-**Transition offer wording:**
+**Transition offers — keep short:**
 - "Sounds like you're ready to build — want to run /hyperpowers:brainstorm?"
 - "Sounds like structural friction — want to run /hyperpowers:intuition?"
-- Keep it short. Don't over-explain the transition.
 </resources>
