@@ -1,10 +1,12 @@
 ---
 name: writing-plans
-description: Use to expand bd tasks with detailed implementation steps - adds exact file paths, complete code, verification commands assuming zero context
+description: Use to expand bd tasks into self-contained two-tier specs (simple/Haiku 2-10 min or medium/Sonnet 10-30 min) with exact file paths, complete code, verification commands
 ---
 
 <skill_overview>
-Enhance bd tasks with comprehensive implementation details for engineers with zero codebase context. Expand checklists into explicit steps: which files, complete code examples, exact commands, verification steps.
+Expand bd tasks into self-contained two-tier specs. Each task is classified as simple (2-10 min, Haiku) or medium (10-30 min, Sonnet) and written with enough detail that an executor can implement it with zero prior context. Every spec includes a Why section — so the executor understands how the task fits into the epic.
+
+The task tree is created upfront by brainstorming. This skill expands the specs, it does not create the task tree.
 </skill_overview>
 
 <rigidity_level>
@@ -18,8 +20,9 @@ Adapt implementation details to actual codebase state. Never use placeholders or
 | Step | Action | Critical Rule |
 |------|--------|---------------|
 | **Identify Scope** | Single task, range, or full epic | No artificial limits |
+| **Classify** | Simple (2-10 min) or Medium (10-30 min) | No task exceeds 30 min |
 | **Verify Codebase** | Use `codebase-investigator` agent | NEVER verify yourself, report discrepancies |
-| **Draft Steps** | Write bite-sized (2-5 min) actions | Follow TDD cycle for new features |
+| **Draft Spec** | Use two-tier format for the task's tier | Must include Why section; medium must include Boundaries |
 | **Present to User** | Show COMPLETE expansion FIRST | Then ask for approval |
 | **Update bd** | `bd update bd-N --design "..."` | Only after user approves |
 | **Continue** | Move to next task automatically | NO asking permission between tasks |
@@ -30,13 +33,12 @@ Adapt implementation details to actual codebase state. Never use placeholders or
 </quick_reference>
 
 <when_to_use>
-**Use after hyperpowers:sre-task-refinement or anytime tasks need more detail.**
+**Use after brainstorming creates the task tree (and optionally after SRE batch review).**
 
 Symptoms:
-- bd tasks have implementation checklists but need expansion
-- Engineer needs step-by-step guide with zero context
-- Want explicit file paths, complete code examples
-- Need exact verification commands
+- bd tasks exist but need self-contained specs
+- Tasks lack Why, Changes, or Boundaries sections
+- Specs reference context not included in the task itself
 
 </when_to_use>
 
@@ -71,7 +73,23 @@ bd dep tree bd-1  # View complete dependency tree
 bd show bd-3  # Read current task design
 ```
 
-### 2b. Verify Codebase State
+### 2b. Classify the Task
+
+**Simple (2-10 min, Haiku):** Single-file or mechanical changes with exact known edits. No judgment required.
+- Renaming a term across files
+- Adding a config value
+- Updating a doc section
+- Adding a small standalone function with a known signature
+
+**Medium (10-30 min, Sonnet):** Multi-file changes or changes requiring judgment.
+- New component or skill
+- Cross-file refactor
+- Implementation with design decisions
+- Any task with a Tests section
+
+**No task should exceed 30 minutes.** If a task feels larger, flag it for splitting before expanding.
+
+### 2c. Verify Codebase State
 
 **CRITICAL: Use codebase-investigator agent, NEVER verify yourself.**
 
@@ -103,67 +121,86 @@ Verify these assumptions and report:
 ✅ "Create `src/auth.ts`" (investigator confirmed doesn't exist)
 ✅ "Modify `src/index.ts:45-67`" (investigator confirmed exists)
 
-### 2c. Draft Expanded Implementation Steps
+### 2d. Draft the Task Spec (Two-Tier Format)
 
-**Bite-sized granularity (2-5 minutes per step):**
+Use the template for the task's tier. Both tiers REQUIRE a Why section.
 
-For new features (follow test-driven-development):
-1. Write the failing test (one step)
-2. Run it to verify it fails (one step)
-3. Implement minimal code to pass (one step)
-4. Run tests to verify they pass (one step)
-5. Commit (one step)
+---
 
-**Include in each step:**
+**Simple task spec template (2-10 min, Haiku):**
+
+```markdown
+## Goal
+[One sentence: what changes]
+
+## Why
+[How this task fits into the epic — what breaks if it is skipped]
+
+## Changes
+- `exact/path/to/file.ext` line N: [exact change, complete replacement text]
+- `exact/path/to/other.ext`: [add/remove/replace what]
+
+## Verification
+[Exact command to confirm the change is correct, e.g. grep, test run, or manual check]
+```
+
+---
+
+**Medium task spec template (10-30 min, Sonnet):**
+
+```markdown
+## Goal
+[One sentence: what is delivered]
+
+## Why
+[How this task fits into the epic — what depends on it, what breaks if skipped]
+
+## Context
+[Key files, functions, or patterns the executor must read before starting]
+
+## Implementation guidance
+[Step-by-step: what to create/modify/delete, with exact file paths and complete code]
+
+For new features (TDD):
+1. Write the failing test
+2. Run to confirm RED
+3. Implement minimal code
+4. Run to confirm GREEN
+5. Refactor, keep green
+
+Include in each step:
 - Exact file path
 - Complete code example (not pseudo-code)
 - Exact command to run
 - Expected output
 
-### 2d. Present COMPLETE Expansion to User
+## Tests
+[Which tests to write and what they must assert — omit this section for pure-documentation tasks]
+
+## Verification
+[Exact commands to confirm all success criteria]
+
+## Boundaries
+[What is explicitly out of scope for this task]
+```
+
+---
+
+### 2e. Present COMPLETE Expansion to User
 
 **CRITICAL: Show the full expansion BEFORE asking for approval.**
 
 **Format:**
 ```markdown
-**bd-[N]: [Task Title]**
-
-**From bd issue:**
-- Goal: [From bd show]
-- Effort estimate: [From bd issue]
-- Success criteria: [From bd issue]
+**bd-[N]: [Task Title]** (simple / medium)
 
 **Codebase verification findings:**
 - ✓ Confirmed: [what matched]
 - ✗ Incorrect: [what issue said] - ACTUALLY: [reality]
 - + Found: [unexpected discoveries]
 
-**Implementation steps based on actual codebase state:**
-
-### Step Group 1: [Component Name]
-
-**Files:**
-- Create: `exact/path/to/file.py`
-- Modify: `exact/path/to/existing.py:123-145`
-- Test: `tests/exact/path/to/test.py`
-
-**Step 1: Write the failing test**
-```python
-# tests/auth/test_login.py
-def test_login_with_valid_credentials():
-    user = create_test_user(email="test@example.com", password="secure123")
-    result = login(email="test@example.com", password="secure123")
-    assert result.success is True
-    assert result.user_id == user.id
-```
-
-**Step 2: Run test to verify it fails**
-```bash
-pytest tests/auth/test_login.py::test_login_with_valid_credentials
-# Expected: ModuleNotFoundError: No module named 'auth.login'
-```
-
-[... continue for all steps ...]
+**Expanded spec:**
+[Full spec using two-tier template for the task's tier]
 ```
 
 **THEN ask for approval using AskUserQuestion:**
@@ -173,7 +210,7 @@ pytest tests/auth/test_login.py::test_login_with_valid_credentials
   - "Needs revision"
   - "Other"
 
-### 2e. If Approved: Update bd and Continue
+### 2f. If Approved: Update bd and Continue
 
 ```bash
 bd update bd-3 --design "[paste complete expansion]"
@@ -181,102 +218,107 @@ bd update bd-3 --design "[paste complete expansion]"
 # IMMEDIATELY continue to next task (NO asking permission)
 ```
 
-### 2f. If Needs Revision: Iterate
+### 2g. If Needs Revision: Iterate
 
 - Keep as in_progress in TodoWrite
 - Revise based on feedback
-- Present again (step 2d)
+- Present again (step 2e)
 
 ## 3. After ALL Tasks Done
 
 ```
-All bd issues now contain detailed implementation steps.
-Epic ready for execution.
+All bd tasks now have self-contained two-tier specs.
+Epic ready for SRE batch review and execution.
 ```
 
-**Offer execution choice:**
-"Ready to execute? I can use hyperpowers:executing-plans to implement iteratively."
+**Offer next step:**
+"Ready to proceed? I can run hyperpowers:sre-task-refinement in batch mode against the full plan, then use hyperpowers:executing-plans to implement."
 
 </the_process>
 
 <examples>
 
 <example>
-<scenario>Developer writes placeholder text instead of actual implementation steps</scenario>
+<scenario>Developer writes a task spec without a Why section or Boundaries section</scenario>
 
 <code>
 bd update bd-3 --design "## Goal
-Implement user authentication
+Add logout() function to src/services/auth.ts
 
 ## Implementation
-[Full implementation steps as detailed above - includes all 6 step groups with complete code examples]
+### Step 1: Write failing test
+[test code]
 
-## Tests
-[Complete code examples will be added here]"
+### Step 2: Implement logout()
+[implementation code]
+
+## Verification
+pytest tests/auth/"
 </code>
 
 <why_it_fails>
-**Placeholders defeat the purpose:**
-- Engineer executing bd-3 has zero context
-- There is no "above" to reference (bd issue is the source of truth)
-- Violates "exact instructions for zero-context engineer" principle
-- Makes task impossible to execute
+**Missing Why section:**
+- Executor has zero context on why this task exists
+- Executor cannot judge "is this change locally correct but globally wrong?"
+- Without Boundaries, executor may refactor auth.ts broadly while implementing logout()
 
-**Common placeholder patterns (ALL FORBIDDEN):**
-- `[Full implementation steps as detailed above]`
-- `[See above for detailed steps]`
-- `[As specified in success criteria]`
-- `[Complete code examples will be added here]`
+**Missing Boundaries section (medium task):**
+- Executor implements logout(), then "helpfully" also refactors login() it sees along the way
+- Drift compounds across tasks
 </why_it_fails>
 
 <correction>
-**Write actual content:**
+**Write the complete two-tier spec:**
 
 ```bash
 bd update bd-3 --design "## Goal
-Implement user authentication
+Add logout() function to src/services/auth.ts
 
-## Implementation
+## Why
+The executing-plans skill dispatches a fresh executor per task. Session cleanup depends on this function existing before the session-management task (bd-5) runs. Without it, bd-5 will fail.
 
-### Step 1: Write failing login test
-```python
-# tests/auth/test_login.py
-import pytest
-from auth.service import login
+## Context
+- src/services/auth.ts — exists, has login() at line 12. logout() does not exist yet.
+- tests/auth/test_auth.test.ts — existing test file for this service
+- argon2 (0.31.2) is installed; no new dependencies needed
 
-def test_login_with_valid_credentials():
-    result = login(email='test@example.com', password='pass123')
-    assert result.success is True
-```
+## Implementation guidance
 
-### Step 2: Run test (should fail)
-```bash
-pytest tests/auth/test_login.py::test_login_with_valid_credentials
-# Expected: ModuleNotFoundError: No module named 'auth.service'
-```
+### Step 1: Write failing test
+# tests/auth/test_auth.test.ts — add at end of file:
+it('logs out a user by clearing the session token', async () => {
+  const result = await logout('valid-token-123');
+  expect(result.success).toBe(true);
+});
 
-### Step 3: Create login function
-```python
-# src/auth/service.py
-from dataclasses import dataclass
+### Step 2: Run to confirm RED
+npx jest tests/auth/test_auth.test.ts
+# Expected: TypeError: logout is not a function
 
-@dataclass
-class LoginResult:
-    success: bool
-    user_id: int | None = None
+### Step 3: Implement logout()
+# src/services/auth.ts — add after login() at line 28:
+export async function logout(token: string): Promise<{ success: boolean }> {
+  await db.sessions.delete({ where: { token } });
+  return { success: true };
+}
 
-def login(email: str, password: str) -> LoginResult:
-    # Minimal implementation
-    return LoginResult(success=True, user_id=1)
-```
-
-[... continue for all steps with complete code ...]
+### Step 4: Run to confirm GREEN
+npx jest tests/auth/test_auth.test.ts
+# Expected: 3 passed
 
 ## Tests
-All test code included in implementation steps above following TDD cycle."
+tests/auth/test_auth.test.ts — must assert logout clears the session token
+
+## Verification
+npx jest tests/auth/test_auth.test.ts
+
+## Boundaries
+- Do NOT refactor login() — that is out of scope
+- Do NOT add token validation logic — that is bd-4's responsibility
+- Do NOT modify session schema — that is bd-5's responsibility"
 ```
 
-**Result:** Engineer can execute without any context.
+**Result:** Executor knows why the task exists, what not to touch, and can implement without any other context.
 </correction>
 </example>
 
@@ -399,39 +441,57 @@ bd show bd-4  # Read next task
    - ❌ FORBIDDEN: `[Full implementation steps as detailed above]`
    - ✅ REQUIRED: Complete code, exact paths, real commands
 
-2. **Use codebase-investigator agent** → Never verify yourself
+2. **Every task spec must include a Why section** → Executor must understand purpose
+   - Simple tasks: Why explains what breaks if this task is skipped
+   - Medium tasks: Why explains what depends on this task and its role in the epic
+
+3. **Every medium task spec must include a Boundaries section** → Prevents scope creep
+   - List explicitly what is out of scope for this task
+   - Prevents executor from doing "just a little more"
+
+4. **Effort estimates in minutes, not hours** → No task exceeds 30 minutes
+   - Simple: 2-10 min (Haiku)
+   - Medium: 10-30 min (Sonnet)
+   - If a task feels larger: flag it for splitting, do not expand it
+
+5. **Use codebase-investigator agent** → Never verify yourself
    - Agent gets bd assumptions
    - Agent reports discrepancies
    - You adjust plan to match reality
 
-3. **Present COMPLETE expansion before asking** → User must SEE before approving
+6. **Present COMPLETE expansion before asking** → User must SEE before approving
    - Show full expansion in message text
    - Then use AskUserQuestion for approval
    - Never ask without showing first
 
-4. **Continue automatically between validations** → Don't ask permission
+7. **Continue automatically between validations** → Don't ask permission
    - TodoWrite list IS your plan
    - Execute it completely
-   - Only ask: (a) task validation, (b) final execution choice
+   - Only ask: (a) task validation, (b) final next-step offer
 
-5. **Write definitive steps** → Never conditional
+8. **Write definitive steps** → Never conditional
    - ❌ "Update `index.js` if exists"
    - ✅ "Create `src/auth.ts`" (investigator confirmed)
 
 ## Common Excuses
 
-All of these mean: Stop, write actual content:
-- "I'll add the details later"
-- "The implementation is obvious from the goal"
-- "See above for the steps"
-- "User can figure out the code"
+All of these mean: Stop, apply the rule:
+- "I'll add the details later" → Write actual content now
+- "The Why is obvious" → Write it anyway; executor has zero context
+- "Boundaries is implied" → Write explicit Boundaries section for medium tasks
+- "This will take longer than 30 min" → Flag for splitting, do not expand
 
 </critical_rules>
 
 <verification_checklist>
 
 Before marking each task complete in TodoWrite:
+- [ ] Task classified as simple or medium
 - [ ] Used codebase-investigator agent (not manual verification)
+- [ ] Spec uses correct two-tier template for classification
+- [ ] Spec includes Why section (both tiers)
+- [ ] Medium spec includes Boundaries section
+- [ ] Effort estimate is in minutes (2-10 or 10-30), not hours
 - [ ] Presented COMPLETE expansion to user (showed full text)
 - [ ] User approved expansion (via AskUserQuestion)
 - [ ] Updated bd with actual content (no placeholders)
@@ -439,9 +499,10 @@ Before marking each task complete in TodoWrite:
 
 Before finishing all tasks:
 - [ ] All tasks in TodoWrite marked completed
-- [ ] All bd issues updated with expansions
+- [ ] All bd tasks updated with two-tier specs
+- [ ] No task exceeds 30-minute estimate
 - [ ] No conditional steps ("if exists")
-- [ ] Complete code examples in all steps
+- [ ] Complete code examples in all medium task steps
 - [ ] Exact file paths and commands throughout
 
 </verification_checklist>
@@ -449,13 +510,15 @@ Before finishing all tasks:
 <integration>
 
 **This skill calls:**
-- sre-task-refinement (optional, can run before this)
 - codebase-investigator (REQUIRED for each task verification)
-- executing-plans (offered after all tasks expanded)
 
 **This skill is called by:**
 - User (via /hyperpowers:write-plan command)
-- After brainstorming creates epic
+- After brainstorming creates the task tree
+
+**After this skill:**
+- Run hyperpowers:sre-task-refinement in batch mode against the full plan
+- Then use hyperpowers:executing-plans to implement
 
 **Agents used:**
 - hyperpowers:codebase-investigator (verify assumptions, report discrepancies)
