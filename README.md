@@ -62,7 +62,7 @@ Quick access to key workflows:
 
 Domain-specific agents for complex tasks:
 
-- **executor** - Implements a single bd task with TDD discipline; uses native TaskCreate/TaskUpdate for TDD sub-step tracking; fresh instance dispatched per task; writes project memory before returning so cross-task learnings are bridged; returns structured output to lead after task
+- **executor** - Implements a single bd task; fresh instance dispatched per task with dynamic model selection (Haiku for simple, Sonnet for medium); reads self-contained task spec, implements, commits, returns one-liner status (DONE/BLOCKED/NEEDS_HELP) to lead
 - **reviewer** - Verifies implementation against bd epic spec; returns APPROVED or GAPS FOUND verdict
 - **code-reviewer** - Review implementations against plans and coding standards
 - **codebase-investigator** - Understand current codebase state and patterns

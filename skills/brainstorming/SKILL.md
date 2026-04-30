@@ -4,7 +4,7 @@ description: Use when creating or developing anything, before writing code - ref
 ---
 
 <skill_overview>
-Turn rough ideas into validated designs stored as bd epics with immutable requirements; tasks created iteratively as you learn, not upfront.
+Turn rough ideas into validated designs stored as bd epics with immutable requirements; writing-plans produces the full task tree upfront before execution begins.
 </skill_overview>
 
 <rigidity_level>
@@ -335,16 +335,17 @@ First task [bd-M] has been refined and is ready to execute.
 Ready to start implementation? I'll use executing-plans to orchestrate execution.
 
 The executing-plans skill will:
-1. Dispatch a fresh executor subagent for each individual task
-2. The executor implements the task with TDD (red-green-refactor-commit), tracks
-   sub-steps via TaskCreate/TaskUpdate
-3. I validate each proposed next task against epic requirements and anti-patterns
-4. After each task: executor writes learnings to project memory and returns;
-   lead dispatches fresh executor for next task
-5. When all criteria met, a reviewer agent verifies the implementation against the epic spec
+1. Read the full upfront task list from bd and classify each task as simple or medium
+2. Dispatch a fresh executor subagent per task with dynamic model selection
+   (Haiku for simple 2-10 min tasks, Sonnet for medium 10-30 min tasks)
+3. The executor reads the self-contained task spec, implements, commits, and returns
+   a one-liner status (DONE, BLOCKED, or NEEDS_HELP)
+4. After each task: lead runs a two-stage review (spec check + code quality),
+   then dispatches fresh executor for next task
+5. When all tasks complete, a reviewer agent verifies the assembled whole against the epic spec
 
-This approach prevents context exhaustion (bounded per-task executor lifetime) while
-preserving learnings via project memory — no manual /clear cycling needed."
+This approach prevents context exhaustion (small bounded tasks with dynamic model selection)
+while keeping full scope visible upfront — all tasks are planned before execution begins."
 ```
 
 </the_process>
