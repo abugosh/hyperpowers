@@ -177,8 +177,8 @@ Claude: "Now I'm using hyperpowers:writing-plans to create a detailed implementa
 Claude: "Now I'm using hyperpowers:executing-plans to orchestrate task execution."
 
 [Skill tool loads executing-plans]
-[Dispatches fresh executor subagent per task who implements with TDD]
-[Lead validates proposals against epic, processes return value, dispatches next]
+[Dispatches fresh executor subagent per task with dynamic model selection]
+[Executor implements task, commits, returns DONE/BLOCKED/NEEDS_HELP; lead runs two-stage review then dispatches next]
 
 **What you gain:**
 - Clear requirements before coding
@@ -339,7 +339,7 @@ These have HIGH FREEDOM - adapt core principles to context:
 ## User Instructions Describe WHAT, Not HOW
 
 **User says:** "Add user authentication"
-**This means:** Use brainstorming → writing-plans → executing-plans (lead orchestrates executor with TDD) → verification
+**This means:** Use brainstorming → writing-plans → executing-plans (lead dispatches executor per task, runs two-stage review after each) → verification
 
 **User says:** "Fix this bug"
 **This means:** Use debugging-with-tools → fixing-bugs → TDD → verification

@@ -11,10 +11,11 @@ Hyperpowers is a Claude Code plugin that provides structured workflows, best pra
 Reusable workflows for common development tasks:
 
 **Feature Development:**
+- **grand-planner** - Decompose large initiatives into leaf epics with dependencies; escalation target when brainstorming scope exceeds ~10 tasks or 3-4 components
 - **consider** - Lightweight Socratic thinking partner for exploring ideas before committing to build; routes to brainstorming or intuition when ready
 - **brainstorming** - Interactive design refinement using Socratic method
 - **writing-plans** - Create detailed implementation plans (single task or multiple tasks)
-- **executing-plans** - Lead orchestrates executor subagent for TDD implementation; validates proposals against epic
+- **executing-plans** - Lead reads upfront task list, classifies tasks as simple/medium, dispatches fresh executor subagent per task with dynamic model selection, runs two-stage review (spec + code quality) after each task
 - **review-implementation** - Verify implementation matches requirements
 - **finishing-a-development-branch** - Complete workflow for PR creation and cleanup
 - **sre-task-refinement** - Ensure all corner cases and requirements are understood (uses Opus 4.1)
@@ -49,6 +50,7 @@ Reusable workflows for common development tasks:
 
 Quick access to key workflows:
 
+- `/hyperpowers:grand-plan` - Decompose a large initiative into leaf epics with dependencies
 - `/hyperpowers:consider` - Explore ideas before committing to build (optional framing argument)
 - `/hyperpowers:brainstorm` - Start interactive design refinement
 - `/hyperpowers:write-plan` - Create detailed implementation plan
@@ -156,9 +158,9 @@ Claude: Now I'm using the writing-plans skill to create a detailed implementatio
 
 Claude: I'm using the executing-plans skill to orchestrate execution.
 
-[Dispatches fresh executor subagent per task]
-[Executor implements tasks with TDD, uses TaskCreate for sub-step tracking]
-[Lead validates proposals against epic requirements]
+[Dispatches fresh executor subagent per task with dynamic model selection]
+[Executor reads self-contained task spec, implements, commits, returns DONE/BLOCKED/NEEDS_HELP]
+[Lead runs two-stage review (spec check + Haiku code quality) after each task]
 
 Claude: The executor reports all criteria met. Dispatching the reviewer agent.
 
