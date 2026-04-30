@@ -11,7 +11,7 @@ Hyperpowers is a Claude Code plugin that provides structured workflows, best pra
 Reusable workflows for common development tasks:
 
 **Feature Development:**
-- **grand-planner** - Decompose large initiatives into leaf epics with dependencies; escalation target when brainstorming scope exceeds ~10 tasks or 3-4 components
+- **preordain** - Decompose large initiatives into leaf epics with dependencies; escalation target when brainstorming scope exceeds ~10 tasks or 3-4 components
 - **consider** - Lightweight Socratic thinking partner for exploring ideas before committing to build; routes to brainstorming or intuition when ready
 - **brainstorming** - Interactive design refinement using Socratic method
 - **writing-plans** - Create detailed implementation plans (single task or multiple tasks)
@@ -50,7 +50,7 @@ Reusable workflows for common development tasks:
 
 Quick access to key workflows:
 
-- `/hyperpowers:grand-plan` - Decompose a large initiative into leaf epics with dependencies
+- `/hyperpowers:preordain` - Decompose a large initiative into leaf epics with dependencies
 - `/hyperpowers:consider` - Explore ideas before committing to build (optional framing argument)
 - `/hyperpowers:brainstorm` - Start interactive design refinement
 - `/hyperpowers:write-plan` - Create detailed implementation plan

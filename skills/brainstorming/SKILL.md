@@ -281,9 +281,9 @@ Before creating tasks, check whether this epic is too large for a single leaf ep
 - Work spans 3 or more distinct components?
 - Multiple independent deliverables that could ship separately?
 
-If any are true, offer escalation to grand planner:
+If any are true, offer escalation to preordain:
 
-> "This scope looks large for a single epic (~[N] tasks across [M] components). The grand planner can decompose it into leaf epics with dependencies, so each epic stays focused. Continue here, or escalate to /grand-plan?"
+> "This scope looks large for a single epic (~[N] tasks across [M] components). The preordain can decompose it into leaf epics with dependencies, so each epic stays focused. Continue here, or escalate to /preordain?"
 
 This is a gate the user can override — not a hard block. If the user says "proceed anyway," create the task tree and note in the epic that the sizing gate was triggered but overridden.
 

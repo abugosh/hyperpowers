@@ -1,5 +1,5 @@
 ---
-name: grand-planner
+name: preordain
 description: Decomposes large initiatives into leaf epics with dependencies; handles initiative-level architecture analysis; routes each leaf epic to brainstorming
 ---
 
@@ -22,8 +22,8 @@ HIGH FREEDOM — Socratic questioning within steps adapts to context. The 6-step
 | 6 | Handoff to brainstorming | User routes each leaf epic to /brainstorm |
 
 **Invocation patterns:**
-- `/hyperpowers:grand-plan` — user arrives with a large initiative
-- `/hyperpowers:grand-plan` — brainstorming sizing gate escalation (prior work becomes context for Step 1)
+- `/hyperpowers:preordain` — user arrives with a large initiative
+- `/hyperpowers:preordain` — brainstorming sizing gate escalation (prior work becomes context for Step 1)
 </quick_reference>
 
 <when_to_use>
@@ -41,7 +41,7 @@ HIGH FREEDOM — Socratic questioning within steps adapts to context. The 6-step
 
 <the_process>
 
-**Announce:** "I'm using the grand-planner skill."
+**Announce:** "I'm using the preordain skill."
 
 ---
 
@@ -133,10 +133,10 @@ Does this decomposition look right, or should any scopes shift?
 > "This initiative fits in a single leaf epic (~[N] tasks across [M] components). Rather than decompose, routing to /brainstorm is the right call. Want to do that instead?"
 
 *Leaf epic that would still exceed sizing gate:*
-Continue decomposing until every proposed leaf epic would pass the brainstorming sizing gate (~10 tasks, ~3 components). Never create a leaf epic that requires grand-planner decomposition again.
+Continue decomposing until every proposed leaf epic would pass the brainstorming sizing gate (~10 tasks, ~3 components). Never create a leaf epic that requires preordain decomposition again.
 
 *Initiative spans multiple codebases or repos:*
-> "This initiative spans [repo A] and [repo B]. The grand planner covers single-repo work. Cross-repo coordination (API contracts, deployment ordering) is out of scope — document the handoff point between repos and manage cross-repo coordination manually."
+> "This initiative spans [repo A] and [repo B]. The preordain covers single-repo work. Cross-repo coordination (API contracts, deployment ordering) is out of scope — document the handoff point between repos and manage cross-repo coordination manually."
 
 ---
 
@@ -240,7 +240,7 @@ The user drives which epic to brainstorm first. Do not auto-invoke /brainstorm.
 1. **Use AskUserQuestion for all clarifying questions** — never print questions and wait
 2. **Research before decomposing** — dispatch codebase-investigator or internet-researcher before proposing any leaf epic boundaries
 3. **User confirms decomposition before creating epics** — present the decomposition proposal, get explicit confirmation, then run `bd create`
-4. **Grand planner creates epics, not tasks** — brainstorming creates tasks; grand planner's only bd artifact is leaf epics
+4. **Grand planner creates epics, not tasks** — brainstorming creates tasks; preordain's only bd artifact is leaf epics
 5. **No leaf epic that re-triggers the sizing gate** — each leaf epic must target ~5-10 tasks; if larger, decompose further
 6. **No circular dependencies between leaf epics** — dependencies must be sequential (DAG only)
 7. **Architecture analysis at initiative level, not per-leaf-epic** — offer /intuition once for the full initiative; individual leaf epics run their own Step 4 during brainstorming only if new friction appears
@@ -252,7 +252,7 @@ All of these mean: **STOP. Reread the critical rules.**
 
 - "I already understand the codebase well enough to skip research" → violates rule 2; dispatch agents
 - "I'll create the epics now and adjust boundaries during brainstorming" → violates rule 3; confirm first
-- "I'll create tasks for the first epic since we know what it needs" → violates rule 4; grand planner creates epics only
+- "I'll create tasks for the first epic since we know what it needs" → violates rule 4; preordain creates epics only
 - "This leaf epic is big but brainstorming can handle it" → violates rule 5; decompose further
 - "Epic B can start while Epic A is finishing" → violates rule 6 if it creates a circular dependency; check the DAG
 - "Each brainstorm session will do its own architecture check" → violates rule 7; architecture impact check happens here at initiative level
@@ -260,7 +260,7 @@ All of these mean: **STOP. Reread the critical rules.**
 </critical_rules>
 
 <verification_checklist>
-Before claiming grand-planner session is complete:
+Before claiming preordain session is complete:
 
 - [ ] Used AskUserQuestion for all questions (not printed)
 - [ ] Dispatched research agents before proposing decomposition
@@ -276,8 +276,8 @@ Before claiming grand-planner session is complete:
 
 <integration>
 **Called from:**
-- Direct user invocation (`/hyperpowers:grand-plan`)
-- Brainstorming Step 6a sizing gate ("continue here, or escalate to /grand-plan?")
+- Direct user invocation (`/hyperpowers:preordain`)
+- Brainstorming Step 6a sizing gate ("continue here, or escalate to /preordain?")
 
 **Calls (never auto-invokes, always offers):**
 - `/hyperpowers:intuition` — offered at Step 4 if Architecture Impact Check has any YES
@@ -296,5 +296,5 @@ Before claiming grand-planner session is complete:
 **Relationship to brainstorming:**
 - Grand planner creates epics with requirements and boundaries
 - Brainstorming takes each leaf epic and creates the full task tree
-- When called from brainstorming sizing gate: prior brainstorming work becomes Step 1 context; grand planner does not re-ask answered questions
+- When called from brainstorming sizing gate: prior brainstorming work becomes Step 1 context; preordain does not re-ask answered questions
 </integration>
