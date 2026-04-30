@@ -14,7 +14,7 @@ LOW FREEDOM - Follow the 8-category checklist exactly. Apply all categories to e
 <quick_reference>
 | Category | Key Questions | Auto-Reject If |
 |----------|---------------|----------------|
-| 1. Granularity | Tasks 4-8 hours? Phases <16 hours? | Any task >16h without breakdown |
+| 1. Granularity | Simple task 2-10 min? Medium task 10-30 min? | Any task >30 min without breakdown |
 | 2. Implementability | Junior can execute without questions? | Vague language, missing details |
 | 3. Success Criteria | 3+ measurable criteria per task? | Can't verify ("works well") |
 | 4. Dependencies | Correct parent-child, blocking relationships? | Circular dependencies |
@@ -26,6 +26,8 @@ LOW FREEDOM - Follow the 8-category checklist exactly. Apply all categories to e
 **Perspective**: Google Fellow SRE with 20+ years experience reviewing junior engineer designs.
 
 **Time**: Don't rush - catching one gap pre-implementation saves hours of rework.
+
+**Modes**: Single-task mode (default) and batch mode (full task tree from brainstorming).
 </quick_reference>
 
 <when_to_use>
@@ -33,9 +35,10 @@ Use when:
 - Reviewing bd epic/feature plans before implementation
 - Need to ensure junior engineer can execute without questions
 - Want to catch edge cases and failure modes upfront
-- Need to verify task granularity (4-8 hour subtasks)
+- Need to verify task granularity (2-30 min tasks with simple/medium classification)
 - After hyperpowers:writing-plans creates initial plan
 - Before hyperpowers:executing-plans starts implementation
+- **Batch mode**: After brainstorming creates the full task tree (Step 7 calls this skill against the entire epic's task tree as a unit)
 
 Don't use when:
 - Task already being implemented (too late)
@@ -51,17 +54,102 @@ Don't use when:
 
 ---
 
+## Batch Mode (Full Task Tree Review)
+
+Use batch mode when reviewing a complete task tree as a unit — this is required when called from brainstorming Step 7.
+
+### Input
+```bash
+bd dep tree <epic-id>   # Get the full task tree
+bd show <task-id>       # Read each child task
+```
+
+### Process
+
+**Phase 1: Per-Task Review**
+Apply the 8-category checklist (below) to every task in the tree. Same rigor as single-task mode — no shortcuts because there are many tasks.
+
+**Phase 2: Cross-Task Analysis**
+After reviewing each task individually, run these systemic checks:
+
+**a. Granularity consistency**
+- Are all tasks within the 2-30 min range?
+- Are simple tasks (2-10 min) classified as simple and medium tasks (10-30 min) classified as medium?
+- Flag any task whose spec complexity doesn't match its classification (e.g., a task with full Implementation + Tests sections classified as simple)
+
+**b. Dependency completeness**
+- Do all ordering constraints have `bd dep` declarations?
+- Are there implicit dependencies (task B uses output of task A) without a blocking relationship?
+- Check: if task B reads a file created by task A, is there a declared dependency?
+
+**c. Systemic gaps**
+- Does the same missing edge case appear across multiple tasks? (e.g., no error handling for nil inputs in every data-transformation task)
+- Is there a missing task that several tasks implicitly depend on (shared utility, migration, config change)?
+- Are success criteria consistently strong, or does one task have measurable criteria while others use vague language?
+
+**d. Classification consistency**
+- Simple task spec: should have Goal, Why, Changes, Verification — nothing more
+- Medium task spec: should have Goal, Why, Context, Implementation, Tests, Verification, Boundaries
+- A task with an Implementation section and Tests section must be classified as medium
+- A task with only "exact change description" can be simple
+
+**e. Coverage**
+- Do the tasks collectively cover every success criterion in the epic?
+- List each epic success criterion and map it to at least one task
+- Flag any criterion with no corresponding task
+
+### Batch Mode Output Format
+After per-task reviews, append a cross-task section:
+
+```markdown
+## Cross-Task Analysis
+
+### Granularity Consistency
+[Summary: all within range / exceptions listed]
+
+### Dependency Completeness
+[Summary: all declared / missing deps listed with recommendation]
+
+### Systemic Gaps
+[Any patterns found across multiple tasks, or "None found"]
+
+### Classification Consistency
+[Any mismatches between spec complexity and simple/medium label]
+
+### Epic Coverage
+| Success Criterion | Covered By |
+|-------------------|------------|
+| [criterion text]  | bd-N        |
+| [criterion text]  | bd-N, bd-M  |
+| [criterion text]  | ❌ No task covers this |
+
+### Batch Verdict
+[APPROVE ✅ / NEEDS REVISION ⚠️ / REJECT ❌]
+[If NEEDS REVISION or REJECT: list recommended additions or splits]
+```
+
+**Batch mode scope:** SRE can suggest adding a task, splitting a task, or strengthening criteria across multiple tasks. These are suggestions to the lead — SRE does not directly modify the plan.
+
+---
+
 ## Review Checklist (Apply to Every Task)
 
 ### 1. Task Granularity
 
 **Check:**
-- [ ] No task >8 hours (subtasks) or >16 hours (phases)?
-- [ ] Large phases broken into 4-8 hour subtasks?
-- [ ] Each subtask independently completable?
-- [ ] Each subtask has clear deliverable?
+- [ ] Task classified as simple (2-10 min) or medium (10-30 min)?
+- [ ] No task exceeds 30 min estimate?
+- [ ] Simple task: spec has Goal/Why/Changes/Verification only (no full Implementation section)?
+- [ ] Medium task: spec has Goal/Why/Context/Implementation/Tests/Verification/Boundaries?
+- [ ] Each task independently completable?
+- [ ] Each task has a clear deliverable?
 
-**If task >16 hours:**
+**Classification guide:**
+- **Simple (2-10 min, Haiku)**: Single-file edits, config changes, doc updates, rename/move operations, adding a field to an existing struct. Spec describes the exact change, not a design.
+- **Medium (10-30 min, Sonnet)**: New components, cross-file changes, logic requiring judgment, anything with a Tests section.
+
+**If task >30 min:**
+- Break into smaller tasks; 30 min is the hard ceiling
 - Create subtasks with `bd create`
 - Link with `bd dep add child parent --type parent-child`
 - Update parent to coordinator role
@@ -157,7 +245,7 @@ bd dep tree bd-1  # Show full dependency tree
 ### 7. Red Flags (AUTO-REJECT)
 
 **Check for these - if found, REJECT plan:**
-- ❌ Any task >16 hours without subtask breakdown
+- ❌ Any task >30 min without subtask breakdown
 - ❌ Vague language: "implement properly", "add support", "make it work"
 - ❌ Success criteria that can't be verified: "code is good", "works well"
 - ❌ Missing test specifications
@@ -304,7 +392,7 @@ After updating, read back with `bd show bd-N` and verify:
 
 ## Breaking Down Large Tasks
 
-If task >16 hours, create subtasks:
+If task >30 min, create subtasks:
 
 ```bash
 # Create first subtask
@@ -367,8 +455,9 @@ After reviewing all tasks:
 
 #### [Task Name] (bd-N)
 **Type**: [epic/feature/task]
+**Classification**: [simple (2-10 min) / medium (10-30 min)]
 **Status**: [✅ Ready / ⚠️ Needs Minor Improvements / ❌ Needs Major Revision]
-**Estimated Effort**: [X hours] ([✅ Good / ❌ Too large - needs breakdown])
+**Estimated Effort**: [X min] ([✅ Within range / ❌ Too large - needs breakdown])
 
 **Strengths**:
 - [What's done well]
@@ -393,7 +482,7 @@ After reviewing all tasks:
 
 **Issues Updated**:
 - bd-3 - Added edge case handling for Unicode, regex backtracking risks
-- bd-5 - Broke into 3 subtasks (was 40 hours, now 3x8 hours)
+- bd-5 - Broke into 3 subtasks (was 40 min, now 3x10 min)
 - bd-7 - Strengthened success criteria (added test names, verification commands)
 
 ### Critical Gaps Across Plan
@@ -417,6 +506,9 @@ After reviewing all tasks:
 ❌ Plan has fundamental issues and needs redesign:
 - [Critical problems]
 ```
+
+**In batch mode:** Append the Cross-Task Analysis section (from Batch Mode output format above) after the task-by-task reviews. The batch verdict is the authoritative recommendation for the full plan.
+</the_process>
 </the_process>
 
 <examples>
@@ -427,7 +519,7 @@ After reviewing all tasks:
 # Review of bd-3: Implement VIN scanner
 
 ## Checklist review:
-1. Granularity: ✅ 6-8 hours
+1. Granularity: ✅ 15 min (medium)
 2. Implementability: ✅ Junior can implement
 3. Success Criteria: ✅ Has 5 test scenarios
 4. Dependencies: ✅ Correct
@@ -783,7 +875,7 @@ EOF
 1. **Apply all 8 categories to every task** → No skipping any category for any task
 2. **Reject plans with placeholder text** → "[detailed above]", "[as specified]" = instant reject
 3. **Verify no placeholder after updates** → Read back with `bd show` and confirm actual content
-4. **Break tasks >16 hours** → Create subtasks, don't accept large tasks
+4. **Break tasks >30 min** → Create subtasks; 30 min is the hard ceiling
 5. **Strengthen vague criteria** → "Works correctly" → measurable verification commands
 6. **Add edge cases to every task** → Empty? Unicode? Concurrency? Failures?
 7. **Never skip Category 6** → Edge case analysis prevents production issues
@@ -813,7 +905,7 @@ Before completing SRE review:
 - [ ] Checked for placeholder text in design field
 - [ ] Updated task with missing information via `bd update --design`
 - [ ] Verified updated task with `bd show` (no placeholders remain)
-- [ ] Broke down any task >16 hours into subtasks
+- [ ] Broke down any task >30 min into subtasks
 - [ ] Strengthened vague success criteria to measurable
 - [ ] Added edge case analysis to Key Considerations
 - [ ] Strengthened anti-patterns based on failure modes
@@ -832,41 +924,43 @@ Before completing SRE review:
 <integration>
 **This skill is used after:**
 - hyperpowers:writing-plans (creates initial plan)
-- hyperpowers:brainstorming (establishes requirements)
+- hyperpowers:brainstorming (establishes requirements; Step 7 calls this in batch mode)
 
 **This skill is used before:**
 - hyperpowers:executing-plans (implements tasks)
 
-**This skill is also called by:**
-- hyperpowers:executing-plans (REQUIRED for new tasks created during execution)
+**Modes:**
+- **Single-task mode** (default): review one task at a time during plan refinement or for gap-fix tasks during execution
+- **Batch mode**: review full task tree as a unit — required from brainstorming Step 7 after the complete task tree is created
 
 **Call chains:**
 ```
-Initial planning:
-hyperpowers:brainstorming → hyperpowers:writing-plans → hyperpowers:sre-task-refinement → hyperpowers:executing-plans
-                                                    ↓
-                                            (if gaps: revise and re-review)
+Upfront planning (batch mode):
+hyperpowers:brainstorming → creates full task tree → hyperpowers:sre-task-refinement [BATCH] → hyperpowers:executing-plans
+                                                                        ↓
+                                                              (if gaps: revise tasks, re-run batch)
 
-During execution (for new tasks):
-hyperpowers:executing-plans → executor proposes new task → hyperpowers:sre-task-refinement → lead validates proposal
+Plan refinement (single-task mode):
+hyperpowers:writing-plans → hyperpowers:sre-task-refinement [SINGLE] → hyperpowers:executing-plans
 ```
 
 **This skill uses:**
 - bd commands (show, update, create, dep add, dep tree)
 - Google Fellow SRE perspective (20+ years distributed systems)
-- 8-category checklist (mandatory for every task)
+- 8-category checklist (mandatory for every task, in both modes)
 
 **Time expectations:**
-- Small epic (3-5 tasks): 15-20 minutes
-- Medium epic (6-10 tasks): 25-40 minutes
-- Large epic (10+ tasks): 45-60 minutes
+- Single task: 3-5 minutes
+- Small epic (3-5 tasks) batch: 15-20 minutes
+- Medium epic (6-10 tasks) batch: 25-40 minutes
+- Large epic (10+ tasks) batch: 45-60 minutes
 
 **Don't rush:** Catching one critical gap pre-implementation saves hours of rework.
 </integration>
 
 <resources>
 **Review patterns:**
-- Task too large (>16h) → Break into 4-8h subtasks
+- Task too large (>30 min) → Break into simple (2-10 min) or medium (10-30 min) subtasks
 - Vague criteria ("works correctly") → Measurable commands/checks
 - Missing edge cases → Add to Key Considerations with mitigations
 - Placeholder text → Rewrite with actual content
@@ -879,7 +973,7 @@ hyperpowers:executing-plans → executor proposes new task → hyperpowers:sre-t
 - "Is the assertion meaningful?" → `!= nil` is weaker than `== expectedValue`
 
 **When stuck:**
-- Unsure if task too large → Ask: Can junior complete in one day?
+- Unsure if task too large → Ask: Can junior complete in under 30 min? If not, break it down.
 - Unsure if criteria measurable → Ask: Can I verify with command/code review?
 - Unsure if edge case matters → Ask: Could this fail in production?
 - Unsure if placeholder → Ask: Does this reference other content instead of providing content?
