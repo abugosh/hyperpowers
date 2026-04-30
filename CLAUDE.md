@@ -179,10 +179,10 @@ Complete workflow from idea to PR:
 1. **Grand Planner** (`/hyperpowers:grand-plan`) - Entry point for large initiatives. Decomposes initiative into leaf epics with dependencies; each leaf epic is independently brainstormable and executable. Skip for single-epic work.
 2. **Brainstorming** (`/hyperpowers:brainstorm`) - Entry point for leaf epics. Socratic questioning to refine requirements, research codebase/external docs, produce bd epic with immutable requirements; escalates to grand planner when scope exceeds ~10 tasks or 3-4 components
 3. **SRE Task Refinement** - Batch review of full task plan using Opus 4.1; required to catch corner cases before execution begins
-3. **Writing Plans** (`/hyperpowers:write-plan`) - Creates detailed bd epic with tasks
-4. **Executing Plans** (`/hyperpowers:execute-plan`) - Lead reads upfront task list, classifies tasks as simple/medium, dispatches fresh executor subagent per task with dynamic model, runs two-stage review (spec + code quality) after each task
-5. **Review Implementation** (`/hyperpowers:review-implementation`) - Verifies against spec
-6. **Finishing Branch** - Creates PR, handles cleanup
+4. **Writing Plans** (`/hyperpowers:write-plan`) - Creates detailed bd epic with tasks
+5. **Executing Plans** (`/hyperpowers:execute-plan`) - Lead reads upfront task list, classifies tasks as simple/medium, dispatches fresh executor subagent per task with dynamic model, runs two-stage review (spec + code quality) after each task
+6. **Review Implementation** (`/hyperpowers:review-implementation`) - Verifies against spec
+7. **Finishing Branch** - Creates PR, handles cleanup
 
 ### Architecture (Empirical, Brand-based)
 
