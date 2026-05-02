@@ -152,7 +152,7 @@ Specialized agents run in separate contexts to handle specific tasks:
 
 **Critical pattern:** Agents keep verbose output (test results, formatting diffs) in their own context, returning only essential info to the main conversation.
 
-**Delegation pattern:** The executing-plans skill uses blocking subagent dispatch — the lead (main context) dispatches a fresh executor subagent per task via the Agent tool (without team_name), which blocks the lead until the executor returns. The lead selects the model dynamically based on task classification (Haiku for simple 2-10 min tasks, Sonnet for medium 10-30 min tasks). After each executor returns, the lead runs a two-stage review (spec check + Haiku code quality review) before moving to the next task. Task specs are self-contained with Goal, Why, and Boundaries sections — executors need no cross-task context bridging.
+**Delegation pattern:** The executing-plans skill uses blocking subagent dispatch — the lead (main context) dispatches a fresh executor subagent per task via the Agent tool (without team_name), which blocks the lead until the executor returns. The lead selects the model dynamically based on task classification (Haiku for simple 2-5 min tasks, Sonnet for medium 5-15 min tasks). After each executor returns, the lead runs a two-stage review (spec check + Haiku code quality review) before moving to the next task. Task specs are self-contained with Goal, Why, and Boundaries sections — executors need no cross-task context bridging.
 
 ### Common Patterns Location
 
