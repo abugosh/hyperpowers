@@ -905,7 +905,7 @@ Before completing SRE review:
 - [ ] Checked for placeholder text in design field
 - [ ] Updated task with missing information via `bd update --design`
 - [ ] Verified updated task with `bd show` (no placeholders remain)
-- [ ] Broke down any task >30 min into subtasks
+- [ ] Broke down any task >15 min into subtasks
 - [ ] Strengthened vague success criteria to measurable
 - [ ] Added edge case analysis to Key Considerations
 - [ ] Strengthened anti-patterns based on failure modes
