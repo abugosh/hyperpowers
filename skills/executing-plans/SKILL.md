@@ -57,14 +57,14 @@ bd list --parent <epic-id>     # List all child tasks
 Before dispatching each task, classify it:
 
 **Simple → use Haiku:**
-- Effort estimate ≤10 min
-- Single-file or small multi-file changes
+- Effort estimate ≤5 min
+- Mechanical changes with exact known edits — complexity determines model, not file count
 - Task spec has a Changes section with exact edits described
 - No Tests section, or trivial verification only
 
 **Medium → use Sonnet:**
-- Effort estimate 10–30 min
-- Multi-file changes requiring judgment
+- Effort estimate 5–15 min
+- Changes requiring judgment or design decisions
 - Task spec has an Implementation section and/or a Tests section
 - Requires decisions the spec cannot fully anticipate
 
