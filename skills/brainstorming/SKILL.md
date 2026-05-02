@@ -19,9 +19,9 @@ HIGH FREEDOM - The 8-step order is fixed, but Socratic questioning within steps 
 | 3 | Present design in sections (200-300 words each); friction detection | Validated architecture; /intuition offered if friction detected |
 | 4 | Architecture Impact Check (5 structural questions) | Impact recorded in epic; /intuition offered if any YES |
 | 5 | Create bd epic with IMMUTABLE requirements | Epic with 7 top-level sections and anti-patterns |
-| 6 | Sizing gate check, then create complete task tree | All tasks planned upfront with simple/medium classification |
+| 6 | Sizing gate, decomposition strategy approval, then create complete task tree | All tasks planned upfront with Haiku-first classification |
 | 7 | Run SRE batch review on full task tree | Refined task tree ready for handoff |
-| 8 | Hand off to executing-plans | Lead orchestrates executor subagents with dynamic model selection |
+| 8 | Present task summary, then hand off to executing-plans | Human reviews task list; lead orchestrates executor subagents with dynamic model selection |
 </quick_reference>
 
 <when_to_use>
@@ -271,13 +271,13 @@ EOF
 
 ---
 
-## Step 6 — Sizing Gate, Then Complete Task Tree
+## Step 6 — Sizing Gate, Decomposition Strategy, Then Complete Task Tree
 
 ### 6a — Sizing Gate
 
 Before creating tasks, check whether this epic is too large for a single leaf epic:
 
-- Estimated tasks exceed 10?
+- Estimated tasks exceed ~20?
 - Work spans 3 or more distinct components?
 - Multiple independent deliverables that could ship separately?
 
@@ -289,9 +289,32 @@ This is a gate the user can override — not a hard block. If the user says "pro
 
 ---
 
-### 6b — Create Complete Task Tree
+### 6b — Decomposition Strategy Proposal
 
-Create ALL tasks for the epic upfront. Every task must be classified as **simple** (2-10 min, Haiku) or **medium** (10-30 min, Sonnet) and linked to the epic.
+Before creating any tasks, present a decomposition strategy to the human for approval. Use AskUserQuestion to present:
+
+- How many simple vs medium tasks you plan to create
+- The split rationale (e.g., "grouped by file group: X tasks for config files, Y tasks for core logic")
+- Explicit justification for any medium (Sonnet) tasks — what judgment or design decision makes each one irreducibly complex?
+- Ask: "Does this breakdown look right, or would you like to adjust the grouping or classification?"
+
+**Haiku-first philosophy:**
+
+Default assumption: every task is Haiku. Haiku handles mechanical changes well — it only needs to know exactly what to edit, where, and what success looks like.
+
+Sonnet requires explicit justification. Ask: "What judgment does this task require that Haiku can't handle?" If the answer is "it touches many files" or "it's important" — those are not justifications. The answer must name a specific design decision or edge case analysis the executor must make.
+
+The planner's job is to minimize Sonnet usage by decomposing aggressively. For refactors: define the pattern during planning; each executor task is a cheap Haiku application of that pattern. For new features: extract the design judgment into the spec; execution becomes mechanical.
+
+**Hard ceiling: 15 minutes per task. No exceptions.** Tasks estimated over 15 minutes must be split.
+
+Do not create any tasks until the human approves the strategy.
+
+---
+
+### 6c — Create Complete Task Tree
+
+Create ALL tasks for the epic upfront. Every task must be classified as **simple** (2-5 min, Haiku) or **medium** (5-15 min, Sonnet) and linked to the epic.
 
 **Simple task spec** — Goal, Why, Changes, Verification:
 
@@ -354,8 +377,8 @@ bd dep add bd-[task] bd-[epic] --type parent-child
 ```
 
 **Classification guide:**
-- Simple: rename, config change, single-file edit, documentation update
-- Medium: new component, cross-file change, logic with edge cases, test suite addition
+- Simple (2-5 min, Haiku): Mechanical changes with exact known edits. No judgment required. Examples: rename, config change, documentation update, applying a pre-defined pattern to a file. Complexity of the work determines the model — not file count.
+- Medium (5-15 min, Sonnet): Changes requiring judgment or design decisions that cannot be fully specified upfront. Reserved for irreducible complexity. Examples: new component with architectural decisions, logic with non-obvious edge cases, test suite requiring coverage strategy.
 
 Set task dependencies in bd so execution order is clear: `bd dep add bd-[task-B] bd-[task-A] --type blocking` for tasks that must run in sequence.
 
@@ -377,20 +400,34 @@ The full task tree review catches systemic gaps (e.g., missing error handling ac
 
 ---
 
-## Step 8 — Handoff to Executing-Plans
+## Step 8 — Task Summary and Handoff to Executing-Plans
 
-After refinement approved, present the handoff:
+After SRE refinement is approved, present a one-liner summary of every task for the human to review before execution begins:
+
+```
+Task summary for [epic-id]:
+
+  [N]. [bd-task-id] [simple|medium] — [one-line description of what this task does]
+  [N]. [bd-task-id] [simple|medium] — [one-line description of what this task does]
+  ...
+
+[X] simple tasks (Haiku), [Y] medium tasks (Sonnet)
+
+Ready to hand off to executing-plans?
+```
+
+Wait for human confirmation before proceeding.
+
+After confirmation, present the handoff:
 
 ```
 "Epic [bd-N] is ready with immutable requirements and success criteria.
 Full task tree has been batch-reviewed by SRE and is ready to execute.
 
-Ready to start implementation? I'll use executing-plans to orchestrate execution.
-
 The executing-plans skill will:
 1. Read the full upfront task list from bd and classify each task as simple or medium
 2. Dispatch a fresh executor subagent per task with dynamic model selection
-   (Haiku for simple 2-10 min tasks, Sonnet for medium 10-30 min tasks)
+   (Haiku for simple 2-5 min tasks, Sonnet for medium 5-15 min tasks)
 3. The executor reads the self-contained task spec, implements, commits, and returns
    a one-liner status (DONE, BLOCKED, or NEEDS_HELP)
 4. After each task: lead runs a two-stage review (spec check + code quality),
@@ -425,7 +462,8 @@ Worked examples (skipped-research, upfront-task-tree, missing-anti-patterns) liv
 3. **Propose 2-3 approaches with trade-offs** → Don't jump to a single solution
 4. **Epic requirements IMMUTABLE** → Tasks adapt, requirements don't
 5. **Include anti-patterns section with reasoning** → Prevents watering down requirements when blockers occur
-6. **Create the complete task tree** → All tasks planned upfront with simple/medium classification; check sizing gate first
+6. **Propose decomposition strategy before creating tasks** → Present simple/medium split with Sonnet justifications; get human approval before any bd create
+6b. **Haiku-first default** → Every task is Haiku unless you can name the specific judgment it requires; minimize Sonnet usage by decomposing aggressively
 7. **Run SRE batch review before handoff** → Reviews full task tree once; catches systemic gaps and weak criteria
 8. **Offer /intuition when design-time friction detected** → Architect-decides routing, not a gate
 9. **Architecture Impact Check required before epic finalization** → 5 questions, record result in epic, offer /intuition if any YES
@@ -435,6 +473,8 @@ Worked examples (skipped-research, upfront-task-tree, missing-anti-patterns) liv
 - "Requirements obvious, don't need questions" — Questions reveal hidden complexity
 - "I know this pattern, don't need research" — Research might show a better way or a conflict
 - "Scope is small, sizing gate doesn't apply" — Check task count and components anyway; gate is cheap
+- "This task touches many files, it needs Sonnet" — File count is not a complexity signal; name the judgment required or make it Haiku
+- "I can skip the decomposition strategy proposal" — Human approval before bd create is the rule; surprises during execution are expensive
 - "Anti-patterns section is overkill" — Prevents rationalization under pressure
 - "Epic can evolve" — Requirements are a contract; tasks evolve, requirements don't
 - "Batch SRE review is overkill for a small plan" — Full-tree review catches systemic gaps a per-task pass misses
@@ -450,7 +490,7 @@ Before handing off to executing-plans:
 - [ ] Architecture Impact Check done (Step 4); /intuition offered if 1+ YES or friction detected
 - [ ] bd epic has all 7 sections; Design Rationale has 6 subsections; every empty subsection has "None because [reason]"
 - [ ] Anti-patterns include reasoning ("NO X (reason: Y)")
-- [ ] Sizing gate checked; all tasks created with simple/medium classification and linked to epic
+- [ ] Sizing gate checked; decomposition strategy proposed and approved by human; all tasks created with Haiku-first classification and linked to epic
 - [ ] Batch SRE review run against full task tree; refinements applied
 - [ ] Announced handoff to executing-plans
 
