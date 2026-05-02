@@ -1,10 +1,10 @@
 ---
 name: writing-plans
-description: Use to expand bd tasks into self-contained two-tier specs (simple/Haiku 2-10 min or medium/Sonnet 10-30 min) with exact file paths, complete code, verification commands
+description: Use to expand bd tasks into self-contained two-tier specs (simple/Haiku 2-5 min or medium/Sonnet 5-15 min) with exact file paths, complete code, verification commands
 ---
 
 <skill_overview>
-Expand bd tasks into self-contained two-tier specs. Each task is classified as simple (2-10 min, Haiku) or medium (10-30 min, Sonnet) and written with enough detail that an executor can implement it with zero prior context. Every spec includes a Why section — so the executor understands how the task fits into the epic.
+Expand bd tasks into self-contained two-tier specs. Each task is classified as simple (2-5 min, Haiku) or medium (5-15 min, Sonnet) and written with enough detail that an executor can implement it with zero prior context. Every spec includes a Why section — so the executor understands how the task fits into the epic.
 
 The task tree is created upfront by brainstorming. This skill expands the specs, it does not create the task tree.
 </skill_overview>
@@ -20,7 +20,7 @@ Adapt implementation details to actual codebase state. Never use placeholders or
 | Step | Action | Critical Rule |
 |------|--------|---------------|
 | **Identify Scope** | Single task, range, or full epic | No artificial limits |
-| **Classify** | Simple (2-10 min) or Medium (10-30 min) | No task exceeds 30 min |
+| **Classify** | Simple (2-5 min) or Medium (5-15 min) | No task exceeds 15 min |
 | **Verify Codebase** | Use `codebase-investigator` agent | NEVER verify yourself, report discrepancies |
 | **Draft Spec** | Use two-tier format for the task's tier | Must include Why section; medium must include Boundaries |
 | **Present to User** | Show COMPLETE expansion FIRST | Then ask for approval |
@@ -75,19 +75,19 @@ bd show bd-3  # Read current task design
 
 ### 2b. Classify the Task
 
-**Simple (2-10 min, Haiku):** Single-file or mechanical changes with exact known edits. No judgment required.
+**Simple (2-5 min, Haiku):** Mechanical changes with exact known edits. No judgment required — complexity of work determines model, not file count.
 - Renaming a term across files
 - Adding a config value
 - Updating a doc section
 - Adding a small standalone function with a known signature
 
-**Medium (10-30 min, Sonnet):** Multi-file changes or changes requiring judgment.
+**Medium (5-15 min, Sonnet):** Changes requiring judgment or design decisions. Reserved for irreducible complexity.
 - New component or skill
 - Cross-file refactor
 - Implementation with design decisions
 - Any task with a Tests section
 
-**No task should exceed 30 minutes.** If a task feels larger, flag it for splitting before expanding.
+**No task should exceed 15 minutes.** If a task feels larger, flag it for splitting before expanding.
 
 ### 2c. Verify Codebase State
 
@@ -127,7 +127,7 @@ Use the template for the task's tier. Both tiers REQUIRE a Why section.
 
 ---
 
-**Simple task spec template (2-10 min, Haiku):**
+**Simple task spec template (2-5 min, Haiku):**
 
 ```markdown
 ## Goal
@@ -146,7 +146,7 @@ Use the template for the task's tier. Both tiers REQUIRE a Why section.
 
 ---
 
-**Medium task spec template (10-30 min, Sonnet):**
+**Medium task spec template (5-15 min, Sonnet):**
 
 ```markdown
 ## Goal
@@ -449,9 +449,9 @@ bd show bd-4  # Read next task
    - List explicitly what is out of scope for this task
    - Prevents executor from doing "just a little more"
 
-4. **Effort estimates in minutes, not hours** → No task exceeds 30 minutes
-   - Simple: 2-10 min (Haiku)
-   - Medium: 10-30 min (Sonnet)
+4. **Effort estimates in minutes, not hours** → No task exceeds 15 minutes
+   - Simple: 2-5 min (Haiku)
+   - Medium: 5-15 min (Sonnet)
    - If a task feels larger: flag it for splitting, do not expand it
 
 5. **Use codebase-investigator agent** → Never verify yourself
@@ -479,7 +479,7 @@ All of these mean: Stop, apply the rule:
 - "I'll add the details later" → Write actual content now
 - "The Why is obvious" → Write it anyway; executor has zero context
 - "Boundaries is implied" → Write explicit Boundaries section for medium tasks
-- "This will take longer than 30 min" → Flag for splitting, do not expand
+- "This will take longer than 15 min" → Flag for splitting, do not expand
 
 </critical_rules>
 
@@ -491,7 +491,7 @@ Before marking each task complete in TodoWrite:
 - [ ] Spec uses correct two-tier template for classification
 - [ ] Spec includes Why section (both tiers)
 - [ ] Medium spec includes Boundaries section
-- [ ] Effort estimate is in minutes (2-10 or 10-30), not hours
+- [ ] Effort estimate is in minutes (2-5 or 5-15), not hours
 - [ ] Presented COMPLETE expansion to user (showed full text)
 - [ ] User approved expansion (via AskUserQuestion)
 - [ ] Updated bd with actual content (no placeholders)
@@ -500,7 +500,7 @@ Before marking each task complete in TodoWrite:
 Before finishing all tasks:
 - [ ] All tasks in TodoWrite marked completed
 - [ ] All bd tasks updated with two-tier specs
-- [ ] No task exceeds 30-minute estimate
+- [ ] No task exceeds 15-minute estimate
 - [ ] No conditional steps ("if exists")
 - [ ] Complete code examples in all medium task steps
 - [ ] Exact file paths and commands throughout

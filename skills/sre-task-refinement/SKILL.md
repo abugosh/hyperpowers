@@ -14,7 +14,7 @@ LOW FREEDOM - Follow the 8-category checklist exactly. Apply all categories to e
 <quick_reference>
 | Category | Key Questions | Auto-Reject If |
 |----------|---------------|----------------|
-| 1. Granularity | Simple task 2-10 min? Medium task 10-30 min? | Any task >30 min without breakdown |
+| 1. Granularity | Simple task 2-5 min? Medium task 5-15 min? | Any task >15 min without breakdown |
 | 2. Implementability | Junior can execute without questions? | Vague language, missing details |
 | 3. Success Criteria | 3+ measurable criteria per task? | Can't verify ("works well") |
 | 4. Dependencies | Correct parent-child, blocking relationships? | Circular dependencies |
@@ -35,7 +35,7 @@ Use when:
 - Reviewing bd epic/feature plans before implementation
 - Need to ensure junior engineer can execute without questions
 - Want to catch edge cases and failure modes upfront
-- Need to verify task granularity (2-30 min tasks with simple/medium classification)
+- Need to verify task granularity (2-15 min tasks with simple/medium classification)
 - After hyperpowers:writing-plans creates initial plan
 - Before hyperpowers:executing-plans starts implementation
 - **Batch mode**: After brainstorming creates the full task tree (Step 7 calls this skill against the entire epic's task tree as a unit)
@@ -73,8 +73,8 @@ Apply the 8-category checklist (below) to every task in the tree. Same rigor as 
 After reviewing each task individually, run these systemic checks:
 
 **a. Granularity consistency**
-- Are all tasks within the 2-30 min range?
-- Are simple tasks (2-10 min) classified as simple and medium tasks (10-30 min) classified as medium?
+- Are all tasks within the 2-15 min range?
+- Are simple tasks (2-5 min) classified as simple and medium tasks (5-15 min) classified as medium?
 - Flag any task whose spec complexity doesn't match its classification (e.g., a task with full Implementation + Tests sections classified as simple)
 
 **b. Dependency completeness**
@@ -137,19 +137,19 @@ After per-task reviews, append a cross-task section:
 ### 1. Task Granularity
 
 **Check:**
-- [ ] Task classified as simple (2-10 min) or medium (10-30 min)?
-- [ ] No task exceeds 30 min estimate?
+- [ ] Task classified as simple (2-5 min) or medium (5-15 min)?
+- [ ] No task exceeds 15 min estimate?
 - [ ] Simple task: spec has Goal/Why/Changes/Verification only (no full Implementation section)?
 - [ ] Medium task: spec has Goal/Why/Context/Implementation/Tests/Verification/Boundaries?
 - [ ] Each task independently completable?
 - [ ] Each task has a clear deliverable?
 
 **Classification guide:**
-- **Simple (2-10 min, Haiku)**: Single-file edits, config changes, doc updates, rename/move operations, adding a field to an existing struct. Spec describes the exact change, not a design.
-- **Medium (10-30 min, Sonnet)**: New components, cross-file changes, logic requiring judgment, anything with a Tests section.
+- **Simple (2-5 min, Haiku)**: Mechanical changes with exact known edits. No judgment required — complexity of work determines model, not file count.
+- **Medium (5-15 min, Sonnet)**: Changes requiring judgment or design decisions. Reserved for irreducible complexity.
 
-**If task >30 min:**
-- Break into smaller tasks; 30 min is the hard ceiling
+**If task >15 min:**
+- Break into smaller tasks; 15 min is the hard ceiling
 - Create subtasks with `bd create`
 - Link with `bd dep add child parent --type parent-child`
 - Update parent to coordinator role
@@ -245,7 +245,7 @@ bd dep tree bd-1  # Show full dependency tree
 ### 7. Red Flags (AUTO-REJECT)
 
 **Check for these - if found, REJECT plan:**
-- ❌ Any task >30 min without subtask breakdown
+- ❌ Any task >15 min without subtask breakdown
 - ❌ Vague language: "implement properly", "add support", "make it work"
 - ❌ Success criteria that can't be verified: "code is good", "works well"
 - ❌ Missing test specifications
@@ -392,7 +392,7 @@ After updating, read back with `bd show bd-N` and verify:
 
 ## Breaking Down Large Tasks
 
-If task >30 min, create subtasks:
+If task >15 min, create subtasks:
 
 ```bash
 # Create first subtask
@@ -455,7 +455,7 @@ After reviewing all tasks:
 
 #### [Task Name] (bd-N)
 **Type**: [epic/feature/task]
-**Classification**: [simple (2-10 min) / medium (10-30 min)]
+**Classification**: [simple (2-5 min) / medium (5-15 min)]
 **Status**: [✅ Ready / ⚠️ Needs Minor Improvements / ❌ Needs Major Revision]
 **Estimated Effort**: [X min] ([✅ Within range / ❌ Too large - needs breakdown])
 
@@ -875,7 +875,7 @@ EOF
 1. **Apply all 8 categories to every task** → No skipping any category for any task
 2. **Reject plans with placeholder text** → "[detailed above]", "[as specified]" = instant reject
 3. **Verify no placeholder after updates** → Read back with `bd show` and confirm actual content
-4. **Break tasks >30 min** → Create subtasks; 30 min is the hard ceiling
+4. **Break tasks >15 min** → Create subtasks; 15 min is the hard ceiling
 5. **Strengthen vague criteria** → "Works correctly" → measurable verification commands
 6. **Add edge cases to every task** → Empty? Unicode? Concurrency? Failures?
 7. **Never skip Category 6** → Edge case analysis prevents production issues
@@ -960,7 +960,7 @@ hyperpowers:writing-plans → hyperpowers:sre-task-refinement [SINGLE] → hyper
 
 <resources>
 **Review patterns:**
-- Task too large (>30 min) → Break into simple (2-10 min) or medium (10-30 min) subtasks
+- Task too large (>15 min) → Break into simple (2-5 min) or medium (5-15 min) subtasks
 - Vague criteria ("works correctly") → Measurable commands/checks
 - Missing edge cases → Add to Key Considerations with mitigations
 - Placeholder text → Rewrite with actual content
@@ -973,7 +973,7 @@ hyperpowers:writing-plans → hyperpowers:sre-task-refinement [SINGLE] → hyper
 - "Is the assertion meaningful?" → `!= nil` is weaker than `== expectedValue`
 
 **When stuck:**
-- Unsure if task too large → Ask: Can junior complete in under 30 min? If not, break it down.
+- Unsure if task too large → Ask: Can junior complete in under 15 min? If not, break it down.
 - Unsure if criteria measurable → Ask: Can I verify with command/code review?
 - Unsure if edge case matters → Ask: Could this fail in production?
 - Unsure if placeholder → Ask: Does this reference other content instead of providing content?
