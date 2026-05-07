@@ -5,74 +5,58 @@ Worked conversation examples for the consider skill. Read these only when you ne
 <examples>
 
 <example>
-<scenario>User explores a caching idea and commits to building</scenario>
+<scenario>User explores a caching idea — Claude investigates, shares findings, user commits to building</scenario>
 
 <conversation>
 User: "I'm thinking about adding some kind of caching layer but I'm not sure if it's worth it."
 
-Consider (via AskUserQuestion): "What problem are you trying to solve with caching?"
+Consider: Dispatches codebase-investigator to understand current data access patterns, API response paths, and any existing caching.
 
-User: "API response times — users complain about the dashboard being slow."
+Consider: "I looked at the dashboard API. The main endpoint hits `StatsRepository.get_dashboard_data()` which runs 4 separate queries against the stats tables — no caching anywhere in the path. The queries aggregate over time windows so the data only changes every few minutes, but you're paying the full query cost on every request. Given the read-heavy pattern here, a cache with even a 60-second TTL would eliminate most of the redundant work."
 
-Consider (via AskUserQuestion): "How volatile is the data on the dashboard? Does it change per request or could it be stale for a few seconds?"
+Consider (via AskUserQuestion): "Do you know roughly how many concurrent users hit the dashboard? That determines whether this is 'nice to have' or 'your DB is doing 100x the work it needs to.'"
 
-User: "Most of it is aggregated stats that only update every few minutes."
-
-Consider (via AskUserQuestion): "Is the slowness from the query itself, or from downstream services the API calls?"
-
-User: "The main query hits several tables. I've seen 800ms responses."
-
-Consider (via AskUserQuestion): "Do you have a sense of how many users hit the dashboard concurrently?"
-
-User: "Maybe 50-100 at peak. Okay I think I want to add a Redis cache for the dashboard endpoint."
+User: "Maybe 50-100 at peak. Yeah, let's add Redis for that endpoint."
 
 Consider: "Sounds like you're ready to build — want to run /hyperpowers:brainstorm?"
 </conversation>
 </example>
 
 <example>
-<scenario>User explores refactoring and concludes it isn't worth doing</scenario>
+<scenario>User explores refactoring — Claude investigates and helps conclude it isn't worth doing</scenario>
 
 <conversation>
 User: "Should we refactor the auth module?"
 
-Consider (via AskUserQuestion): "What would change if you did?"
+Consider: Dispatches codebase-investigator to examine the auth module structure, recent change frequency, and any pain points visible in the code.
 
-User: "Mostly cleaner code. The current structure is a bit hard to follow."
+Consider: "I looked at the auth module. It's about 400 lines across 3 files. The structure is a bit sprawling — `authenticate()`, `authorize()`, and session management are all in one file — but git log shows it's only been touched twice in the last 3 months, both minor fixes. No test failures related to it. It's not pretty, but it's stable and low-churn."
 
-Consider (via AskUserQuestion): "Is the difficulty causing actual problems — bugs, slow feature work, onboarding friction?"
+Consider (via AskUserQuestion): "Is something specific making you want to refactor it, or is it more of a 'this bothers me when I read it' feeling?"
 
-User: "Not really. It's just not pretty."
+User: "Just bothers me when I read it. Nothing is actually broken."
 
-Consider (via AskUserQuestion): "What's the cost of not refactoring right now?"
-
-User: "Nothing is broken. The team is tight on time before the release."
-
-Consider: "You explored refactoring auth — the value is cleanup, but nothing is broken and timing is poor. Status quo is acceptable. Let me know if the friction becomes a real problem."
+Consider: "I'd leave it. The code is stable, rarely touched, and not blocking anything. Refactoring low-churn code that works is almost never worth the risk, especially before a release. If it starts causing real friction — bugs, slow feature work, onboarding confusion — that's when it earns a rewrite."
 </conversation>
 
-The session ends without a handoff. Clean exit.
+The session ends without a handoff. Clean exit with a clear opinion.
 </example>
 
 <example>
-<scenario>User's uncertainty reveals structural friction — routed to /intuition</scenario>
+<scenario>User's uncertainty reveals structural friction — Claude investigates and routes to /intuition</scenario>
 
 <conversation>
 User: "I want to add rate limiting but I can't figure out where it should live."
 
-Consider (via AskUserQuestion): "What are the candidates you're considering?"
+Consider: Dispatches codebase-investigator to examine the API gateway layer, service layer, and how auth context flows between them.
 
-User: "Either the API gateway layer or inside the service itself. Both feel awkward."
+Consider: "I looked at both candidate locations. The API gateway is a thin proxy — it has access to the request but not auth context. Getting per-user limits there would mean either duplicating the auth lookup or passing user context through headers, which adds coupling. The service layer already has auth context, but `ServiceBase` is already doing business logic, validation, and error handling — rate limiting there would be a fourth concern in an already-busy class. Neither placement is clean, which suggests this isn't a 'where do I put it' problem — it's a design problem."
 
-Consider (via AskUserQuestion): "What makes the API gateway placement awkward?"
+Consider (via AskUserQuestion): "Both placements create coupling that doesn't exist yet. Does the rate limiting need per-user awareness, or could it be IP-based at the gateway?"
 
-User: "It would need to know about per-user limits, which means it needs auth context — that feels like it's pulling in too much."
+User: "It needs to be per-user. Some users have higher limits."
 
-Consider (via AskUserQuestion): "And the service placement?"
-
-User: "The service layer is already tangled with business logic. Adding rate limiting there feels like complection."
-
-Consider: "Sounds like structural friction — both placements have coupling concerns, which suggests the design needs examination before committing. Want to run /hyperpowers:intuition?"
+Consider: "That confirms it — the rate limiting needs auth context, but the layer that has auth context is already overloaded. This is structural friction. The real question is whether rate limiting deserves its own layer or whether the service layer needs to be decomposed so adding concerns doesn't make things worse. Want to run /hyperpowers:intuition to examine this properly?"
 </conversation>
 </example>
 

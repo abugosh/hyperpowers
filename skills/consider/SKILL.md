@@ -1,27 +1,27 @@
 ---
 name: consider
-description: Use when exploring an idea before knowing what to build — Socratic thinking partner that routes to /brainstorm on commit-to-build or /intuition on structural friction
+description: Use when exploring an idea before knowing what to build — thinking partner that investigates the codebase, shares findings, and offers opinions before asking questions
 ---
 
 <skill_overview>
-A lightweight Socratic thinking partner for exploration before committing to build. Ask clarifying questions, optionally dispatch research agents when conversation reveals a factual need, and offer /brainstorm or /intuition when the user is ready to move forward.
+A thinking partner for exploration before committing to build. Actively investigates the codebase when the topic touches code, brings back findings, offers opinions, and asks targeted questions grounded in evidence. Routes to /brainstorm or /intuition when the user is ready to move forward.
 </skill_overview>
 
 <rigidity_level>
-HIGH FREEDOM — Adapt Socratic questions to context. Transitions are soft suggestions, not gates. Research agents dispatch only when the conversation reveals a specific factual need. Clean exit (no handoff) is always valid.
+HIGH FREEDOM — Adapt investigation and questions to context. Transitions are soft suggestions, not gates. Clean exit (no handoff) is always valid.
 </rigidity_level>
 
 <quick_reference>
 | Step | Action | When |
 |------|--------|------|
-| 1 | Understand via AskUserQuestion (one at a time) | Always — start here |
-| 2 | Research on-demand | Only when conversation reveals a factual question |
+| 1 | Orient and investigate | Always — understand topic, look at code if relevant |
+| 2 | Discuss as a partner | Share findings, offer opinions, ask targeted questions |
 | 3 | Detect transition signals | Commit-to-build → offer /brainstorm; structural friction → offer /intuition |
 | 4 | End cleanly | User has clarity; no forced handoff required |
 
 **Invocation patterns:**
-- `/hyperpowers:consider` (no argument) — open with "What are you thinking about?"
-- `/hyperpowers:consider "topic"` (with argument) — open with "You mentioned [topic] — what's the specific concern or uncertainty?"
+- `/hyperpowers:consider` (no argument) — ask what they're thinking about, then investigate
+- `/hyperpowers:consider "topic"` (with argument) — investigate the topic immediately
 </quick_reference>
 
 <when_to_use>
@@ -46,51 +46,45 @@ HIGH FREEDOM — Adapt Socratic questions to context. Transitions are soft sugge
 
 ---
 
-## Step 1 — Understand via Socratic Questions
+## Step 1 — Orient and Investigate
 
-Use AskUserQuestion for each question — do not print questions and wait. One question at a time.
+Understand what the user is exploring. If the topic touches the codebase, investigate immediately — don't wait for the user to ask.
 
-**Opening question (no argument):**
-```
-What are you thinking about?
-```
+**Opening (no argument):**
+Use AskUserQuestion: "What are you thinking about?"
+Then proceed to investigation once you have a topic.
 
-**Opening question (argument provided):**
-```
-You mentioned [topic] — what's the specific concern or uncertainty?
-```
+**Opening (argument provided):**
+The user gave you a topic. Investigate it before asking anything.
 
-**Useful Socratic patterns:**
-- "What problem are you actually trying to solve?"
-- "What would change if you knew the answer?"
-- "What have you already ruled out, and why?"
-- "What's the simplest thing that could work?"
-- "What would need to be true for this to be worth doing?"
-- "Who else is affected by this decision?"
+**Investigation rules:**
+- **Topic touches the codebase** → dispatch `hyperpowers:codebase-investigator` to understand current state. This is cheap. Do it.
+- **Topic involves external tech/APIs** → dispatch `hyperpowers:internet-researcher` for current docs
+- **Topic is purely strategic** (team process, priorities, tradeoffs) → no investigation needed, go straight to discussion
+- **Both codebase and external?** → dispatch both in parallel
 
-**Guidelines:**
-- Follow the user's answers — let the conversation determine the next question
-- Do not ask more than one question per turn
-- Stop asking when the thinking space is clear or the user has reached a conclusion
+**After investigation, share what you found** before asking any questions. The user needs to know what you know.
 
 ---
 
-## Step 2 — Research On-Demand
+## Step 2 — Discuss as a Partner
 
-Dispatch a research agent ONLY when the conversation reveals a factual question that cannot be answered Socratically.
+The interaction pattern is: **bring information → offer an opinion → ask a targeted question.** Not: ask → ask → ask.
 
-**Triggers for research dispatch:**
-- User asks "does library X support Y?" → dispatch `hyperpowers:internet-researcher`
-- User asks "is there code in this repo that does Z?" → dispatch `hyperpowers:codebase-investigator`
-- User says "I'm not sure if [factual thing] exists" → dispatch the appropriate agent
+**Partner behaviors:**
+- Share observations: "I looked at X and here's what I see..."
+- Offer opinions: "I think Y because Z" — let the user push back
+- Ask questions that follow from evidence: "Given that the auth module already does X, does it make sense to add Y there or is that too much responsibility?"
+- Point out things the user might not have considered: constraints, existing patterns, related code
 
-**Non-triggers (do NOT dispatch):**
-- User expresses uncertainty, preference, or opinion
-- User is still thinking through goals
-- User hasn't named a specific factual question yet
-- Skill start — never dispatch preemptively
+**Use AskUserQuestion when you need a decision or preference from the user.** One question at a time.
 
-**Never dispatch both agents at skill start.** Research serves the conversation; the conversation doesn't serve research.
+**Do NOT:**
+- Ask generic Socratic questions disconnected from the codebase ("What problem are you actually trying to solve?")
+- Stack multiple questions in one turn
+- Withhold opinions to seem neutral — the user wants a partner, not a therapist
+
+**When the conversation reveals a new factual question**, dispatch another research agent. Don't gate on whether the user explicitly asked — if knowing the answer would move the conversation forward, go find out.
 
 ---
 
@@ -119,7 +113,7 @@ Sounds like structural friction — want to run /hyperpowers:intuition?
 - "we said X but now we're doing Y"
 - "not sure where this fits in the system"
 
-**If the user declines an offer:** Return to exploration without re-offering. Do not lock into a transition once an offer was declined. The user may re-enter exploration freely.
+**If the user declines an offer:** Return to discussion without re-offering.
 
 ---
 
@@ -130,49 +124,44 @@ Consider produces clarity, not artifacts. When the user has what they need:
 - Briefly summarize what was explored and what conclusion (if any) was reached
 - Clean exit is valid — do not force a handoff to /brainstorm or /intuition
 
-**Example clean exit:**
-```
-You explored [topic]. The key insight was [conclusion]. No action committed to — 
-status quo is acceptable given [reason]. Let me know if anything changes.
-```
-
 </the_process>
 
 <examples>
-Three worked conversations (caching commit-to-build, refactor clean-exit, rate-limiting friction-to-intuition) live in `examples.md`. Read that file when you need a concrete reference.
+Three worked conversations live in `examples.md`. Read that file when you need a concrete reference.
 </examples>
 
 <critical_rules>
 
 ## Rules That Have No Exceptions
 
-1. **Use AskUserQuestion for all Socratic questions** — one question per turn; never print questions and wait
-2. **Do NOT create a bd epic, task, or any bd artifact inside Consider** — Consider produces clarity, not outputs
-3. **Do NOT load architecture context** — no architecture views, no decision-record scanning; architectural work belongs in /intuition
-4. **Offer /hyperpowers:brainstorm when user commits to building** — soft suggestion only; never auto-invoke
-5. **Offer /hyperpowers:intuition when user expresses structural friction** — soft suggestion only; never auto-invoke
-6. **Research agents only on-demand** — never dispatch codebase-investigator or internet-researcher at skill start or preemptively
-7. **Clean exit is valid** — Consider ends when the user has clarity, even if no handoff occurs
+1. **Investigate when the topic touches the codebase** — dispatch codebase-investigator proactively; don't wait for the user to ask a specific factual question
+2. **Share findings before asking questions** — the user needs to know what you found; lead with information, not interrogation
+3. **Have opinions** — offer your read on the situation and let the user push back; withholding opinions to seem neutral is not helpful
+4. **Use AskUserQuestion for questions** — one question per turn; never print questions and wait
+5. **Do NOT create bd artifacts** — no epics, tasks, or any bd output; Consider produces clarity, not tracked work
+6. **Offer /hyperpowers:brainstorm when user commits to building** — soft suggestion only; never auto-invoke
+7. **Offer /hyperpowers:intuition when user expresses structural friction** — soft suggestion only; never auto-invoke
+8. **Clean exit is valid** — Consider ends when the user has clarity, even if no handoff occurs
 
 ## Common Excuses
 
 All of these mean: **STOP. Reread the critical rules.**
 
-- "I'll run codebase-investigator to get context first" → violates rule 6; wait for a factual need to emerge
-- "User seems uncertain, let me load architecture to help" → violates rule 3; architecture belongs in /intuition
-- "I'll create a bd task to track this thinking session" → violates rule 2; Consider produces no artifacts
-- "User clearly wants to build, I'll just start /brainstorm now" → violates rule 4; always offer, never auto-invoke
-- "There's no obvious handoff, let me ask if they want to brainstorm anyway" → violates rule 7; respect clean exit
+- "I'll just ask some questions first before looking at code" → violates rule 1; if the topic touches code, investigate immediately
+- "I don't want to bias the user with my opinion" → violates rule 3; they want a partner, not a therapist
+- "I'll create a bd task to track this thinking session" → violates rule 5; Consider produces no artifacts
+- "User clearly wants to build, I'll just start /brainstorm now" → violates rule 6; always offer, never auto-invoke
+- "There's no obvious handoff, let me ask if they want to brainstorm anyway" → violates rule 8; respect clean exit
 
 </critical_rules>
 
 <verification_checklist>
 Before claiming Consider is complete for a session:
 
-- [ ] Used AskUserQuestion for every question (not printed)
-- [ ] Asked one question at a time (no multi-question turns)
-- [ ] Research agents dispatched only when conversation revealed factual need
-- [ ] No architecture context loaded (no architecture views, no decision-record scanning)
+- [ ] Investigated the codebase when topic touched code (didn't just ask questions)
+- [ ] Shared findings before asking questions
+- [ ] Offered opinions grounded in evidence
+- [ ] Used AskUserQuestion for questions (not printed), one at a time
 - [ ] No bd artifacts created
 - [ ] Transition offers made as soft suggestions (not auto-invocations)
 - [ ] Session ended cleanly: handoff offered, handoff made, or clarity-and-exit
@@ -187,9 +176,9 @@ Before claiming Consider is complete for a session:
 </integration>
 
 <resources>
-**When the conversation stalls:** "What would change if you knew the answer?" — almost always re-energizes. If the user keeps giving vague answers, make the question concrete: "name one thing you'd change if you could."
+**When the conversation stalls:** Go look at something. If you've been discussing code abstractly, dispatch codebase-investigator to ground the conversation. Fresh facts re-energize better than more questions.
 
-**Research dispatch test:** Is the user stuck on a factual unknown (does X exist? does Y support Z?)? Dispatch. Still figuring out what they want? More Socratic questions, not research.
+**Research dispatch test:** Would knowing the answer move the conversation forward? Dispatch. Still figuring out what question to ask? Ask the user.
 
 **Transition offers — keep short:**
 - "Sounds like you're ready to build — want to run /hyperpowers:brainstorm?"

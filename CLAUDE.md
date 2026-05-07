@@ -170,7 +170,7 @@ Skills reference these rather than duplicating content.
 
 When the goal isn't yet clear — exploring whether to build something, clarifying problem framing, or thinking through an idea before committing:
 
-1. **Consider** (`/hyperpowers:consider`) - Lightweight Socratic thinking partner. One question at a time, optional research agents on-demand, routes to /brainstorm (commit-to-build) or /intuition (structural friction) when ready. Clean exit valid if no commitment made.
+1. **Consider** (`/hyperpowers:consider`) - Thinking partner that actively investigates the codebase, shares findings, and offers opinions. Dispatches codebase-investigator proactively when topic touches code. Routes to /brainstorm (commit-to-build) or /intuition (structural friction) when ready. Clean exit valid if no commitment made.
 
 ### Feature Development (Greenfield)
 
