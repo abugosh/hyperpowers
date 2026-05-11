@@ -15,7 +15,7 @@ Reusable workflows for common development tasks:
 - **consider** - Lightweight Socratic thinking partner for exploring ideas before committing to build; routes to brainstorming or intuition when ready
 - **brainstorming** - Interactive design refinement using Socratic method
 - **writing-plans** - Create detailed implementation plans (single task or multiple tasks)
-- **executing-plans** - Lead reads upfront task list, classifies tasks as simple/medium, dispatches fresh executor subagent per task with dynamic model selection, runs two-stage review (spec + code quality) after each task
+- **executing-plans** - Lead reads upfront task list, dispatches fresh executor subagent (Sonnet) per task, runs two-stage review (spec + code quality) after each task
 - **review-implementation** - Verify implementation matches requirements
 - **finishing-a-development-branch** - Complete workflow for PR creation and cleanup
 - **sre-task-refinement** - Ensure all corner cases and requirements are understood (uses Opus 4.1)
@@ -64,7 +64,7 @@ Quick access to key workflows:
 
 Domain-specific agents for complex tasks:
 
-- **executor** - Implements a single bd task; fresh instance dispatched per task with dynamic model selection (Haiku for simple, Sonnet for medium); reads self-contained task spec, implements, commits, returns one-liner status (DONE/BLOCKED/NEEDS_HELP) to lead
+- **executor** - Implements a single bd task; fresh Sonnet instance dispatched per task; reads self-contained task spec, implements, commits, returns one-liner status (DONE/BLOCKED/NEEDS_HELP) to lead
 - **reviewer** - Verifies implementation against bd epic spec; returns APPROVED or GAPS FOUND verdict
 - **code-reviewer** - Review implementations against plans and coding standards
 - **codebase-investigator** - Understand current codebase state and patterns
@@ -158,9 +158,9 @@ Claude: Now I'm using the writing-plans skill to create a detailed implementatio
 
 Claude: I'm using the executing-plans skill to orchestrate execution.
 
-[Dispatches fresh executor subagent per task with dynamic model selection]
+[Dispatches fresh executor subagent (Sonnet) per task]
 [Executor reads self-contained task spec, implements, commits, returns DONE/BLOCKED/NEEDS_HELP]
-[Lead runs two-stage review (spec check + Haiku code quality) after each task]
+[Lead runs two-stage review (spec check + code quality) after each task]
 
 Claude: The executor reports all criteria met. Dispatching the reviewer agent.
 

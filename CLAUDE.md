@@ -142,7 +142,7 @@ bd status bd-3 --status in-progress     # Update task status
 
 Specialized agents run in separate contexts to handle specific tasks:
 
-1. **executor** (subagent) - Implements a single bd task. Dispatched fresh per task by executing-plans with dynamic model selection (Haiku for simple tasks, Sonnet for medium tasks). Reads the self-contained task spec, implements, commits, and returns a one-liner status (DONE, BLOCKED, or NEEDS_HELP) to the lead.
+1. **executor** (subagent) - Implements a single bd task. Dispatched fresh per task by executing-plans using Sonnet. Reads the self-contained task spec, implements, commits, and returns a one-liner status (DONE, BLOCKED, or NEEDS_HELP) to the lead.
 2. **reviewer** (subagent) - Verifies implementation against bd epic spec with Google Fellow SRE scrutiny. Returns APPROVED or GAPS FOUND verdict. Dispatched as one-shot subagent.
 3. **test-runner** (uses Haiku) - Runs tests/hooks/commits, returns only summary + failures to keep context clean
 4. **code-reviewer** - Reviews implementations against plans and coding standards
@@ -152,7 +152,7 @@ Specialized agents run in separate contexts to handle specific tasks:
 
 **Critical pattern:** Agents keep verbose output (test results, formatting diffs) in their own context, returning only essential info to the main conversation.
 
-**Delegation pattern:** The executing-plans skill uses blocking subagent dispatch — the lead (main context) dispatches a fresh executor subagent per task via the Agent tool (without team_name), which blocks the lead until the executor returns. The lead selects the model dynamically based on task classification (Haiku for simple 2-5 min tasks, Sonnet for medium 5-15 min tasks). After each executor returns, the lead runs a two-stage review (spec check + Haiku code quality review) before moving to the next task. Task specs are self-contained with Goal, Why, and Boundaries sections — executors need no cross-task context bridging.
+**Delegation pattern:** The executing-plans skill uses blocking subagent dispatch — the lead (main context) dispatches a fresh executor subagent (Sonnet) per task via the Agent tool (without team_name), which blocks the lead until the executor returns. After each executor returns, the lead runs a two-stage review (spec check + code quality review) before moving to the next task. Task specs are self-contained with Goal, Why, and Boundaries sections — executors need no cross-task context bridging.
 
 ### Common Patterns Location
 
@@ -180,7 +180,7 @@ Complete workflow from idea to PR:
 2. **Brainstorming** (`/hyperpowers:brainstorm`) - Entry point for leaf epics. Socratic questioning to refine requirements, research codebase/external docs, produce bd epic with immutable requirements; escalates to preordain when scope exceeds ~10 tasks or 3-4 components
 3. **SRE Task Refinement** - Batch review of full task plan using Opus 4.1; required to catch corner cases before execution begins
 4. **Writing Plans** (`/hyperpowers:write-plan`) - Creates detailed bd epic with tasks
-5. **Executing Plans** (`/hyperpowers:execute-plan`) - Lead reads upfront task list, classifies tasks as simple/medium, dispatches fresh executor subagent per task with dynamic model, runs two-stage review (spec + code quality) after each task
+5. **Executing Plans** (`/hyperpowers:execute-plan`) - Lead reads upfront task list, dispatches fresh executor subagent (Sonnet) per task, runs two-stage review (spec + code quality) after each task
 6. **Review Implementation** (`/hyperpowers:review-implementation`) - Verifies against spec
 7. **Finishing Branch** - Creates PR, handles cleanup
 
@@ -324,7 +324,7 @@ Priority: Continue adding collaboration workflows (code review response, inciden
 - Changes to skill files take effect immediately in new conversations
 - The test-runner agent uses Haiku model for cost efficiency
 - The sre-task-refinement skill uses Opus 4.1 for deep analysis
-- Most other operations use the default model (Sonnet)
+- Executor subagents always use Sonnet
 - **Always bump the version** in `.claude-plugin/plugin.json` before the final push of any change that modifies files in `skills/`, `agents/`, `commands/`, `hooks/`, `CLAUDE.md`, or `README.md`. Patch bump (x.y.Z) for fixes, minor bump (x.Y.0) for features/rewrites.
 
 ## Contributing Guidelines

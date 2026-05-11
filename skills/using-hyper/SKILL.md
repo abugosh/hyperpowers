@@ -177,7 +177,7 @@ Claude: "Now I'm using hyperpowers:writing-plans to create a detailed implementa
 Claude: "Now I'm using hyperpowers:executing-plans to orchestrate task execution."
 
 [Skill tool loads executing-plans]
-[Dispatches fresh executor subagent per task with dynamic model selection]
+[Dispatches fresh executor subagent (Sonnet) per task]
 [Executor implements task, commits, returns DONE/BLOCKED/NEEDS_HELP; lead runs two-stage review then dispatches next]
 
 **What you gain:**
