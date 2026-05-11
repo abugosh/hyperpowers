@@ -145,8 +145,8 @@ After per-task reviews, append a cross-task section:
 - [ ] Each task has a clear deliverable?
 
 **Classification guide:**
-- **Simple (2-5 min, Haiku)**: Mechanical changes with exact known edits. No judgment required — complexity of work determines model, not file count.
-- **Medium (5-15 min, Sonnet)**: Changes requiring judgment or design decisions. Reserved for irreducible complexity.
+- **Simple (2-5 min)**: Mechanical changes with exact known edits. No judgment required.
+- **Medium (5-15 min)**: Changes requiring judgment or design decisions. Reserved for irreducible complexity.
 
 **If task >15 min:**
 - Break into smaller tasks; 15 min is the hard ceiling

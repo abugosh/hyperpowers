@@ -1,10 +1,10 @@
 ---
 name: writing-plans
-description: Use to expand bd tasks into self-contained two-tier specs (simple/Haiku 2-5 min or medium/Sonnet 5-15 min) with exact file paths, complete code, verification commands
+description: Use to expand bd tasks into self-contained two-tier specs (simple 2-5 min or medium 5-15 min) with exact file paths, complete code, verification commands
 ---
 
 <skill_overview>
-Expand bd tasks into self-contained two-tier specs. Each task is classified as simple (2-5 min, Haiku) or medium (5-15 min, Sonnet) and written with enough detail that an executor can implement it with zero prior context. Every spec includes a Why section — so the executor understands how the task fits into the epic.
+Expand bd tasks into self-contained two-tier specs. Each task is classified as simple (2-5 min) or medium (5-15 min) and written with enough detail that an executor can implement it with zero prior context. Every spec includes a Why section — so the executor understands how the task fits into the epic.
 
 The task tree is created upfront by brainstorming. This skill expands the specs, it does not create the task tree.
 </skill_overview>
@@ -75,13 +75,13 @@ bd show bd-3  # Read current task design
 
 ### 2b. Classify the Task
 
-**Simple (2-5 min, Haiku):** Mechanical changes with exact known edits. No judgment required — complexity of work determines model, not file count.
+**Simple (2-5 min):** Mechanical changes with exact known edits. No judgment required.
 - Renaming a term across files
 - Adding a config value
 - Updating a doc section
 - Adding a small standalone function with a known signature
 
-**Medium (5-15 min, Sonnet):** Changes requiring judgment or design decisions. Reserved for irreducible complexity.
+**Medium (5-15 min):** Changes requiring judgment or design decisions. Reserved for irreducible complexity.
 - New component or skill
 - Cross-file refactor
 - Implementation with design decisions
@@ -127,7 +127,7 @@ Use the template for the task's tier. Both tiers REQUIRE a Why section.
 
 ---
 
-**Simple task spec template (2-5 min, Haiku):**
+**Simple task spec template (2-5 min):**
 
 ```markdown
 ## Goal
@@ -146,7 +146,7 @@ Use the template for the task's tier. Both tiers REQUIRE a Why section.
 
 ---
 
-**Medium task spec template (5-15 min, Sonnet):**
+**Medium task spec template (5-15 min):**
 
 ```markdown
 ## Goal
@@ -450,8 +450,8 @@ bd show bd-4  # Read next task
    - Prevents executor from doing "just a little more"
 
 4. **Effort estimates in minutes, not hours** → No task exceeds 15 minutes
-   - Simple: 2-5 min (Haiku)
-   - Medium: 5-15 min (Sonnet)
+   - Simple: 2-5 min
+   - Medium: 5-15 min
    - If a task feels larger: flag it for splitting, do not expand it
 
 5. **Use codebase-investigator agent** → Never verify yourself
