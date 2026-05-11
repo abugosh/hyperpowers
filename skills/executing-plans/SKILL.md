@@ -1,14 +1,14 @@
 ---
 name: executing-plans
-description: Lead reads pre-planned task list, classifies tasks as simple/medium, dispatches fresh blocking executor subagent with dynamic model selection, runs two-stage per-task review, and escalates to user when plan proves invalid.
+description: Lead reads pre-planned task list, dispatches fresh blocking executor subagent (Sonnet) per task, runs two-stage per-task review, and escalates to user when plan proves invalid.
 ---
 
 <skill_overview>
-Lead orchestrates execution of a pre-planned task list. All tasks exist in bd before execution begins. Lead classifies each task, dispatches a fresh executor subagent per task, runs two-stage review (spec check + Haiku code quality), and escalates to user when the plan proves invalid. Epic requirements are immutable.
+Lead orchestrates execution of a pre-planned task list. All tasks exist in bd before execution begins. Lead dispatches a fresh executor subagent per task, runs two-stage review (spec check + code quality), and escalates to user when the plan proves invalid. Epic requirements are immutable.
 </skill_overview>
 
 <rigidity_level>
-MEDIUM FREEDOM — Classification heuristics use judgment. Dispatch, review, and escalation protocol are rigid (follow exactly). Do not skip stage 1 or stage 2 review. Do not implement code in the lead context. Do not redesign the plan autonomously.
+MEDIUM FREEDOM — Pre-dispatch verification uses judgment. Dispatch, review, and escalation protocol are rigid (follow exactly). Do not skip stage 1 or stage 2 review. Do not implement code in the lead context. Do not redesign the plan autonomously.
 </rigidity_level>
 
 <quick_reference>
@@ -16,10 +16,10 @@ MEDIUM FREEDOM — Classification heuristics use judgment. Dispatch, review, and
 | Step | Action | How |
 |------|--------|-----|
 | **Startup** | Load epic, list all tasks, verify specs | `bd show <epic-id>` + `bd list --parent <epic-id>` |
-| **Classify** | Simple (Haiku) vs Medium (Sonnet) | Effort estimate + spec content |
+| **Pre-dispatch** | Verify spec exists and dependencies met | `bd show <task-id>` |
 | **Dispatch** | Fresh blocking executor subagent per task | Agent tool (no team_name) |
 | **Stage 1** | Lead reads diff vs task spec | `git diff HEAD~1` |
-| **Stage 2** | Haiku code quality review | Agent tool (Haiku) |
+| **Stage 2** | Code quality review | Agent tool (Sonnet) |
 | **Escalation** | Halt, summarize, recommend, wait | AskUserQuestion |
 
 **Critical:** Executor returns a one-liner (DONE:, BLOCKED:, or NEEDS_HELP:) — not a multi-section envelope. Parse the first word only.
@@ -52,23 +52,13 @@ bd list --parent <epic-id>     # List all child tasks
 
 **Determine execution order** from bd dependencies. Tasks blocked by uncompleted dependencies must wait.
 
-## 2. Task Classification
+## 2. Pre-dispatch Verification
 
-Before dispatching each task, classify it:
+Before dispatching each task, verify:
+1. Task has a non-empty spec (design field).
+2. Blocking dependencies are met (all tasks that must complete before this one are done).
 
-**Simple → use Haiku:**
-- Effort estimate ≤5 min
-- Mechanical changes with exact known edits — complexity determines model, not file count
-- Task spec has a Changes section with exact edits described
-- No Tests section, or trivial verification only
-
-**Medium → use Sonnet:**
-- Effort estimate 5–15 min
-- Changes requiring judgment or design decisions
-- Task spec has an Implementation section and/or a Tests section
-- Requires decisions the spec cannot fully anticipate
-
-Classification is a heuristic. If Haiku returns NEEDS_HELP on a task classified as simple, reclassify as medium and re-dispatch on Sonnet.
+If either check fails, skip the task and note why.
 
 ## 3. Executor Dispatch
 
@@ -77,7 +67,7 @@ Dispatch a fresh executor subagent for the current task:
 ```
 Agent tool:
   subagent_type: "hyperpowers:executor"
-  model: "haiku" OR "sonnet" (based on classification)
+  model: "sonnet"
   mode: "bypassPermissions"
   prompt: |
     Execute this task:
@@ -104,12 +94,12 @@ git diff HEAD~1    # Read the executor's changes
 ```
 Compare the diff against the task spec. Does the implementation match what was specified? If NO: note the gaps, re-dispatch with feedback (see Stage 1 feedback template below).
 
-**Stage 2 — Haiku code quality review:**
+**Stage 2 — Code quality review:**
 
 ```
 Agent tool:
   subagent_type: "hyperpowers:code-reviewer"
-  model: "haiku"
+  model: "sonnet"
   mode: "bypassPermissions"
   prompt: |
     Review this change for code quality.
@@ -180,8 +170,6 @@ Working directory: <pwd>
 Branch: <current branch>
 ```
 
-If a Haiku executor returns NEEDS_HELP on a simple task: reclassify as medium and re-dispatch on Sonnet before escalating.
-
 If the lead cannot answer: escalate to user via AskUserQuestion. Wait for answer before re-dispatching.
 
 ## 5. Escalation Protocol
@@ -239,29 +227,30 @@ After all tasks return DONE and pass two-stage review:
 <example>
 <scenario>Normal task dispatch and DONE return with passing review</scenario>
 <code>
-Lead classifies bd-42 (effort: 5 min, Changes section, no Tests section) → Haiku.
-
-Dispatches executor with Haiku model. Executor returns:
+Lead verifies bd-42: non-empty spec, no blocking dependencies pending. Dispatches executor (Sonnet).
+Executor returns:
 "DONE: Added error handling to auth.ts:validate() and committed as 3f9a1b2."
 
 Stage 1: git diff HEAD~1 → matches spec (error handling added at the right location). ✓
-Stage 2: Haiku code-reviewer returns "PASS". ✓
+Stage 2: code-reviewer returns "PASS". ✓
 
 Lead marks bd-42 done. Proceeds to bd-43.
 </code>
 </example>
 
 <example>
-<scenario>NEEDS_HELP on a simple task → reclassify as medium</scenario>
+<scenario>NEEDS_HELP — lead answers and re-dispatches</scenario>
 <code>
-Lead classifies bd-44 as simple → Haiku.
-Haiku executor returns:
+Executor returns:
 "NEEDS_HELP: Task says modify config.ts line 12 but that line is a type import. Should I
 modify line 34 (the actual config object) instead?"
 
-Lead reclassifies bd-44 as medium. Re-dispatches with Sonnet + answer in prompt:
+Lead answers in re-dispatch prompt:
 "Re-execute this task. Answer: yes, modify line 34 (the config object). The spec meant
-the config assignment, not the import."
+the config assignment, not the import.
+
+Task spec:
+<paste task spec>"
 </code>
 </example>
 
@@ -290,7 +279,7 @@ Waits for user response before proceeding.
 
 3. **Parse the one-liner** — Executor returns DONE:, BLOCKED:, or NEEDS_HELP: as a one-liner. There are no multi-section status envelopes to parse.
 
-4. **Two-stage review on every DONE** — Stage 1 (lead spec check) and Stage 2 (Haiku code quality) are both mandatory. Do not skip either stage.
+4. **Two-stage review on every DONE** — Stage 1 (lead spec check) and Stage 2 (code quality review) are both mandatory. Do not skip either stage.
 
 5. **Never redesign autonomously** — On plan-level failures, halt and escalate. Present options; the user decides. Never continue without user input after escalation.
 
@@ -298,14 +287,11 @@ Waits for user response before proceeding.
 
 7. **Task spec only in dispatch prompt** — No epic context, no adjacent task details, no cross-task learnings in the executor prompt. The task spec's Why section is the executor's only context.
 
-8. **Dynamic model selection is load-bearing** — Haiku for simple, Sonnet for medium. Do not use a single model for all tasks.
-
-9. **Epic requirements are immutable** — Never water down a requirement. If an executor's changes violate an anti-pattern, reject in Stage 1 and re-dispatch.
+8. **Epic requirements are immutable** — Never water down a requirement. If an executor's changes violate an anti-pattern, reject in Stage 1 and re-dispatch.
 
 ## Common Rationalizations
 
-- "I'll skip Stage 2 since Stage 1 looked fine" → Both stages are mandatory. Dispatch the Haiku reviewer.
-- "This task is almost simple, I'll use Sonnet to be safe" → Use the classification. Haiku costs are the point of classification.
+- "I'll skip Stage 2 since Stage 1 looked fine" → Both stages are mandatory. Dispatch the code-reviewer.
 - "I'll just clarify this one thing in the spec and continue" → If it's a plan-level issue, escalate. Don't patch forward.
 - "The reviewer is overkill for gap-fix tasks" → Dispatch reviewer after all gaps are fixed. No exceptions.
 - "I can answer this NEEDS_HELP myself and keep going" → Answer it in the re-dispatch prompt. Do not implement it in the lead context.
@@ -317,11 +303,10 @@ Waits for user response before proceeding.
 Before dispatching each task:
 - [ ] Task has a non-empty spec
 - [ ] Dependencies are met (blocking tasks completed first)
-- [ ] Task classified (simple/medium) with model selected
 
 After each DONE return:
 - [ ] Stage 1: Lead read the diff against the task spec
-- [ ] Stage 2: Haiku code-reviewer dispatched and returned PASS
+- [ ] Stage 2: Code-reviewer dispatched and returned PASS
 - [ ] Task marked done in bd
 
 Before completion:
@@ -333,11 +318,11 @@ Before completion:
 
 <integration>
 
-**Calls:** agents/executor.md (blocking subagent, per task) · agents/code-reviewer.md (Haiku, per task) · agents/reviewer.md (blocking subagent, once at end)
+**Calls:** agents/executor.md (blocking subagent, per task) · agents/code-reviewer.md (Sonnet, per task) · agents/reviewer.md (blocking subagent, once at end)
 
 **Called by:** User via /hyperpowers:execute-plan · after writing-plans produces the task tree
 
-**Flow:** Startup → Classify → Dispatch executor (blocks) → Parse one-liner → Two-stage review → Next task → ... → Reviewer gate → Present → /hyperpowers:finish-branch
+**Flow:** Startup → Pre-dispatch verification → Dispatch executor (blocks) → Parse one-liner → Two-stage review → Next task → ... → Reviewer gate → Present → /hyperpowers:finish-branch
 
 **bd command reference:** See [bd commands](../common-patterns/bd-commands.md)
 
