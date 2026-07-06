@@ -75,7 +75,7 @@ Priority: CRITICAL | IMPORTANT | NICE_TO_HAVE
 
 **Sizing gate — evaluate now:**
 
-With a scope estimate in hand from the questions above, check the thresholds in `common-patterns/pipeline-constants.md`. If any fire, offer escalation to preordain:
+With a scope estimate in hand from the questions above, check the thresholds in `skills/common-patterns/pipeline-constants.md`. If any fire, offer escalation to preordain:
 
 > "This scope looks large for a single epic (~[N] tasks across [M] components). The preordain can decompose it into leaf epics with dependencies, so each epic stays focused. Continue here, or escalate to /preordain?"
 
@@ -283,7 +283,7 @@ EOF
 
 ### 6a — Sizing Gate Re-Check
 
-The sizing gate was already evaluated at Step 1 exit (thresholds in `common-patterns/pipeline-constants.md`). Re-run it now only if scope grew past that Step 1 estimate during design (Steps 2-5) — e.g., research or design surfaced additional components or tasks. If scope did not grow, proceed directly to 6b.
+The sizing gate was already evaluated at Step 1 exit (thresholds in `skills/common-patterns/pipeline-constants.md`). Re-run it now only if scope grew past that Step 1 estimate during design (Steps 2-5) — e.g., research or design surfaced additional components or tasks. If scope did not grow, proceed directly to 6b.
 
 If a re-check fires, offer escalation to preordain using the same phrasing as Step 1. This is a gate the user can override — not a hard block. If the user says "proceed anyway," create the task tree and note in the epic that the sizing gate was triggered but overridden.
 
@@ -302,7 +302,7 @@ Before creating any tasks, present a decomposition strategy to the human for app
 
 For refactors: define the pattern during planning so each executor task is a mechanical application of that pattern (simple spec). For new features: extract design judgment into the spec (medium spec) so execution becomes deliberate.
 
-**Hard ceiling: see `common-patterns/pipeline-constants.md`. No exceptions.** Tasks estimated over the ceiling must be split.
+**Hard ceiling: see `skills/common-patterns/pipeline-constants.md`. No exceptions.** Tasks estimated over the ceiling must be split.
 
 Do not create any tasks until the human approves the strategy.
 
@@ -310,7 +310,7 @@ Do not create any tasks until the human approves the strategy.
 
 ### 6c — Create Complete Task Tree
 
-Create ALL tasks for the epic upfront. Every task must be classified as **simple** or **medium** (time bands defined in `common-patterns/pipeline-constants.md`) and linked to the epic.
+Create ALL tasks for the epic upfront. Every task must be classified as **simple** or **medium** (time bands defined in `skills/common-patterns/pipeline-constants.md`) and linked to the epic.
 
 **Simple task spec** — Goal, Why, Changes, Verification:
 
@@ -372,11 +372,11 @@ EOF
 bd dep add bd-[task] bd-[epic] --type parent-child
 ```
 
-**Classification guide** (time bands defined in `common-patterns/pipeline-constants.md`):
+**Classification guide** (time bands defined in `skills/common-patterns/pipeline-constants.md`):
 - Simple: Mechanical changes with exact known edits. No judgment required. Examples: rename, config change, documentation update, applying a pre-defined pattern to a file. Use the concise spec template (Goal, Why, Changes, Verification).
 - Medium: Changes requiring judgment or design decisions that cannot be fully specified upfront. Reserved for irreducible complexity. Examples: new component with architectural decisions, logic with non-obvious edge cases, test suite requiring coverage strategy. Use the full spec template (Goal, Why, Context, Implementation, Tests, Verification, Boundaries).
 
-A task spec may carry the `Executor: opus` promotion flag for irreducibly hard tasks — see `common-patterns/pipeline-constants.md` for the full promotion policy.
+A task spec may carry the `Executor: opus` promotion flag for irreducibly hard tasks — see `skills/common-patterns/pipeline-constants.md` for the full promotion policy.
 
 Set task dependencies in bd so execution order is clear: `bd dep add bd-[task-B] bd-[task-A] --type blocking` for tasks that must run in sequence.
 
