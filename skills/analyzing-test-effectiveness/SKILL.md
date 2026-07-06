@@ -652,15 +652,21 @@ EOF
 
 ### Step 5.3: Run SRE Task Refinement
 
-**MANDATORY:** After creating bd tasks, run SRE task refinement:
+**MANDATORY:** After creating bd tasks, dispatch SRE task refinement as a fresh blocking subagent — this session authored the improvement tasks, so the review must come from a context that did not:
 
 ```
-Announce: "I'm using hyperpowers:sre-task-refinement to review these test improvement tasks."
-
-Use Skill tool: hyperpowers:sre-task-refinement
+Agent tool:
+  subagent_type: "general-purpose"
+  mode: "bypassPermissions"
+  prompt: |
+    Load the skill hyperpowers:sre-task-refinement with the Skill tool and
+    run its BATCH MODE against epic <epic-id> (the test improvement tasks).
+    You may strengthen task specs via bd update (no placeholders); do not
+    create, close, or re-classify tasks. Return the batch verdict,
+    cross-task analysis, and the list of bd updates applied.
 ```
 
-Apply all 8 categories to each task, especially:
+The review applies all 8 categories to each task, especially:
 - **Category 8 (Test Meaningfulness)**: Verify the proposed tests actually catch bugs
 - **Category 6 (Edge Cases)**: Ensure corner cases are comprehensive
 - **Category 3 (Success Criteria)**: Ensure criteria are measurable
