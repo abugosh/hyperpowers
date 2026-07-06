@@ -250,7 +250,7 @@ After all tasks return DONE and pass two-stage review:
 <scenario>Normal task dispatch and DONE return with passing review</scenario>
 <code>
 Lead records base SHA (git rev-parse HEAD → a1b2c3d), then verifies bd-42: non-empty spec, no
-blocking dependencies pending. Dispatches executor (Sonnet).
+blocking dependencies pending. Dispatches executor on Sonnet (spec carries no promotion flag).
 Executor returns:
 "DONE: Added error handling to auth.ts:validate() and committed as 3f9a1b2."
 
