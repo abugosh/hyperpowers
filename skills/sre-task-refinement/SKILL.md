@@ -93,7 +93,7 @@ After reviewing each task individually, run these systemic checks:
 - Is there a missing task that several tasks implicitly depend on (shared utility, migration, config change)?
 - Are success criteria consistently strong, or does one task have measurable criteria while others use vague language?
 
-**d. Classification consistency**
+**d. Classification consistency** (canonical templates: `skills/common-patterns/spec-templates.md`)
 - Simple task spec: should have Goal, Why, Changes, Verification — nothing more
 - Medium task spec: should have Goal, Why, Context, Implementation, Tests, Verification, Boundaries
 - A task with an Implementation section and Tests section must be classified as medium

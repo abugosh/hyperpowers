@@ -335,69 +335,21 @@ Create ALL tasks for the epic upfront. Every task must be classified as **simple
 ✅ "Create `src/auth.ts`" (verified: doesn't exist)
 ✅ "Modify `src/index.ts:45`" (verified: exists)
 
-**Simple task spec** — Goal, Why, Changes, Verification:
+**Spec body per tier:** use the templates in `skills/common-patterns/spec-templates.md` — simple (Goal, Why, Changes, Verification) or medium (Goal, Why, Context, Implementation, Tests, Verification, Boundaries). Do not restate or improvise the templates; that file is the single source.
 
 ```bash
 bd create "Task N: [Specific Deliverable]" \
   --type feature \
   --priority [match-epic] \
+  --description "[One-line summary for bd list views]" \
   --design "$(cat <<'EOF'
-## Goal
-[What this task delivers — one clear outcome]
-
-## Why
-[How this fits the epic — what breaks without it]
-
-## Changes
-- [file.ts line/function] — [exact change]
-- [file.ts line/function] — [exact change]
-
-## Verification
-- [ ] [Specific, measurable outcome]
-- [ ] Pre-commit hooks passing
+[Spec body from the tier's template in skills/common-patterns/spec-templates.md]
 EOF
 )"
 bd dep add bd-[task] bd-[epic] --type parent-child
 ```
 
-**Medium task spec** — Goal, Why, Context, Implementation, Tests, Verification, Boundaries:
-
-```bash
-bd create "Task N: [Specific Deliverable]" \
-  --type feature \
-  --priority [match-epic] \
-  --design "$(cat <<'EOF'
-## Goal
-[What this task delivers — one clear outcome]
-
-## Why
-[How this fits the epic — what breaks without it]
-
-## Context
-[Key files, patterns, or interfaces the executor needs to know]
-
-## Implementation
-1. [Step with file path and what to change]
-2. [Step with file path and what to change]
-
-## Tests
-[Test cases to write — scenario and expected behavior]
-
-## Verification
-- [ ] [Specific, measurable outcome]
-- [ ] Tests passing
-- [ ] Pre-commit hooks passing
-
-## Boundaries
-[What is explicitly OUT of scope for this task]
-EOF
-)"
-bd dep add bd-[task] bd-[epic] --type parent-child
-```
-
-**Classification guide** (time bands defined in `skills/common-patterns/pipeline-constants.md`):
-- Simple: Mechanical changes with exact known edits. No judgment required. Examples: rename, config change, documentation update, applying a pre-defined pattern to a file. Use the concise spec template (Goal, Why, Changes, Verification).
-- Medium: Changes requiring judgment or design decisions that cannot be fully specified upfront. Reserved for irreducible complexity. Examples: new component with architectural decisions, logic with non-obvious edge cases, test suite requiring coverage strategy. Use the full spec template (Goal, Why, Context, Implementation, Tests, Verification, Boundaries).
+**Classification guide:** time bands, definitions, and examples are in `skills/common-patterns/pipeline-constants.md` and `skills/common-patterns/spec-templates.md` — cite, never restate.
 
 A task spec may carry the `Executor: opus` promotion flag for irreducibly hard tasks — see `skills/common-patterns/pipeline-constants.md` for the full promotion policy.
 

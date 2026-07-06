@@ -128,66 +128,7 @@ Verify these assumptions and report:
 
 ### 2d. Draft the Task Spec (Two-Tier Format)
 
-Use the template for the task's tier. Both tiers REQUIRE a Why section.
-
----
-
-**Simple task spec template:**
-
-```markdown
-## Goal
-[One sentence: what changes]
-
-## Why
-[How this task fits into the epic — what breaks if it is skipped]
-
-## Changes
-- `exact/path/to/file.ext` line N: [exact change, complete replacement text]
-- `exact/path/to/other.ext`: [add/remove/replace what]
-
-## Verification
-[Exact command to confirm the change is correct, e.g. grep, test run, or manual check]
-```
-
----
-
-**Medium task spec template:**
-
-```markdown
-## Goal
-[One sentence: what is delivered]
-
-## Why
-[How this task fits into the epic — what depends on it, what breaks if skipped]
-
-## Context
-[Key files, functions, or patterns the executor must read before starting]
-
-## Implementation guidance
-[Step-by-step: what to create/modify/delete, with exact file paths. Follow the spec-depth rule (skills/common-patterns/pipeline-constants.md): write intent — goal, constraints, test cases, verification commands, boundaries. Complete code only where this session verified the exact site during planning.]
-
-For new features (TDD):
-1. Write the failing test
-2. Run to confirm RED
-3. Implement minimal code
-4. Run to confirm GREEN
-5. Refactor, keep green
-
-Include in each step:
-- Exact file path
-- Complete code where this session verified the exact site; otherwise the constraints and expected shape, per the spec-depth rule
-- Exact command to run
-- Expected output
-
-## Tests
-[Which tests to write and what they must assert — omit this section for pure-documentation tasks]
-
-## Verification
-[Exact commands to confirm all success criteria]
-
-## Boundaries
-[What is explicitly out of scope for this task]
-```
+Use the template for the task's tier from `skills/common-patterns/spec-templates.md` — the single source for both tiers (simple: Goal, Why, Changes, Verification; medium: Goal, Why, Context, Implementation, Tests, Verification, Boundaries). Both tiers REQUIRE a Why section. The canonical medium field name is `## Implementation`. Do not restate or improvise the templates here.
 
 ---
 
@@ -304,7 +245,7 @@ The executing-plans skill dispatches a fresh executor per task. Session cleanup 
 - tests/auth/test_auth.test.ts — existing test file for this service
 - argon2 (0.31.2) is installed; no new dependencies needed
 
-## Implementation guidance
+## Implementation
 
 ### Step 1: Write failing test
 # tests/auth/test_auth.test.ts — add at end of file:
