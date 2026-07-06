@@ -57,57 +57,59 @@ Claude (without brainstorming):
 </example>
 
 <example>
-<scenario>Developer creates full task tree upfront</scenario>
+<scenario>Developer creates tasks iteratively during execution</scenario>
 
 <code>
-bd create "Epic: Add OAuth"
-bd create "Task 1: Configure OAuth provider"
-bd create "Task 2: Implement token exchange"
-bd create "Task 3: Add refresh token logic"
-bd create "Task 4: Create middleware"
-bd create "Task 5: Add UI components"
-bd create "Task 6: Write integration tests"
-
-# Starts implementing Task 1
-# Discovers OAuth library handles refresh automatically
-# Now Task 3 is wrong, needs deletion
-# Discovers middleware already exists
-# Now Task 4 is wrong
-# Task tree brittle to reality
-</code>
-
-<why_it_fails>
-- Assumptions about implementation prove wrong
-- Task tree becomes incorrect as you learn
-- Wastes time updating or deleting wrong tasks
-- Rigid plan fights with reality
-</why_it_fails>
-
-<correction>
-**Correct approach (iterative):**
-
-```bash
 bd create "Epic: Add OAuth" # with immutable requirements
 bd create "Task 1: Configure OAuth provider"
 
-# Execute Task 1
-# Learn: OAuth library handles refresh; middleware already exists
+# "I'll create the next task after I see how this one goes."
 
-bd create "Task 2: Integrate with existing middleware"
-# [Created AFTER learning from Task 1]
+# Execute Task 1
+bd create "Task 2: Integrate with existing middleware"  # invented mid-execution
 
 # Execute Task 2
-# Learn: UI needs OAuth button component
+bd create "Task 3: Add OAuth button to login UI"        # invented mid-execution
+</code>
 
-bd create "Task 3: Add OAuth button to login UI"
-# [Created AFTER learning from Task 2]
+<why_it_fails>
+- The plan never exists as a reviewable artifact — there is nothing for the human to approve before execution begins
+- SRE batch review has nothing to review; systemic gaps across the plan are never caught
+- Dependencies are unknowable — execution order emerges by accident instead of by design
+- Drift is invisible until late: each mid-flight task quietly reinterprets the epic
+- The session's context becomes the plan; a fresh session cannot resume the work from bd alone
+</why_it_fails>
+
+<correction>
+**Correct approach (complete verified task tree upfront — Step 6c):**
+
+```bash
+bd create "Epic: Add OAuth" # with immutable requirements
+
+# Draft ALL tasks, then run pre-create verification on every draft:
+# broad structure questions → codebase-investigator
+# exact edit sites → read the file directly before writing the change
+# Verification catches reality BEFORE tasks are created:
+#   ✗ OAuth library handles refresh automatically — no refresh task needed
+#   + Middleware already exists at src/middleware/auth.ts — integrate, don't create
+
+bd create "Task 1: Configure OAuth provider"        # paths verified
+bd create "Task 2: Extend auth/passport-config.ts"  # confirmed to exist
+bd create "Task 3: Add OAuth button to login UI"    # component location verified
+bd dep add bd-[t2] bd-[t1] --type blocking
+bd dep add bd-[t3] bd-[t2] --type blocking
+
+# Batch SRE review of the full tree (Step 7), then execution begins
 ```
 
+**When reality still disagrees during execution:** the executor returns BLOCKED or NEEDS_HELP, the lead clarifies or escalates, and the reviewer's gap-fix path creates repair tasks. Adaptation flows through a defined channel — not by improvising the plan mid-flight.
+
 **What you gain:**
-- Tasks reflect current reality (accurate plan)
-- No wasted time fixing wrong tasks (efficient)
-- Each task informed by previous learnings (adaptive)
-- Epic requirements stay immutable (contract preserved)
+- The full plan is reviewable — by the human and by SRE — before any code changes
+- Pre-create verification kills wrong-assumption tasks before they exist (the old failure mode of upfront planning)
+- Dependencies set execution order deliberately (time bands and ceiling: skills/common-patterns/pipeline-constants.md)
+- A fresh session resumes from bd alone — the artifacts carry the state
+- Epic requirements stay immutable; tasks adapt through the execution loop (contract preserved)
 </correction>
 </example>
 
