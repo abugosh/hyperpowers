@@ -4,7 +4,7 @@ description: Use when creating or developing anything, before writing code - ref
 ---
 
 <skill_overview>
-Turn rough ideas into validated designs stored as bd epics with immutable requirements; writing-plans produces the full task tree upfront before execution begins.
+Turn rough ideas into validated designs stored as bd epics with immutable requirements, and create the complete, verified task tree; executing-plans runs it.
 </skill_overview>
 
 <rigidity_level>
@@ -14,12 +14,12 @@ HIGH FREEDOM - The 8-step order is fixed, but Socratic questioning within steps 
 <quick_reference>
 | Step | Action | Deliverable |
 |------|--------|-------------|
-| 1 | Ask questions (one at a time, AskUserQuestion) | Understanding of the problem and context |
+| 1 | Ask questions (one at a time, AskUserQuestion); evaluate sizing gate | Understanding of the problem and context; escalation offer if gate fires |
 | 2 | Research codebase and external patterns; propose 2-3 approaches | Recommended option with trade-offs documented |
 | 3 | Present design in sections (200-300 words each); friction detection | Validated architecture; /intuition offered if friction detected |
 | 4 | Architecture Impact Check (5 structural questions) | Impact recorded in epic; /intuition offered if any YES |
 | 5 | Create bd epic with IMMUTABLE requirements | Epic with 7 top-level sections and anti-patterns |
-| 6 | Sizing gate, decomposition strategy approval, then create complete task tree | All tasks planned upfront with simple/medium classification (spec depth) |
+| 6 | Re-check sizing gate if scope grew; decomposition strategy approval; create complete task tree | All tasks planned upfront with simple/medium classification (spec depth) |
 | 7 | Run SRE batch review on full task tree | Refined task tree ready for handoff |
 | 8 | Present task summary, then hand off to executing-plans | Human reviews task list; lead orchestrates executor subagents on Sonnet |
 </quick_reference>
@@ -72,6 +72,14 @@ Priority: CRITICAL | IMPORTANT | NICE_TO_HAVE
 - Question asked
 - User's answer
 - Implication for requirements or anti-patterns
+
+**Sizing gate — evaluate now:**
+
+With a scope estimate in hand from the questions above, check the thresholds in `skills/common-patterns/pipeline-constants.md`. If any fire, offer escalation to preordain:
+
+> "This scope looks large for a single epic (~[N] tasks across [M] components). The preordain can decompose it into leaf epics with dependencies, so each epic stays focused. Continue here, or escalate to /preordain?"
+
+This is a gate the user can override — not a hard block. If the user says "proceed anyway," continue to Step 2 and note the override for the epic's Design Rationale once created (Step 5); the task tree created in Step 6 must reflect the overridden scope.
 
 ---
 
@@ -273,19 +281,11 @@ EOF
 
 ## Step 6 — Sizing Gate, Decomposition Strategy, Then Complete Task Tree
 
-### 6a — Sizing Gate
+### 6a — Sizing Gate Re-Check
 
-Before creating tasks, check whether this epic is too large for a single leaf epic:
+The sizing gate was already evaluated at Step 1 exit (thresholds in `skills/common-patterns/pipeline-constants.md`). Re-run it now only if scope grew past that Step 1 estimate during design (Steps 2-5) — e.g., research or design surfaced additional components or tasks. If scope did not grow, proceed directly to 6b.
 
-- Estimated tasks exceed ~20?
-- Work spans 3 or more distinct components?
-- Multiple independent deliverables that could ship separately?
-
-If any are true, offer escalation to preordain:
-
-> "This scope looks large for a single epic (~[N] tasks across [M] components). The preordain can decompose it into leaf epics with dependencies, so each epic stays focused. Continue here, or escalate to /preordain?"
-
-This is a gate the user can override — not a hard block. If the user says "proceed anyway," create the task tree and note in the epic that the sizing gate was triggered but overridden.
+If a re-check fires, offer escalation to preordain using the same phrasing as Step 1. This is a gate the user can override — not a hard block. If the user says "proceed anyway," create the task tree and note in the epic that the sizing gate was triggered but overridden.
 
 ---
 
@@ -302,7 +302,7 @@ Before creating any tasks, present a decomposition strategy to the human for app
 
 For refactors: define the pattern during planning so each executor task is a mechanical application of that pattern (simple spec). For new features: extract design judgment into the spec (medium spec) so execution becomes deliberate.
 
-**Hard ceiling: 15 minutes per task. No exceptions.** Tasks estimated over 15 minutes must be split.
+**Hard ceiling: see `skills/common-patterns/pipeline-constants.md`. No exceptions.** Tasks estimated over the ceiling must be split.
 
 Do not create any tasks until the human approves the strategy.
 
@@ -310,7 +310,24 @@ Do not create any tasks until the human approves the strategy.
 
 ### 6c — Create Complete Task Tree
 
-Create ALL tasks for the epic upfront. Every task must be classified as **simple** (2-5 min) or **medium** (5-15 min) and linked to the epic.
+Create ALL tasks for the epic upfront. Every task must be classified as **simple** or **medium** (time bands defined in `skills/common-patterns/pipeline-constants.md`) and linked to the epic.
+
+**Pre-create verification (MANDATORY):** Before any task is created in bd, verify every file, section, and symbol its spec references against the actual codebase — for each drafted task:
+
+- **Broad structure questions** (does a pattern already exist, what's the shape of a directory, is a dependency present) → dispatch `hyperpowers:codebase-investigator`. Report findings as:
+  - ✓ Confirmed assumptions → use in the spec as drafted
+  - ✗ Incorrect assumptions → adjust the spec to match reality
+  - + Found additional → document and incorporate
+- **Exact edit sites** (the specific file/line/function a Changes or Implementation entry will name) → read directly with the Read tool before writing the exact change into the spec.
+- Adjust drafts to match what verification found before moving on to the next task.
+
+**Conditional steps are forbidden.** Every Changes/Implementation line states a definitive action against a verified target.
+
+❌ "Update `index.js` if exists"
+❌ "Modify `config.py` (if present)"
+
+✅ "Create `src/auth.ts`" (verified: doesn't exist)
+✅ "Modify `src/index.ts:45`" (verified: exists)
 
 **Simple task spec** — Goal, Why, Changes, Verification:
 
@@ -372,9 +389,11 @@ EOF
 bd dep add bd-[task] bd-[epic] --type parent-child
 ```
 
-**Classification guide:**
-- Simple (2-5 min): Mechanical changes with exact known edits. No judgment required. Examples: rename, config change, documentation update, applying a pre-defined pattern to a file. Use the concise spec template (Goal, Why, Changes, Verification).
-- Medium (5-15 min): Changes requiring judgment or design decisions that cannot be fully specified upfront. Reserved for irreducible complexity. Examples: new component with architectural decisions, logic with non-obvious edge cases, test suite requiring coverage strategy. Use the full spec template (Goal, Why, Context, Implementation, Tests, Verification, Boundaries).
+**Classification guide** (time bands defined in `skills/common-patterns/pipeline-constants.md`):
+- Simple: Mechanical changes with exact known edits. No judgment required. Examples: rename, config change, documentation update, applying a pre-defined pattern to a file. Use the concise spec template (Goal, Why, Changes, Verification).
+- Medium: Changes requiring judgment or design decisions that cannot be fully specified upfront. Reserved for irreducible complexity. Examples: new component with architectural decisions, logic with non-obvious edge cases, test suite requiring coverage strategy. Use the full spec template (Goal, Why, Context, Implementation, Tests, Verification, Boundaries).
+
+A task spec may carry the `Executor: opus` promotion flag for irreducibly hard tasks — see `skills/common-patterns/pipeline-constants.md` for the full promotion policy.
 
 Set task dependencies in bd so execution order is clear: `bd dep add bd-[task-B] bd-[task-A] --type blocking` for tasks that must run in sequence.
 
@@ -462,6 +481,7 @@ Worked examples (skipped-research, upfront-task-tree, missing-anti-patterns) liv
 8. **Offer /intuition when design-time friction detected** → Architect-decides routing, not a gate
 9. **Architecture Impact Check required before epic finalization** → 5 questions, record result in epic, offer /intuition if any YES
 10. **Subsection 'None' requires grounded justification** → "None because [specific reason]"; bare "None" enables skip-thinking
+11. **No task created with unverified references** → Verify files, sections, and symbols before bd create
 
 **Common excuses that mean STOP and follow the process:**
 - "Requirements obvious, don't need questions" — Questions reveal hidden complexity
@@ -484,6 +504,7 @@ Before handing off to executing-plans:
 - [ ] bd epic has all 7 sections; Design Rationale has 6 subsections; every empty subsection has "None because [reason]"
 - [ ] Anti-patterns include reasoning ("NO X (reason: Y)")
 - [ ] Sizing gate checked; decomposition strategy proposed and approved by human; all tasks classified (simple/medium for spec depth) and linked to epic
+- [ ] Every task spec reference verified against the codebase before creation
 - [ ] Batch SRE review run against full task tree; refinements applied
 - [ ] Announced handoff to executing-plans
 

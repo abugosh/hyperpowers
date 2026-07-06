@@ -27,7 +27,7 @@ HIGH FREEDOM — Socratic questioning within steps adapts to context. The 6-step
 </quick_reference>
 
 <when_to_use>
-- Initiative clearly exceeds ~10 tasks or spans 3+ distinct components
+- Initiative exceeds the sizing gate (thresholds defined in `skills/common-patterns/pipeline-constants.md`)
 - Brainstorming sizing gate triggered and user chose to escalate
 - Multiple independent deliverables that could ship in separate epics
 - Initiative spans multiple teams or codebases that need coordination boundaries defined
@@ -101,7 +101,7 @@ Propose a decomposition into leaf epics. Present it to the user and ask for conf
 **Each proposed leaf epic must:**
 - Be independently brainstormable — has its own clear requirements without needing concurrent work in another epic
 - Be independently executable — no shared in-flight state with other leaf epics
-- Target ~5-10 tasks (so it stays below brainstorming's sizing gate)
+- Target the leaf-epic size defined in `skills/common-patterns/pipeline-constants.md` (so it stays below brainstorming's sizing gate)
 - Have clear boundaries — what is in scope, what belongs to adjacent epics
 
 **Proposal format:**
@@ -133,7 +133,7 @@ Does this decomposition look right, or should any scopes shift?
 > "This initiative fits in a single leaf epic (~[N] tasks across [M] components). Rather than decompose, routing to /brainstorm is the right call. Want to do that instead?"
 
 *Leaf epic that would still exceed sizing gate:*
-Continue decomposing until every proposed leaf epic would pass the brainstorming sizing gate (~10 tasks, ~3 components). Never create a leaf epic that requires preordain decomposition again.
+Continue decomposing until every proposed leaf epic would pass the brainstorming sizing gate (thresholds defined in `skills/common-patterns/pipeline-constants.md`). Never create a leaf epic that requires preordain decomposition again.
 
 *Initiative spans multiple codebases or repos:*
 > "This initiative spans [repo A] and [repo B]. The preordain covers single-repo work. Cross-repo coordination (API contracts, deployment ordering) is out of scope — document the handoff point between repos and manage cross-repo coordination manually."
@@ -240,8 +240,8 @@ The user drives which epic to brainstorm first. Do not auto-invoke /brainstorm.
 1. **Use AskUserQuestion for all clarifying questions** — never print questions and wait
 2. **Research before decomposing** — dispatch codebase-investigator or internet-researcher before proposing any leaf epic boundaries
 3. **User confirms decomposition before creating epics** — present the decomposition proposal, get explicit confirmation, then run `bd create`
-4. **Grand planner creates epics, not tasks** — brainstorming creates tasks; preordain's only bd artifact is leaf epics
-5. **No leaf epic that re-triggers the sizing gate** — each leaf epic must target ~5-10 tasks; if larger, decompose further
+4. **Preordain creates epics, not tasks** — brainstorming creates tasks; preordain's only bd artifact is leaf epics
+5. **No leaf epic that re-triggers the sizing gate** — each leaf epic must target the leaf-epic size in `skills/common-patterns/pipeline-constants.md`; if larger, decompose further
 6. **No circular dependencies between leaf epics** — dependencies must be sequential (DAG only)
 7. **Architecture analysis at initiative level, not per-leaf-epic** — offer /intuition once for the full initiative; individual leaf epics run their own Step 4 during brainstorming only if new friction appears
 8. **Cybernetic: recommend, do not decide** — if the decomposition has ambiguous boundary choices, present options with tradeoffs and let the user decide
@@ -277,7 +277,7 @@ Before claiming preordain session is complete:
 <integration>
 **Called from:**
 - Direct user invocation (`/hyperpowers:preordain`)
-- Brainstorming Step 6a sizing gate ("continue here, or escalate to /preordain?")
+- Brainstorming sizing gate — evaluated at Step 1 exit, re-checked at Step 6a ("continue here, or escalate to /preordain?")
 
 **Calls (never auto-invokes, always offers):**
 - `/hyperpowers:intuition` — offered at Step 4 if Architecture Impact Check has any YES
@@ -290,11 +290,11 @@ Before claiming preordain session is complete:
 
 **Does NOT produce:**
 - bd tasks (brainstorming creates tasks)
-- Implementation plans (writing-plans creates those)
+- Implementation plans (task specs are created by brainstorming; writing-plans only repairs specs off-mainline)
 - Code or implementation artifacts
 
 **Relationship to brainstorming:**
-- Grand planner creates epics with requirements and boundaries
+- Preordain creates epics with requirements and boundaries
 - Brainstorming takes each leaf epic and creates the full task tree
 - When called from brainstorming sizing gate: prior brainstorming work becomes Step 1 context; preordain does not re-ask answered questions
 </integration>

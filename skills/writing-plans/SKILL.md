@@ -1,12 +1,12 @@
 ---
 name: writing-plans
-description: Use to expand bd tasks into self-contained two-tier specs (simple 2-5 min or medium 5-15 min) with exact file paths, complete code, verification commands
+description: Use when bd tasks exist without complete self-contained specs — expands or repairs specs (gap-fix tasks, mid-flight amendments, externally created tasks) with codebase verification.
 ---
 
 <skill_overview>
-Expand bd tasks into self-contained two-tier specs. Each task is classified as simple (2-5 min) or medium (5-15 min) and written with enough detail that an executor can implement it with zero prior context. Every spec includes a Why section — so the executor understands how the task fits into the epic.
+Expand or repair bd task specs into the self-contained two-tier format. Each task is classified as simple or medium (time bands: skills/common-patterns/pipeline-constants.md) and written with enough detail that an executor can implement it with zero prior context. Every spec includes a Why section — so the executor understands how the task fits into the epic.
 
-The task tree is created upfront by brainstorming. This skill expands the specs, it does not create the task tree.
+The standard flow is brainstorm-owned: Step 6c creates the complete task tree with codebase-verified specs upfront. This skill is the off-mainline utility for tasks that bypassed that flow or need their specs repaired — reviewer gap-fix tasks, mid-flight spec amendments, and tasks created outside the brainstorm flow.
 </skill_overview>
 
 <rigidity_level>
@@ -20,7 +20,7 @@ Adapt implementation details to actual codebase state. Never use placeholders or
 | Step | Action | Critical Rule |
 |------|--------|---------------|
 | **Identify Scope** | Single task, range, or full epic | No artificial limits |
-| **Classify** | Simple (2-5 min) or Medium (5-15 min) | No task exceeds 15 min |
+| **Classify** | Simple or Medium (bands: skills/common-patterns/pipeline-constants.md) | No task exceeds the ceiling in skills/common-patterns/pipeline-constants.md |
 | **Verify Codebase** | Use `codebase-investigator` agent | NEVER verify yourself, report discrepancies |
 | **Draft Spec** | Use two-tier format for the task's tier | Must include Why section; medium must include Boundaries |
 | **Present to User** | Show COMPLETE expansion FIRST | Then ask for approval |
@@ -28,17 +28,18 @@ Adapt implementation details to actual codebase state. Never use placeholders or
 | **Continue** | Move to next task automatically | NO asking permission between tasks |
 
 **FORBIDDEN:** Placeholders like `[Full implementation steps as detailed above]`
-**REQUIRED:** Actual content - complete code, exact paths, real commands
+**REQUIRED:** Actual content per the spec-depth rule (skills/common-patterns/pipeline-constants.md) — intent — goal, constraints, test cases, verification commands, boundaries; complete code only where this session verified the exact site
 
 </quick_reference>
 
 <when_to_use>
-**Use after brainstorming creates the task tree (and optionally after SRE batch review).**
+**Use when bd tasks exist without complete self-contained specs — not as the standard planning step.** The standard flow is brainstorm-owned: Step 6c creates the complete task tree with codebase-verified specs before any execution begins. Reach for this skill when a task bypassed that flow or its spec needs repair.
 
 Symptoms:
-- bd tasks exist but need self-contained specs
-- Tasks lack Why, Changes, or Boundaries sections
-- Specs reference context not included in the task itself
+- A reviewer surfaced a gap-fix task without a complete spec
+- A mid-flight amendment changes a task's scope after brainstorming closed
+- A task was created outside the brainstorm flow (directly by the user, or by another tool) and lacks Why, Changes, or Boundaries sections
+- An existing spec references context not included in the task itself
 
 </when_to_use>
 
@@ -57,7 +58,7 @@ bd dep tree bd-1  # View complete dependency tree
 # Note all child task IDs
 ```
 
-**Create TodoWrite tracker:**
+**Track progress in bd when the repo uses beads; TodoWrite otherwise:**
 ```
 - [ ] bd-2: [Task Title]
 - [ ] bd-3: [Task Title]
@@ -75,19 +76,21 @@ bd show bd-3  # Read current task design
 
 ### 2b. Classify the Task
 
-**Simple (2-5 min):** Mechanical changes with exact known edits. No judgment required.
+Time bands and the hard ceiling are defined in skills/common-patterns/pipeline-constants.md — cite that file rather than restating the numbers.
+
+**Simple:** Mechanical changes with exact known edits. No judgment required.
 - Renaming a term across files
 - Adding a config value
 - Updating a doc section
 - Adding a small standalone function with a known signature
 
-**Medium (5-15 min):** Changes requiring judgment or design decisions. Reserved for irreducible complexity.
+**Medium:** Changes requiring judgment or design decisions. Reserved for irreducible complexity.
 - New component or skill
 - Cross-file refactor
 - Implementation with design decisions
 - Any task with a Tests section
 
-**No task should exceed 15 minutes.** If a task feels larger, flag it for splitting before expanding.
+**No task should exceed the hard ceiling in skills/common-patterns/pipeline-constants.md.** If a task feels larger, flag it for splitting before expanding. For irreducibly hard tasks within the ceiling, the `Executor: opus` promotion flag is available — see skills/common-patterns/pipeline-constants.md.
 
 ### 2c. Verify Codebase State
 
@@ -127,7 +130,7 @@ Use the template for the task's tier. Both tiers REQUIRE a Why section.
 
 ---
 
-**Simple task spec template (2-5 min):**
+**Simple task spec template:**
 
 ```markdown
 ## Goal
@@ -146,7 +149,7 @@ Use the template for the task's tier. Both tiers REQUIRE a Why section.
 
 ---
 
-**Medium task spec template (5-15 min):**
+**Medium task spec template:**
 
 ```markdown
 ## Goal
@@ -159,7 +162,7 @@ Use the template for the task's tier. Both tiers REQUIRE a Why section.
 [Key files, functions, or patterns the executor must read before starting]
 
 ## Implementation guidance
-[Step-by-step: what to create/modify/delete, with exact file paths and complete code]
+[Step-by-step: what to create/modify/delete, with exact file paths. Follow the spec-depth rule (skills/common-patterns/pipeline-constants.md): write intent — goal, constraints, test cases, verification commands, boundaries. Complete code only where this session verified the exact site during planning.]
 
 For new features (TDD):
 1. Write the failing test
@@ -170,7 +173,7 @@ For new features (TDD):
 
 Include in each step:
 - Exact file path
-- Complete code example (not pseudo-code)
+- Complete code where this session verified the exact site; otherwise the constraints and expected shape, per the spec-depth rule
 - Exact command to run
 - Expected output
 
@@ -227,12 +230,12 @@ bd update bd-3 --design "[paste complete expansion]"
 ## 3. After ALL Tasks Done
 
 ```
-All bd tasks now have self-contained two-tier specs.
-Epic ready for SRE batch review and execution.
+All repaired/expanded tasks now have self-contained two-tier specs.
+Ready for execution.
 ```
 
 **Offer next step:**
-"Ready to proceed? I can run hyperpowers:sre-task-refinement in batch mode against the full plan, then use hyperpowers:executing-plans to implement."
+"Ready to proceed? I can optionally run hyperpowers:sre-task-refinement in single-task mode against the repaired spec(s), then use hyperpowers:executing-plans to implement."
 
 </the_process>
 
@@ -439,7 +442,7 @@ bd show bd-4  # Read next task
 
 1. **No placeholders or meta-references** → Write actual content
    - ❌ FORBIDDEN: `[Full implementation steps as detailed above]`
-   - ✅ REQUIRED: Complete code, exact paths, real commands
+   - ✅ REQUIRED: Intent per the spec-depth rule (skills/common-patterns/pipeline-constants.md) — goal, constraints, test cases, verification commands, boundaries; complete code only where this session verified the exact site; exact paths and real commands always
 
 2. **Every task spec must include a Why section** → Executor must understand purpose
    - Simple tasks: Why explains what breaks if this task is skipped
@@ -449,10 +452,9 @@ bd show bd-4  # Read next task
    - List explicitly what is out of scope for this task
    - Prevents executor from doing "just a little more"
 
-4. **Effort estimates in minutes, not hours** → No task exceeds 15 minutes
-   - Simple: 2-5 min
-   - Medium: 5-15 min
-   - If a task feels larger: flag it for splitting, do not expand it
+4. **Effort estimates in minutes, not hours** → No task exceeds the hard ceiling in skills/common-patterns/pipeline-constants.md
+   - Simple and Medium time bands are defined in skills/common-patterns/pipeline-constants.md — cite it, don't restate the numbers
+   - If a task feels larger than the ceiling: flag it for splitting, do not expand it
 
 5. **Use codebase-investigator agent** → Never verify yourself
    - Agent gets bd assumptions
@@ -479,7 +481,7 @@ All of these mean: Stop, apply the rule:
 - "I'll add the details later" → Write actual content now
 - "The Why is obvious" → Write it anyway; executor has zero context
 - "Boundaries is implied" → Write explicit Boundaries section for medium tasks
-- "This will take longer than 15 min" → Flag for splitting, do not expand
+- "This will take longer than the ceiling" → Flag for splitting, do not expand (ceiling defined in skills/common-patterns/pipeline-constants.md)
 
 </critical_rules>
 
@@ -491,7 +493,7 @@ Before marking each task complete in TodoWrite:
 - [ ] Spec uses correct two-tier template for classification
 - [ ] Spec includes Why section (both tiers)
 - [ ] Medium spec includes Boundaries section
-- [ ] Effort estimate is in minutes (2-5 or 5-15), not hours
+- [ ] Effort estimate is in minutes, per the bands in skills/common-patterns/pipeline-constants.md, not hours
 - [ ] Presented COMPLETE expansion to user (showed full text)
 - [ ] User approved expansion (via AskUserQuestion)
 - [ ] Updated bd with actual content (no placeholders)
@@ -500,9 +502,9 @@ Before marking each task complete in TodoWrite:
 Before finishing all tasks:
 - [ ] All tasks in TodoWrite marked completed
 - [ ] All bd tasks updated with two-tier specs
-- [ ] No task exceeds 15-minute estimate
+- [ ] No task exceeds the hard ceiling in skills/common-patterns/pipeline-constants.md
 - [ ] No conditional steps ("if exists")
-- [ ] Complete code examples in all medium task steps
+- [ ] Complete code only where this session verified the exact site; intent (constraints, test cases, verification commands, boundaries) elsewhere
 - [ ] Exact file paths and commands throughout
 
 </verification_checklist>
@@ -513,11 +515,12 @@ Before finishing all tasks:
 - codebase-investigator (REQUIRED for each task verification)
 
 **This skill is called by:**
-- User (via /hyperpowers:write-plan command)
-- After brainstorming creates the task tree
+- hyperpowers:executing-plans (gap-fix path — a task surfaces mid-execution without a complete spec)
+- hyperpowers:managing-bd-tasks (tasks split, merged, or otherwise mutated outside the brainstorm flow)
+- The user directly (via /hyperpowers:write-plan command) — for tasks created outside the brainstorm flow, or specs needing repair
 
 **After this skill:**
-- Run hyperpowers:sre-task-refinement in batch mode against the full plan
+- Optionally run hyperpowers:sre-task-refinement in single-task mode against the repaired spec
 - Then use hyperpowers:executing-plans to implement
 
 **Agents used:**

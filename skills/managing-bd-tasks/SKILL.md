@@ -686,7 +686,7 @@ After advanced bd operations:
 - skills/common-patterns/bd-commands.md
 
 **Related skills:**
-- hyperpowers:writing-plans (creating epics and tasks)
+- hyperpowers:writing-plans (repairing or expanding specs for tasks that lack them — off-mainline)
 - hyperpowers:executing-plans (working through tasks)
 - hyperpowers:verification-before-completion (closing tasks properly)
 
