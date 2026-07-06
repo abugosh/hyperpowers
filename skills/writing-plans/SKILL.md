@@ -28,7 +28,7 @@ Adapt implementation details to actual codebase state. Never use placeholders or
 | **Continue** | Move to next task automatically | NO asking permission between tasks |
 
 **FORBIDDEN:** Placeholders like `[Full implementation steps as detailed above]`
-**REQUIRED:** Actual content per the spec-depth rule (skills/common-patterns/pipeline-constants.md) — intent, constraints, test cases, verification commands, boundaries; complete code only where this session verified the exact site
+**REQUIRED:** Actual content per the spec-depth rule (skills/common-patterns/pipeline-constants.md) — intent — goal, constraints, test cases, verification commands, boundaries; complete code only where this session verified the exact site
 
 </quick_reference>
 

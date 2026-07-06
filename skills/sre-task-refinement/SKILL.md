@@ -516,7 +516,6 @@ After reviewing all tasks:
 
 **In batch mode:** Append the Cross-Task Analysis section (from Batch Mode output format above) after the task-by-task reviews. The batch verdict is the authoritative recommendation for the full plan.
 </the_process>
-</the_process>
 
 <examples>
 <example>
