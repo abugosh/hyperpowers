@@ -11,14 +11,14 @@ Hyperpowers is a Claude Code plugin that provides structured workflows, best pra
 Reusable workflows for common development tasks:
 
 **Feature Development:**
-- **preordain** - Decompose large initiatives into leaf epics with dependencies; escalation target when brainstorming scope exceeds ~10 tasks or 3-4 components
+- **preordain** - Decompose large initiatives into leaf epics with dependencies; escalation target when brainstorming scope exceeds the sizing gate (see `skills/common-patterns/pipeline-constants.md`)
 - **consider** - Lightweight Socratic thinking partner for exploring ideas before committing to build; routes to brainstorming or intuition when ready
-- **brainstorming** - Interactive design refinement using Socratic method
-- **writing-plans** - Create detailed implementation plans (single task or multiple tasks)
+- **brainstorming** - Interactive design refinement — produces the epic and the complete verified task tree, batch-reviewed by SRE
+- **writing-plans** - Expand or repair specs for tasks that lack them (gap-fixes, amendments) — off the standard flow
 - **executing-plans** - Lead reads upfront task list, dispatches fresh executor subagent (Sonnet) per task, runs two-stage review (spec + code quality) after each task
 - **review-implementation** - Verify implementation matches requirements
 - **finishing-a-development-branch** - Complete workflow for PR creation and cleanup
-- **sre-task-refinement** - Ensure all corner cases and requirements are understood (uses Opus 4.1)
+- **sre-task-refinement** - Ensure all corner cases and requirements are understood; runs in batch against the full task tree during brainstorming
 
 **Bug Fixing & Debugging:**
 - **debugging-with-tools** - Systematic investigation using debuggers, internet research, and agents
@@ -53,7 +53,7 @@ Quick access to key workflows:
 - `/hyperpowers:preordain` - Decompose a large initiative into leaf epics with dependencies
 - `/hyperpowers:consider` - Explore ideas before committing to build (optional framing argument)
 - `/hyperpowers:brainstorm` - Start interactive design refinement
-- `/hyperpowers:write-plan` - Create detailed implementation plan
+- `/hyperpowers:write-plan` - Expand or repair specs for tasks that lack them
 - `/hyperpowers:execute-plan` - Orchestrate plan execution via executor subagent
 - `/hyperpowers:review-implementation` - Review completed implementation
 - `/hyperpowers:refactor-diagnose` - Diagnose code/design smells and refactor targets
@@ -140,7 +140,7 @@ The `using-hyper` skill automatically loads at the start of each conversation an
 
 1. Check for relevant skills before starting any task
 2. Follow mandatory workflows (brainstorming before coding, TDD, verification)
-3. Use TodoWrite for tracking checklist items
+3. Track checklist items in the repo's task tracker (bd when the repo uses beads; TodoWrite otherwise)
 4. Announce which skills you're using
 
 ### Example Workflow
@@ -151,10 +151,7 @@ User: I need to add user authentication to my app
 Claude: I'm using the brainstorming skill to refine your authentication requirements.
 
 [Socratic questioning to understand requirements]
-
-Claude: Now I'm using the writing-plans skill to create a detailed implementation plan.
-
-[Creates detailed plan with specific tasks in bd]
+[Creates the epic and the complete verified task tree in bd; batch SRE review of the full tree]
 
 Claude: I'm using the executing-plans skill to orchestrate execution.
 
