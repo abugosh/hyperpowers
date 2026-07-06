@@ -306,7 +306,7 @@ For refactors: define the pattern during planning so each executor task is a mec
 
 **Hard ceiling: see `skills/common-patterns/pipeline-constants.md`. No exceptions.** Tasks estimated over the ceiling must be split.
 
-Do not create any tasks until the human approves the strategy.
+Do not create any tasks until the human approves the strategy. When pausing at this gate, emit the gate-state block and persist it to the epic's bd notes (format: `skills/common-patterns/loop-interfaces.md`) — the approval must be answerable in durable prose whenever the user returns.
 
 ---
 
@@ -449,7 +449,7 @@ Task summary for [epic-id]:
 Ready to hand off to executing-plans?
 ```
 
-Wait for human confirmation before proceeding.
+Wait for human confirmation before proceeding. Persist this gate to the epic's bd notes as a gate-state block (format: `skills/common-patterns/loop-interfaces.md`) so a fresh session can pick up the handoff.
 
 After confirmation, present the handoff:
 
