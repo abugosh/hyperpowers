@@ -92,6 +92,8 @@ This is a gate the user can override — not a hard block. If the user says "pro
 - New integration or unfamiliar library → dispatch `hyperpowers:internet-researcher`
 - Both apply → dispatch both
 
+Research dispatches inherit the session model — this is design-tier investigation; do not pass a cheaper model override.
+
 **Capture research findings** as you go: file paths/patterns from codebase, API capabilities/constraints from external sources, dead-end paths (what was explored, why abandoned).
 
 **Propose 2-3 approaches with trade-offs.** Lead with the recommended option and link the recommendation to specific findings (e.g., "matches existing pattern at path/to/file.ts").

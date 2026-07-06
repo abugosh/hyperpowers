@@ -96,6 +96,8 @@ Time bands and the hard ceiling are defined in skills/common-patterns/pipeline-c
 
 **CRITICAL: Use codebase-investigator agent, NEVER verify yourself.**
 
+Mechanical existence-verification like this may run on a cheap model — pass model haiku explicitly in the dispatch rather than inheriting silently.
+
 **Provide agent with bd assumptions:**
 ```
 Assumptions from bd-3:
