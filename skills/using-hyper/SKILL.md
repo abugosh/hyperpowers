@@ -102,6 +102,8 @@ Before using a skill, announce it:
 
 writing-plans is the off-mainline utility for repairing or expanding specs on tasks that lack them.
 
+In multi-service work, shared plan documents (typically in a dedicated planning repo) may sit ABOVE bd: they carry cross-service requirements and contracts, while bd remains the per-repo execution tracker. Both layers are legitimate sources of truth at their own level — brainstorming can ingest a plan-doc slice, and per-repo learnings flow back up as plan-impact notices (see `skills/common-patterns/loop-interfaces.md`). When no plan docs exist, nothing asks for them.
+
 **When implementing:**
 - Use hyperpowers:test-driven-development (RED-GREEN-REFACTOR cycle)
 - Use hyperpowers:verification-before-completion before claiming done
