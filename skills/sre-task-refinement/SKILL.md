@@ -14,11 +14,11 @@ LOW FREEDOM - Follow the 8-category checklist exactly. Apply all categories to e
 <quick_reference>
 | Category | Key Questions | Auto-Reject If |
 |----------|---------------|----------------|
-| 1. Granularity | Simple task 2-5 min? Medium task 5-15 min? | Any task >15 min without breakdown |
+| 1. Granularity | Task classified simple or medium per the bands in `skills/common-patterns/pipeline-constants.md`? | Task exceeds the ceiling in `skills/common-patterns/pipeline-constants.md` without breakdown |
 | 2. Implementability | Junior can execute without questions? | Vague language, missing details |
-| 3. Success Criteria | 3+ measurable criteria per task? | Can't verify ("works well") |
+| 3. Success Criteria | Simple: 1+ measurable outcome plus the hooks line? Medium: 3+ measurable criteria? | Simple task missing a Verification section; medium task criteria can't be verified ("works well") |
 | 4. Dependencies | Correct parent-child, blocking relationships? | Circular dependencies |
-| 5. Safety Standards | Anti-patterns specified? Error handling? | No anti-patterns section |
+| 5. Safety Standards | Epic has an anti-patterns section? Risky tasks have task-level anti-patterns? | Epic missing anti-patterns section, or risky task missing task-level anti-patterns |
 | 6. Edge Cases | Empty input? Unicode? Concurrency? Failures? | No edge case consideration |
 | 7. Red Flags | Placeholder text? Vague instructions? | "[detailed above]", "TODO" |
 | 8. Test Meaningfulness | Tests catch real bugs? Not tautological? | Tests only verify syntax/existence |
@@ -35,16 +35,16 @@ Use when:
 - Reviewing bd epic/feature plans before implementation
 - Need to ensure junior engineer can execute without questions
 - Want to catch edge cases and failure modes upfront
-- Need to verify task granularity (2-15 min tasks with simple/medium classification)
-- After hyperpowers:writing-plans creates initial plan
+- Need to verify task granularity (bands defined in `skills/common-patterns/pipeline-constants.md`)
+- **Batch mode** (mainline): After brainstorming Step 6c creates the complete task tree (Step 7 calls this skill against the entire epic's task tree as a unit)
+- **Single-task mode**: Against a spec that hyperpowers:writing-plans repaired or expanded off-mainline (gap-fix tasks, mid-flight amendments, externally created tasks)
 - Before hyperpowers:executing-plans starts implementation
-- **Batch mode**: After brainstorming creates the full task tree (Step 7 calls this skill against the entire epic's task tree as a unit)
 
 Don't use when:
 - Task already being implemented (too late)
 - Just need to understand existing code (use codebase-investigator)
 - Debugging issues (use debugging-with-tools)
-- Want to create plan from scratch (use brainstorming → writing-plans)
+- Want to create plan from scratch (use brainstorming)
 </when_to_use>
 
 <the_process>
@@ -73,8 +73,8 @@ Apply the 8-category checklist (below) to every task in the tree. Same rigor as 
 After reviewing each task individually, run these systemic checks:
 
 **a. Granularity consistency**
-- Are all tasks within the 2-15 min range?
-- Are simple tasks (2-5 min) classified as simple and medium tasks (5-15 min) classified as medium?
+- Are all tasks within the bands defined in `skills/common-patterns/pipeline-constants.md`?
+- Are simple tasks classified as simple and medium tasks classified as medium, per those bands?
 - Flag any task whose spec complexity doesn't match its classification (e.g., a task with full Implementation + Tests sections classified as simple)
 
 **b. Dependency completeness**
@@ -92,6 +92,7 @@ After reviewing each task individually, run these systemic checks:
 - Medium task spec: should have Goal, Why, Context, Implementation, Tests, Verification, Boundaries
 - A task with an Implementation section and Tests section must be classified as medium
 - A task with only "exact change description" can be simple
+- A correctly classified simple task is not penalized for lacking a 3+ criteria list, a 3+ item checklist, or a task-level anti-patterns section — those are medium-tier requirements (Categories 3, 5, 7)
 
 **e. Coverage**
 - Do the tasks collectively cover every success criterion in the epic?
@@ -128,7 +129,7 @@ After per-task reviews, append a cross-task section:
 [If NEEDS REVISION or REJECT: list recommended additions or splits]
 ```
 
-**Batch mode scope:** SRE can suggest adding a task, splitting a task, or strengthening criteria across multiple tasks. These are suggestions to the lead — SRE does not directly modify the plan.
+**Batch mode scope:** SRE can suggest adding a task, splitting a task, strengthening criteria across multiple tasks, or recommending the `Executor: opus` promotion flag (see `skills/common-patterns/pipeline-constants.md`) for irreducibly hard tasks. These are suggestions to the lead — SRE does not directly modify the plan.
 
 ---
 
@@ -137,19 +138,19 @@ After per-task reviews, append a cross-task section:
 ### 1. Task Granularity
 
 **Check:**
-- [ ] Task classified as simple (2-5 min) or medium (5-15 min)?
-- [ ] No task exceeds 15 min estimate?
+- [ ] Task classified as simple or medium per the bands in `skills/common-patterns/pipeline-constants.md`?
+- [ ] No task exceeds the hard ceiling in `skills/common-patterns/pipeline-constants.md`?
 - [ ] Simple task: spec has Goal/Why/Changes/Verification only (no full Implementation section)?
 - [ ] Medium task: spec has Goal/Why/Context/Implementation/Tests/Verification/Boundaries?
 - [ ] Each task independently completable?
 - [ ] Each task has a clear deliverable?
 
-**Classification guide:**
-- **Simple (2-5 min)**: Mechanical changes with exact known edits. No judgment required.
-- **Medium (5-15 min)**: Changes requiring judgment or design decisions. Reserved for irreducible complexity.
+**Classification guide** (bands defined in `skills/common-patterns/pipeline-constants.md`):
+- **Simple**: Mechanical changes with exact known edits. No judgment required.
+- **Medium**: Changes requiring judgment or design decisions. Reserved for irreducible complexity.
 
-**If task >15 min:**
-- Break into smaller tasks; 15 min is the hard ceiling
+**If task exceeds the ceiling in `skills/common-patterns/pipeline-constants.md`:**
+- Break into smaller tasks
 - Create subtasks with `bd create`
 - Link with `bd dep add child parent --type parent-child`
 - Update parent to coordinator role
@@ -175,16 +176,20 @@ After per-task reviews, append a cross-task section:
 
 ### 3. Success Criteria Quality
 
+**Tier-aware — see `skills/common-patterns/pipeline-constants.md` for the simple/medium bands.**
+
 **Check:**
-- [ ] Each task has 3+ specific, measurable success criteria?
+- [ ] **Simple task**: Has a Verification section with at least one specific, measurable outcome, plus the "Pre-commit hooks passing" line?
+- [ ] **Medium task**: Has 3+ specific, measurable success criteria?
 - [ ] All criteria testable/verifiable (not subjective)?
-- [ ] Includes automated verification (tests pass, clippy clean)?
+- [ ] Includes automated verification (tests pass, clippy clean) where applicable?
 - [ ] No vague criteria like "works well" or "is implemented"?
 
 **Good criteria examples:**
-- ✅ "5+ unit tests pass (valid VIN, invalid checksum, various formats)"
-- ✅ "Clippy clean with no warnings"
-- ✅ "Performance: <100ms for 1000 records"
+- ✅ Medium: "5+ unit tests pass (valid VIN, invalid checksum, various formats)"
+- ✅ Medium: "Clippy clean with no warnings"
+- ✅ Medium: "Performance: <100ms for 1000 records"
+- ✅ Simple: "`rg 'old_name' src/` returns zero" plus "Pre-commit hooks passing"
 
 **Bad criteria examples:**
 - ❌ "Code is good quality"
@@ -210,14 +215,15 @@ bd dep tree bd-1  # Show full dependency tree
 
 ### 5. Safety & Quality Standards
 
+**Anti-patterns are checked at the EPIC level.** The epic's own Anti-Patterns (FORBIDDEN) section (created in hyperpowers:brainstorming Step 5) is the default coverage for every task under it. A task requires its own task-level anti-patterns section only when the task carries task-specific risk beyond what the epic already forbids — e.g. it introduces regex, touches concurrency, or adds a new external dependency. Simple tasks are exempt from a mandatory task-level anti-patterns section unless they carry that kind of risk.
+
 **Check:**
-- [ ] Anti-patterns include unwrap/expect prohibition?
-- [ ] Anti-patterns include TODO prohibition (or must have issue #)?
-- [ ] Anti-patterns include stub implementation prohibition?
-- [ ] Error handling requirements specified (use Result, avoid panic)?
+- [ ] Epic has an Anti-Patterns (FORBIDDEN) section?
+- [ ] If this task carries task-specific risk: does it have its own anti-patterns covering that risk (unwrap/expect, TODO without issue #, stub implementations, regex backtracking, etc.)?
+- [ ] Error handling requirements specified where relevant (use Result, avoid panic)?
 - [ ] Test requirements specific (test names, scenarios listed)?
 
-**Minimum anti-patterns:**
+**Minimum anti-patterns (for a task carrying task-specific risk):**
 - ❌ No unwrap/expect in production code
 - ❌ No TODOs without issue numbers
 - ❌ No stub implementations (unimplemented!, todo!)
@@ -245,14 +251,14 @@ bd dep tree bd-1  # Show full dependency tree
 ### 7. Red Flags (AUTO-REJECT)
 
 **Check for these - if found, REJECT plan:**
-- ❌ Any task >15 min without subtask breakdown
+- ❌ Any task exceeding the ceiling in `skills/common-patterns/pipeline-constants.md` without subtask breakdown
 - ❌ Vague language: "implement properly", "add support", "make it work"
 - ❌ Success criteria that can't be verified: "code is good", "works well"
 - ❌ Missing test specifications
 - ❌ "We'll handle this later" or "TODO" in the plan itself
-- ❌ No anti-patterns section
-- ❌ Implementation checklist with fewer than 3 items per task
-- ❌ No effort estimates
+- ❌ Epic missing anti-patterns section, or risky task missing task-level anti-patterns
+- ❌ **Medium task** implementation checklist with fewer than 3 items
+- ❌ No simple/medium classification present (the classification itself satisfies the effort-estimate requirement)
 - ❌ Missing error handling considerations
 - ❌ **CRITICAL: Placeholder text in design field** - "[detailed above]", "[as specified]", "[complete steps here]"
 
@@ -332,6 +338,7 @@ Take notes:
 - What's vague or ambiguous
 - Hidden failure modes not addressed
 - Better approaches or simplifications
+- Whether to recommend the `Executor: opus` promotion flag (see `skills/common-patterns/pipeline-constants.md`) for an irreducibly hard task — a suggestion to the lead, not something SRE sets directly
 
 **Step 4: Update the task**
 
@@ -392,7 +399,7 @@ After updating, read back with `bd show bd-N` and verify:
 
 ## Breaking Down Large Tasks
 
-If task >15 min, create subtasks:
+If task exceeds the ceiling in `skills/common-patterns/pipeline-constants.md`, create subtasks:
 
 ```bash
 # Create first subtask
@@ -455,7 +462,7 @@ After reviewing all tasks:
 
 #### [Task Name] (bd-N)
 **Type**: [epic/feature/task]
-**Classification**: [simple (2-5 min) / medium (5-15 min)]
+**Classification**: [simple (2-5 min) / medium (5-30 min)]
 **Status**: [✅ Ready / ⚠️ Needs Minor Improvements / ❌ Needs Major Revision]
 **Estimated Effort**: [X min] ([✅ Within range / ❌ Too large - needs breakdown])
 
@@ -519,7 +526,7 @@ After reviewing all tasks:
 # Review of bd-3: Implement VIN scanner
 
 ## Checklist review:
-1. Granularity: ✅ 15 min (medium)
+1. Granularity: ✅ 20 min (medium)
 2. Implementability: ✅ Junior can implement
 3. Success Criteria: ✅ Has 5 test scenarios
 4. Dependencies: ✅ Correct
@@ -875,7 +882,7 @@ EOF
 1. **Apply all 8 categories to every task** → No skipping any category for any task
 2. **Reject plans with placeholder text** → "[detailed above]", "[as specified]" = instant reject
 3. **Verify no placeholder after updates** → Read back with `bd show` and confirm actual content
-4. **Break tasks >15 min** → Create subtasks; 15 min is the hard ceiling
+4. **Break tasks exceeding the ceiling** → Create subtasks; ceiling defined in `skills/common-patterns/pipeline-constants.md`
 5. **Strengthen vague criteria** → "Works correctly" → measurable verification commands
 6. **Add edge cases to every task** → Empty? Unicode? Concurrency? Failures?
 7. **Never skip Category 6** → Edge case analysis prevents production issues
@@ -905,7 +912,7 @@ Before completing SRE review:
 - [ ] Checked for placeholder text in design field
 - [ ] Updated task with missing information via `bd update --design`
 - [ ] Verified updated task with `bd show` (no placeholders remain)
-- [ ] Broke down any task >15 min into subtasks
+- [ ] Broke down any task exceeding the ceiling in `skills/common-patterns/pipeline-constants.md` into subtasks
 - [ ] Strengthened vague success criteria to measurable
 - [ ] Added edge case analysis to Key Considerations
 - [ ] Strengthened anti-patterns based on failure modes
@@ -923,25 +930,25 @@ Before completing SRE review:
 
 <integration>
 **This skill is used after:**
-- hyperpowers:writing-plans (creates initial plan)
-- hyperpowers:brainstorming (establishes requirements; Step 7 calls this in batch mode)
+- hyperpowers:brainstorming (establishes requirements and creates the full task tree; Step 7 calls this in batch mode — the mainline path)
+- hyperpowers:writing-plans (off-mainline: repairs or expands a spec that bypassed the brainstorm flow)
 
 **This skill is used before:**
 - hyperpowers:executing-plans (implements tasks)
 
 **Modes:**
-- **Single-task mode** (default): review one task at a time during plan refinement or for gap-fix tasks during execution
-- **Batch mode**: review full task tree as a unit — required from brainstorming Step 7 after the complete task tree is created
+- **Single-task mode** (default): review one task at a time — for specs hyperpowers:writing-plans repaired or expanded, or for gap-fix tasks during execution
+- **Batch mode**: review full task tree as a unit — required from brainstorming Step 7 after the complete task tree is created; this is the mainline path
 
 **Call chains:**
 ```
-Upfront planning (batch mode):
-hyperpowers:brainstorming → creates full task tree → hyperpowers:sre-task-refinement [BATCH] → hyperpowers:executing-plans
+Upfront planning (batch mode, mainline):
+hyperpowers:brainstorming → creates full task tree (Step 6c) → hyperpowers:sre-task-refinement [BATCH] (Step 7) → hyperpowers:executing-plans
                                                                         ↓
                                                               (if gaps: revise tasks, re-run batch)
 
-Plan refinement (single-task mode):
-hyperpowers:writing-plans → hyperpowers:sre-task-refinement [SINGLE] → hyperpowers:executing-plans
+Spec repair (single-task mode, off-mainline):
+hyperpowers:writing-plans (repairs/expands a spec) → hyperpowers:sre-task-refinement [SINGLE] → hyperpowers:executing-plans
 ```
 
 **This skill uses:**
@@ -960,7 +967,7 @@ hyperpowers:writing-plans → hyperpowers:sre-task-refinement [SINGLE] → hyper
 
 <resources>
 **Review patterns:**
-- Task too large (>15 min) → Break into simple (2-5 min) or medium (5-15 min) subtasks
+- Task too large (exceeds the ceiling in `skills/common-patterns/pipeline-constants.md`) → Break into simple or medium subtasks per the bands there
 - Vague criteria ("works correctly") → Measurable commands/checks
 - Missing edge cases → Add to Key Considerations with mitigations
 - Placeholder text → Rewrite with actual content
@@ -973,7 +980,7 @@ hyperpowers:writing-plans → hyperpowers:sre-task-refinement [SINGLE] → hyper
 - "Is the assertion meaningful?" → `!= nil` is weaker than `== expectedValue`
 
 **When stuck:**
-- Unsure if task too large → Ask: Can junior complete in under 15 min? If not, break it down.
+- Unsure if task too large → Ask: Does it fit within the ceiling in `skills/common-patterns/pipeline-constants.md`? If not, break it down.
 - Unsure if criteria measurable → Ask: Can I verify with command/code review?
 - Unsure if edge case matters → Ask: Could this fail in production?
 - Unsure if placeholder → Ask: Does this reference other content instead of providing content?
