@@ -162,6 +162,9 @@ Across all slices in the doc:
 
 ### Report format
 
+Every GAP and ASYMMETRY proposes a concrete edit; INFO findings are
+observational and propose none.
+
 ```
 Phase doc check: [path]
 
@@ -176,8 +179,10 @@ Phase doc check: [path]
   correct the owner]
 
 ## Cross-slice
-- ASYMMETRY (Release): [service-a] claims lockstep with [service-b];
-  [service-b] says independently deployable.
+- ASYMMETRY (Release Framing): [service-a] claims lockstep with
+  [service-b]; [service-b] says independently deployable. Proposed edit:
+  [align both slices — name the lockstep constraint in service-b's Release
+  Framing too, or drop it from service-a's]
 
 [N] gaps, [M] asymmetries, [K] informational. The doc is yours — these are
 signals, not verdicts.
@@ -232,7 +237,7 @@ Before claiming a portent run complete:
 - [ ] Draft: no invented rationales; unknowns in Open for Design
 - [ ] Draft: self-check ran before handoff; remaining gaps listed
 - [ ] Check: all four checks ran on every slice
-- [ ] Check: every finding cites slice + section and proposes an edit
+- [ ] Check: every finding cites slice + section; every GAP and ASYMMETRY proposes an edit
 - [ ] Output docs contain zero plugin vocabulary
 - [ ] No writes outside the planning repo; no tracker artifacts created
 </verification_checklist>
