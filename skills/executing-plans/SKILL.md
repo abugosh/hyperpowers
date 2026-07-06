@@ -1,6 +1,6 @@
 ---
 name: executing-plans
-description: Lead reads pre-planned task list, dispatches fresh blocking executor subagent (Sonnet) per task, runs two-stage per-task review, and escalates to user when plan proves invalid.
+description: Lead reads pre-planned task list, dispatches fresh blocking executor subagent (Sonnet by default, promotable) per task, runs two-stage per-task review, and escalates to user when plan proves invalid.
 ---
 
 <skill_overview>

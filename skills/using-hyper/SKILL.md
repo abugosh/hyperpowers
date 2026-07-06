@@ -172,7 +172,7 @@ Claude: "I'm using hyperpowers:brainstorming to refine your requirements into a 
 Claude: "Now I'm using hyperpowers:executing-plans to orchestrate task execution."
 
 [Skill tool loads executing-plans]
-[Dispatches fresh executor subagent (Sonnet) per task]
+[Dispatches fresh executor subagent per task — Sonnet by default, promotable]
 [Executor implements task, commits, returns DONE/BLOCKED/NEEDS_HELP; lead runs two-stage review then dispatches next]
 
 **What you gain:**
