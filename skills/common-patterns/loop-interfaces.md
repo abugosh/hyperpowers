@@ -25,6 +25,10 @@ Needs you: <the specific decision(s) or confirmation(s) the gate is waiting on;
 Gate questions must be answerable in durable prose — never only via an
 expiring interactive element. The governor may return hours later.
 
+The Decided section exists so that decisions made in conversation always
+land in bd — a fresh session must never depend on chat history for a
+decision's existence.
+
 ## Plan-Impact Notice
 
 Emitted when per-repo work invalidates or constrains an assumption in a
@@ -50,8 +54,11 @@ Proposed edit: <concrete wording or diff for the planning-repo doc — the
 **Pushed to the user** (surface immediately in the gate-state block and,
 where it exists, the lane's final message): plan-impact notices, provenance
 drift flags (a cited plan doc changed since the epic recorded its SHA),
-escalations, and lane-completion gate-states. These are drift-tier or
-blocking — the costs the governor ranks highest.
+escalations, lane-completion gate-states, and disagreement counter-signals
+(a session's evidence-backed objection to a decision it is executing —
+stated once at the gate; if the governor holds, their call stands and the
+objection remains on record in the Decided section). These are drift-tier
+or blocking — the costs the governor ranks highest.
 
 **Pulled on demand** (recorded in bd, never volunteered): executor churn
 statistics, token burn, and progress rollups. These are noise-tier — bd

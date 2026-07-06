@@ -212,7 +212,7 @@ Triggered when:
    - Current failure (what failed and why)
    - Remaining tasks affected
    - One recommendation: replan remaining tasks / revert and redesign / continue with adjustments
-3. **Persist the gate, then wait.** Emit the gate-state block and write it to the epic's bd notes (format: `skills/common-patterns/loop-interfaces.md`) — the user may return hours later or in a different session, and the question must be answerable in durable prose. Then wait for the user decision. Do NOT continue without user input.
+3. **Persist the gate, then wait.** Emit the gate-state block — including any accumulated plan-impact notices — and write it to the epic's bd notes (format: `skills/common-patterns/loop-interfaces.md`) — the user may return hours later or in a different session, and the question must be answerable in durable prose. Then wait for the user decision. Do NOT continue without user input.
 4. **After user responds:** Execute the user's chosen path. If user says "continue as-is," resume from the next unfinished task. If the specific blocked task is still blocked, skip it and note it as deferred.
 
 **Do not redesign the plan autonomously.** Present options; the user decides.

@@ -4,7 +4,7 @@ description: Use for advanced bd operations - splitting tasks mid-flight, mergin
 ---
 
 <skill_overview>
-Advanced bd operations for managing complex task structures; bd is single source of truth, keep it accurate.
+Advanced bd operations for managing complex task structures; bd is the source of truth for this repo's execution state, keep it accurate. (Shared plan documents may sit above bd in multi-service work — see skills/common-patterns/loop-interfaces.md.)
 </skill_overview>
 
 <rigidity_level>
@@ -626,7 +626,7 @@ bd ready  # Shows bd-15
 <critical_rules>
 ## Rules That Have No Exceptions
 
-1. **Keep bd accurate** → Single source of truth for all work
+1. **Keep bd accurate** → The source of truth for this repo's execution state (plan docs may sit above it)
 2. **Merge duplicates, don't just close** → Preserve information from both
 3. **Split large tasks when discovered** → Not after struggling through
 4. **Document dependency changes** → Update task designs when deps change
