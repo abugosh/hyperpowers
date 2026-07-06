@@ -25,6 +25,7 @@ RIGID - Same 9 analysis passes every time (Passes 1-9), same output format, same
 **Key:** Steps 0-3 are ANALYTICAL. No AskUserQuestion during analysis. Load, analyze, report.
 **Key:** Step 4 is INTERACTIVE. Walk through each tension with the architect.
 **Key:** Tensions surface both pulls. NO recommendations, NO severity rankings.
+**Key:** Steps 0-3 run in a dispatched fresh subagent; the lead presents the returned report and runs Step 4.
 </quick_reference>
 
 <when_to_use>
@@ -41,6 +42,33 @@ RIGID - Same 9 analysis passes every time (Passes 1-9), same output format, same
 </when_to_use>
 
 <the_process>
+
+## Dispatch -- Run the Analysis in a Subagent
+
+When /intuition is invoked, the lead does NOT run the analysis inline. Dispatch a fresh blocking subagent for the analytical phase:
+
+```
+Agent tool:
+  subagent_type: "general-purpose"
+  mode: "bypassPermissions"
+  prompt: |
+    Load the skill hyperpowers:intuition with the Skill tool and execute
+    Steps 0-3 (prepare audit, gather evidence, run all 9 analysis passes,
+    self-check and assemble the report). Prose focus: <verbatim, or "none
+    — full audit">.
+    Working directory: <pwd>
+    Return the complete tension report (Step 3 format, including the
+    Architect Questions) as your final message — it is data for the lead,
+    not prose for a human. Do NOT run Step 4.
+```
+
+Do not pass a model override — the analysis inherits the session model, and the codebase-investigator dispatches inside Steps 1-2 inherit the analysis subagent's model (design-tier evidence; do not downgrade).
+
+The lead presents the returned report to the architect verbatim, then runs Step 4 (Resolution Protocol) interactively. Rationale: the analytical phase is evidence-heavy — multiple investigator dispatches feeding 9 passes — and running it inline detonates the invoking session's context, especially when /intuition is reached from mid-brainstorm friction routing.
+
+If you are reading this as the dispatched analyst: Steps 0-3 below are yours to execute. Do not use AskUserQuestion; do not run Step 4.
+
+---
 
 ## Step 0 -- Prepare Audit
 
@@ -741,6 +769,8 @@ Five worked examples (good audit with model, codebase-only audit, BAD makes-reco
 10. **Think in components and boundaries, NOT classes and functions.** If the analysis descends to implementation details (class hierarchies, function signatures), you have crossed into inner-loop territory. Stay at the component/module level.
 
 11. **Audit without architecture model is a full audit.** Codebase-only mode runs all passes using codebase evidence. It is not a degraded mode — it finds real tensions. The only difference is model-level analysis reports "evidence insufficient — codebase only". Pass 7 still runs (git history is available without a model). Pass 8 and 9 run on codebase evidence (compensating code patterns, fix clustering, code path tracing). Dynamic view drift is checked in /ponder REVIEW (not in /intuition).
+
+12. **Steps 0-3 run in a dispatched subagent — analysis never runs in the invoking context.** The lead dispatches, receives the report, presents it verbatim, and owns Step 4.
 
 ## Common Excuses
 
