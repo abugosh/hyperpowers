@@ -14,7 +14,7 @@ HIGH FREEDOM - The 8-step order is fixed, but Socratic questioning within steps 
 <quick_reference>
 | Step | Action | Deliverable |
 |------|--------|-------------|
-| 1 | Ask questions (one at a time, AskUserQuestion); evaluate sizing gate | Understanding of the problem and context; escalation offer if gate fires |
+| 1 | Detect entry (doc/idea/resume); investigate first; evidence-grounded questions (AskUserQuestion); evaluate sizing gate | Understanding grounded in findings; escalation offer if gate fires |
 | 2 | Research codebase and external patterns; propose 2-3 approaches | Recommended option with trade-offs documented |
 | 3 | Present design in sections (200-300 words each); friction detection | Validated architecture; /intuition offered if friction detected |
 | 4 | Architecture Impact Check (5 structural questions) | Impact recorded in epic; /intuition offered if any YES |
@@ -27,6 +27,7 @@ HIGH FREEDOM - The 8-step order is fixed, but Socratic questioning within steps 
 <when_to_use>
 - User describes new feature to implement
 - User has rough idea that needs refinement
+- An upstream plan document (phase-doc slice) needs designing into an epic — provide it and Step 1 ingests it as a second entry
 - About to write code without clear requirements
 - Need to explore approaches before committing
 - Requirements exist but architecture unclear
@@ -47,26 +48,22 @@ HIGH FREEDOM - The 8-step order is fixed, but Socratic questioning within steps 
 
 ## Step 1 — Understanding the Idea
 
-Ask focused questions to understand what the user wants to build and why. Use the AskUserQuestion tool — do not print questions and wait.
+**Entry detection (automatic — never interrogate about mode):**
+- The user provided an upstream plan document (a path into a planning-repo checkout, or a pasted slice) → run **Ingestion** below, then question only what it leaves open.
+- No document → **idea-first** entry, fully supported: proceed directly to investigation and questioning. Nothing ever asks for a doc that doesn't exist.
+- Resuming an epic whose design carries a Provenance section → verify the cited planning-repo file's current state first; if it changed since the recorded SHA, surface a provenance drift flag (signal policy: `skills/common-patterns/loop-interfaces.md`) before continuing.
 
-**Question format:**
+**Ingestion (document provided):**
+Read the document. Extract what binds this work — using the slice sections in `skills/common-patterns/brainstormable-unit.md` where the doc follows them (Deliverable, Requirements, Contracts, Boundaries, Settled Decisions, Open for Design) and best judgment where it doesn't. Record provenance at ingest: source file path plus its commit SHA (`git -C <planning-repo> rev-parse HEAD`); for untracked or unversioned input, fall back to path + date, flagged unversioned. Then play back the settled/open frontier: "Settled by the plan: [...]. Open for this session: [...]." **Never re-ask what the document settles** — the question round below covers only its Open-for-design items. Several epics may cite the same slice.
 
-```
-Question: [Clear question ending with ?]
-Options:
-  A. [Option] (Recommended) - [Why this is the default]
-  B. [Option] - [Trade-off]
-  C. Other (please specify)
+**Investigate before questioning.** When the topic touches the codebase, dispatch research agents FIRST — before the first question — and share what you find. Bring information, offer an opinion, then ask: evidence-grounded questions ("passport-config.ts already handles sessions — extend it, or is this an excuse to go stateless?") reveal the hidden constraints that generic questions miss. Do not open with an interrogation.
 
-Priority: CRITICAL | IMPORTANT | NICE_TO_HAVE
-```
-
-**Guidelines:**
-- 1-5 questions maximum per round (don't overwhelm)
-- Multiple choice preferred; include suggested default marked "(Recommended)"
-- Fast-path: for IMPORTANT/NICE_TO_HAVE questions with good defaults, offer "Reply 'defaults' to accept all recommended options"
-- Ask one CRITICAL question at a time; group IMPORTANT/NICE_TO_HAVE together
-- Stop asking once the design space is clear — unresolved NICE_TO_HAVE questions become Open Questions in the epic
+**Questioning (AskUserQuestion tool — do not print questions and wait):**
+- At most 4 questions per round; multiple choice preferred
+- Put your recommended option FIRST, labeled "(Recommended)", with the evidence for it in the description
+- Ask one critical/blocking question at a time; group lesser ones
+- Stop once the design space is clear — remaining minor unknowns become Open Questions in the epic
+- An expired question box is not an answer: the user may be in another window. Re-ask in durable prose and hold at the gate patiently (`skills/common-patterns/loop-interfaces.md`)
 
 **As each question is answered, record in "Key Decisions Made":**
 - Question asked
@@ -90,7 +87,7 @@ This is a gate the user can override — not a hard block. If the user says "pro
 **When to dispatch which agent:**
 - Similar feature exists in the codebase → dispatch `hyperpowers:codebase-investigator`
 - New integration or unfamiliar library → dispatch `hyperpowers:internet-researcher`
-- Both apply → dispatch both
+- Both apply → dispatch both in a single message (they run in parallel)
 
 Research dispatches inherit the session model — this is design-tier investigation; do not pass a cheaper model override.
 
@@ -479,7 +476,7 @@ Worked examples (skipped-research, upfront-task-tree, missing-anti-patterns) liv
 </examples>
 
 <key_principles>
-- **One question at a time** — Don't overwhelm; group only IMPORTANT/NICE_TO_HAVE
+- **Investigate, share, opine, then ask** — evidence-grounded questions beat interrogation; one critical question at a time
 - **Multiple choice preferred** — Easier to answer; include recommended default
 - **Delegate research** — Use codebase-investigator and internet-researcher agents
 - **YAGNI ruthlessly** — Remove unnecessary features from all designs
