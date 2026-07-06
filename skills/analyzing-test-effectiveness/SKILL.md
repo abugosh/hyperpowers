@@ -85,7 +85,7 @@ for dir in src/*/; do
 done
 ```
 
-**Create inventory TodoWrite:**
+**Create inventory in the repo's tracker (bd when the repo uses beads, TodoWrite otherwise):**
 ```
 - Analyze tests in src/auth/
 - Analyze tests in src/api/

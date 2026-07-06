@@ -50,7 +50,7 @@ Don't use when:
 
 **Announce:** "I'm using hyperpowers:dispatching-parallel-agents to investigate these independent failures concurrently."
 
-**Create TodoWrite tracker:**
+**Create a tracker (bd when the repo uses beads, TodoWrite otherwise):**
 ```
 - Identify independent domains (3+ domains identified)
 - Create agent tasks (one prompt per domain drafted)
@@ -168,7 +168,7 @@ Task("Fix batch-completion-behavior.test.ts failures", prompt2)
 ```
 
 **After dispatch:**
-- Mark "Dispatch agents in parallel" as completed in TodoWrite
+- Mark "Dispatch agents in parallel" as completed in the tracker
 - Mark "Monitor agent progress" as in_progress
 - Wait for all agents to complete before integration
 
@@ -571,7 +571,7 @@ npm test
 4. **Wait for ALL agents** → Don't integrate until all complete
 5. **Check conflicts manually** → Read summaries, verify no contradictions
 6. **Verify integration** → Run full suite yourself, don't trust agents
-7. **TodoWrite tracking** → Track agent progress explicitly
+7. **Tracked progress** → Track agent progress explicitly in the repo's tracker
 
 ## Common Excuses
 
@@ -582,7 +582,7 @@ All of these mean: **STOP. Follow the process.**
 - "Can dispatch sequentially to save syntax" (WRONG - must dispatch in single message)
 - "Agent failed, but others succeeded - ship it" (All agents must succeed or re-investigate)
 - "Conflicts are minor, can ignore" (Resolve all conflicts explicitly)
-- "Don't need TodoWrite for just tracking agents" (Use TodoWrite, track properly)
+- "Don't need a tracker for just tracking agents" (Use the repo's tracker, track properly)
 - "Can skip verification, agents ran tests" (Agents can make mistakes, YOU verify)
 </critical_rules>
 
@@ -616,7 +616,7 @@ Before completing parallel agent work:
 **This skill uses:**
 - Task tool (dispatch parallel agents)
 - AgentOutput tool (monitor stuck agents)
-- TodoWrite (track agent progress)
+- The repo's tracker — bd when the repo uses beads, TodoWrite otherwise (track agent progress)
 
 **Workflow integration:**
 ```

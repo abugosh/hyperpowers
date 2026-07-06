@@ -46,7 +46,7 @@ Rate each finding 0.0-1.0:
 <quick_reference>
 | Step | Action | Deliverable |
 |------|--------|-------------|
-| 1 | Load bd epic + all tasks | TodoWrite with tasks to review |
+| 1 | Load bd epic + all tasks | Tracker list of tasks to review |
 | 2 | Review each task (automated checks, quality gates, read code, **audit tests**, verify criteria) | Findings per task |
 | 3 | Report findings (approved / gaps found) | Review decision |
 | 4 | Gate: If approved → STOP for manual validation, If gaps → STOP | Next action |
@@ -82,10 +82,10 @@ bd dep tree bd-1      # Task tree
 bd list --parent bd-1 # All tasks
 ```
 
-**Create TodoWrite tracker:**
+**Create a tracker (bd when the repo uses beads, TodoWrite otherwise):**
 
 ```
-TodoWrite todos:
+Tracker items:
 - Review bd-2: Task Name
 - Review bd-3: Task Name
 - Review bd-4: Task Name
@@ -513,7 +513,7 @@ Read code to confirm edge cases handled:
 
 ---
 
-### J. Mark Task Reviewed (TodoWrite)
+### J. Mark Task Reviewed (in the tracker)
 
 ---
 
@@ -1117,7 +1117,7 @@ Before approving implementation:
 
 **Overall:**
 - [ ] Reviewed ALL tasks (no exceptions)
-- [ ] TodoWrite tracker shows all tasks reviewed
+- [ ] Tracker shows all tasks reviewed
 - [ ] Compiled findings (approved or gaps)
 - [ ] If approved: all criteria met for all tasks
 - [ ] If gaps: documented exactly what missing

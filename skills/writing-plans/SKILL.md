@@ -70,7 +70,7 @@ bd dep tree bd-1  # View complete dependency tree
 ### 2a. Mark In Progress and Read Current State
 
 ```bash
-# Mark in TodoWrite: in_progress
+# Mark in the tracker: in_progress
 bd show bd-3  # Read current task design
 ```
 
@@ -162,13 +162,13 @@ When pausing at this approval gate, emit the gate-state block and persist it to 
 
 ```bash
 bd update bd-3 --design "[paste complete expansion]"
-# Mark completed in TodoWrite
+# Mark completed in the tracker
 # IMMEDIATELY continue to next task (NO asking permission)
 ```
 
 ### 2g. If Needs Revision: Iterate
 
-- Keep as in_progress in TodoWrite
+- Keep as in_progress in the tracker
 - Revise based on feedback
 - Present again (step 2e)
 
@@ -361,7 +361,7 @@ Should I continue to bd-4 now? What's your preference?"
 - Unnecessary interruption
 - User has to respond multiple times
 - Slows down batch processing
-- TodoWrite list IS the plan
+- The tracker list IS the plan
 
 **Why it happens:** Over-asking for permission instead of executing the plan.
 </why_it_fails>
@@ -371,7 +371,7 @@ Should I continue to bd-4 now? What's your preference?"
 
 ```bash
 bd update bd-3 --design "[expansion]"  # Update bd
-# Mark completed in TodoWrite
+# Mark completed in the tracker
 ```
 
 **IMMEDIATELY continue to bd-4:**
@@ -427,7 +427,7 @@ bd show bd-4  # Read next task
    - Never ask without showing first
 
 7. **Continue automatically between validations** → Don't ask permission
-   - TodoWrite list IS your plan
+   - The tracker list IS your plan
    - Execute it completely
    - Only ask: (a) task validation, (b) final next-step offer
 
@@ -447,7 +447,7 @@ All of these mean: Stop, apply the rule:
 
 <verification_checklist>
 
-Before marking each task complete in TodoWrite:
+Before marking each task complete in the tracker:
 - [ ] Task classified as simple or medium
 - [ ] Verified per the split-lane rule: investigator for broad questions, direct reads for exact edit sites — no unverified references
 - [ ] Spec uses correct two-tier template for classification
@@ -460,7 +460,7 @@ Before marking each task complete in TodoWrite:
 - [ ] No meta-references in design field
 
 Before finishing all tasks:
-- [ ] All tasks in TodoWrite marked completed
+- [ ] All tasks marked completed in the tracker
 - [ ] All bd tasks updated with two-tier specs
 - [ ] No task exceeds the hard ceiling in skills/common-patterns/pipeline-constants.md
 - [ ] No conditional steps ("if exists")
