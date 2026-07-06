@@ -412,6 +412,7 @@ If task exceeds the ceiling in `skills/common-patterns/pipeline-constants.md`, c
 bd create "Subtask 1: [Specific Component]" \
   --type task \
   --priority 1 \
+  --description "[One-line summary for bd list views]" \
   --design "[Complete subtask design with all 7 categories addressed]"
 # Returns bd-10
 
@@ -419,6 +420,7 @@ bd create "Subtask 1: [Specific Component]" \
 bd create "Subtask 2: [Another Component]" \
   --type task \
   --priority 1 \
+  --description "[One-line summary for bd list views]" \
   --design "[Complete subtask design]"
 # Returns bd-11
 

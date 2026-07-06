@@ -133,6 +133,7 @@ After design is validated and Architecture Impact Check recorded, create the epi
 bd create "[Feature Name]" \
   --type epic \
   --priority [0-4] \
+  --description "[One-line summary for bd list views]" \
   --design "$(cat <<'EOF'
 ## Requirements (IMMUTABLE)
 [What MUST be true when complete — specific, testable]

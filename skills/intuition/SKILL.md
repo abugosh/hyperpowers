@@ -693,7 +693,7 @@ Create an ADR using the template from `skills/common-patterns/adr-template.md`:
 Create an ADR + bd ticket:
 - ADR: documents the structural decision (what the model will look like after the work is done)
 - bd ticket: describes the restructuring work needed to resolve the tension
-- `bd create "[Resolve tension: description]" --type task --priority 2 --design "[ADR reference, specific modules to change, expected outcome]"`
+- `bd create "[Resolve tension: description]" --type task --priority 2 --description "[one-line tension summary]" --design "[ADR reference, specific modules to change, expected outcome]"`
 - If this is the first boundary being created and no model exists: trigger **Model Bootstrapping** (see below)
 
 ### Brainstorm

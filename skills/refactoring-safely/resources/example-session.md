@@ -12,8 +12,9 @@ Result: ✓ 234 tests pass
 
 ### Minutes 5-10: Create bd Task
 ```bash
-bd create "Refactor: Extract user validation" --type task
-bd edit bd-456 --design "Extract validation to UserValidator class..."
+bd create "Refactor: Extract user validation" --type task \
+  --description "Deduplicate validation shared by 3 services"
+bd update bd-456 --design "Extract validation to UserValidator class..."
 bd update bd-456 --status in_progress
 ```
 

@@ -66,13 +66,14 @@ After implementing a fix, classify its status:
 **Track from the start:**
 
 ```bash
-bd create "Bug: [Clear description]" --type bug --priority P1
+bd create "Bug: [Clear description]" --type bug --priority P1 \
+  --description "[Observed impact — what breaks and for whom]"
 # Returns: bd-123
 ```
 
 **Document:**
 ```bash
-bd edit bd-123 --design "
+bd update bd-123 --design "
 ## Bug Description
 [What's wrong]
 
@@ -106,7 +107,7 @@ Use Skill tool: hyperpowers:debugging-with-tools
 
 **Update bd issue with findings:**
 ```bash
-bd edit bd-123 --design "[previous content]
+bd update bd-123 --design "[previous content]
 
 ## Investigation
 [Root cause found via debugging]
@@ -184,7 +185,7 @@ pytest tests/test_user.py::test_rejects_empty_email
 **REQUIRED: Classify fix status before closing:**
 
 ```bash
-bd edit bd-123 --design "[previous content]
+bd update bd-123 --design "[previous content]
 
 ## Fix Status: FIXED
 **Evidence:**
@@ -263,7 +264,8 @@ Commits: "fix: validate email"
 
 ```bash
 # 1. Track
-bd create "Bug: Empty email accepted" --type bug
+bd create "Bug: Empty email accepted" --type bug \
+  --description "Signup accepts empty/whitespace emails, corrupting user records"
 # Returns: bd-123
 
 # 2. Debug (use debugging-with-tools)

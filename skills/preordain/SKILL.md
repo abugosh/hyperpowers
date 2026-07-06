@@ -150,6 +150,7 @@ epic); do not restate or reinterpret them here. Every section is addressed:
 bd create "[Initiative]: [Leaf Epic Name]" \
   --type epic \
   --priority [match initiative] \
+  --description "[One-line summary for bd list views]" \
   --design "$(cat <<'EOF'
 ## Requirements (IMMUTABLE)
 [What this leaf epic must achieve — specific, testable]

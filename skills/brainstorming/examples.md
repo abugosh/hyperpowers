@@ -128,7 +128,8 @@ bd dep add bd-[t3] bd-[t2] --type blocking
 <scenario>Epic created without anti-patterns section</scenario>
 
 <code>
-bd create "Epic: OAuth Authentication" --design "
+bd create "Epic: OAuth Authentication" \
+  --description "Google OAuth2 login" --design "
 ## Requirements
 - Users authenticate via Google OAuth2
 - Tokens stored securely
@@ -158,7 +159,8 @@ bd create "Epic: OAuth Authentication" --design "
 **Correct approach with anti-patterns and design rationale:**
 
 ```bash
-bd create "Epic: OAuth Authentication" --design "
+bd create "Epic: OAuth Authentication" \
+  --description "Google OAuth2 login with httpOnly-cookie sessions" --design "
 ## Requirements (IMMUTABLE)
 - Users authenticate via Google OAuth2
 - Tokens stored in httpOnly cookies (NOT localStorage)
