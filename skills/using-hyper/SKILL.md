@@ -28,7 +28,7 @@ HIGH FREEDOM - The meta-process (check for skills, use Skill tool, announce usag
 4. Announce which skill you're using
 5. Follow the skill exactly as written
 
-**Skill has checklist?** Create TodoWrite for every item.
+**Skill has checklist?** Track every item in the repo's task tracker — bd when beads is present, TodoWrite otherwise.
 
 **Finding a relevant skill = mandatory to use it.**
 </quick_reference>
@@ -97,9 +97,10 @@ Before using a skill, announce it:
 
 **Before writing ANY code:**
 - Use hyperpowers:consider to explore ideas when the goal isn't yet clear (optional; routes to brainstorming when ready)
-- Use hyperpowers:brainstorming to refine requirements
-- Use hyperpowers:writing-plans to create detailed plan
+- Use hyperpowers:brainstorming to refine requirements and produce the verified task tree
 - Use hyperpowers:executing-plans to orchestrate execution via executor subagent
+
+writing-plans is the off-mainline utility for repairing or expanding specs on tasks that lack them.
 
 **When implementing:**
 - Use hyperpowers:test-driven-development (RED-GREEN-REFACTOR cycle)
@@ -113,9 +114,9 @@ Before using a skill, announce it:
 
 ---
 
-## 5. Create TodoWrite for Skill Checklists
+## 5. Track Skill Checklists in the Repo's Tracker
 
-If a skill has a checklist, YOU MUST create TodoWrite todos for EACH item.
+If a skill has a checklist, YOU MUST track every item in the repo's task tracker — bd issues when the repo uses beads, TodoWrite otherwise.
 
 **Don't:**
 - Work through checklist mentally
@@ -123,7 +124,7 @@ If a skill has a checklist, YOU MUST create TodoWrite todos for EACH item.
 - Batch multiple items into one todo
 - Mark complete without doing them
 
-**Why:** Checklists without TodoWrite tracking = steps get skipped. Every time. The overhead is tiny compared to missing steps.
+**Why:** Mental tracking = skipped steps. Every time. The overhead of an explicit tracker entry is tiny compared to missing steps.
 
 **Example:**
 
@@ -133,7 +134,7 @@ Skill has verification checklist:
 - [ ] No linter warnings
 - [ ] bd task updated
 
-TodoWrite todos:
+Track each item in the repo's tracker (bd issues if the repo uses beads, TodoWrite otherwise):
 1. Run all tests and verify they pass
 2. Run linter and verify no warnings
 3. Update bd task with completion status
@@ -153,8 +154,7 @@ Claude (without using-hyper):
 </code>
 
 <why_it_fails>
-- Skipped mandatory brainstorming (requirements unclear)
-- Skipped writing-plans (no detailed implementation plan)
+- Skipped mandatory brainstorming (requirements unclear, no verified task tree)
 - Skipped test-driven-development (no tests first)
 - Will likely miss edge cases, make wrong assumptions
 - User has no visibility into approach before code is written
@@ -167,12 +167,7 @@ Claude: "I'm using hyperpowers:brainstorming to refine your requirements into a 
 
 [Skill tool loads brainstorming]
 [Asks Socratic questions about avatar size limits, formats, storage, etc.]
-[Creates refined requirements]
-
-Claude: "Now I'm using hyperpowers:writing-plans to create a detailed implementation plan."
-
-[Skill tool loads writing-plans]
-[Creates bd epic with tasks]
+[Creates refined requirements and verified task tree]
 
 Claude: "Now I'm using hyperpowers:executing-plans to orchestrate task execution."
 
@@ -297,7 +292,7 @@ Step 6: Final verification → close bd task
 2. **Use Skill tool to load skills** → Never rely on memory (skills evolve)
 3. **Announce skill usage** → Transparency helps catch errors early
 4. **Follow mandatory workflows** → brainstorming before coding, TDD for implementation, verification before claiming done
-5. **Create TodoWrite for checklists** → Mental tracking = skipped steps
+5. **Track checklists in the repo's tracker (bd when beads, TodoWrite otherwise)** → Mental tracking = skipped steps
 
 ## Common Rationalizations
 
@@ -339,7 +334,7 @@ These have HIGH FREEDOM - adapt core principles to context:
 ## User Instructions Describe WHAT, Not HOW
 
 **User says:** "Add user authentication"
-**This means:** Use brainstorming → writing-plans → executing-plans (lead dispatches executor per task, runs two-stage review after each) → verification
+**This means:** Use brainstorming → executing-plans (lead dispatches executor per task, runs two-stage review after each) → verification
 
 **User says:** "Fix this bug"
 **This means:** Use debugging-with-tools → fixing-bugs → TDD → verification
@@ -367,7 +362,7 @@ Before completing ANY task:
 - [ ] Did I use Skill tool to load skills (not rely on memory)?
 - [ ] Did I announce which skill I'm using?
 - [ ] Did I follow the skill's process exactly?
-- [ ] Did I create TodoWrite for any skill checklists?
+- [ ] Did I track every skill checklist item in the repo's tracker (bd when beads, TodoWrite otherwise)?
 - [ ] Did I follow mandatory workflows (brainstorming, TDD, verification)?
 
 **Can't check all boxes?** You skipped critical steps. Review and fix.
@@ -382,8 +377,7 @@ Before completing ANY task:
 - User requests (check before every task)
 
 **Critical workflows this establishes:**
-- hyperpowers:brainstorming (before writing code)
-- hyperpowers:writing-plans → hyperpowers:executing-plans (plan then orchestrate execution via executor subagent)
+- hyperpowers:brainstorming → hyperpowers:executing-plans (produces the verified task tree, then orchestrates execution via executor subagent)
 - hyperpowers:test-driven-development (during implementation)
 - hyperpowers:verification-before-completion (before claiming done)
 </integration>
