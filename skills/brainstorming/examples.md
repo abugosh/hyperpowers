@@ -48,6 +48,17 @@ Claude (without brainstorming):
    I recommend option 1 because it builds on existing auth/ setup.
    ```
 
+3. **Ask the evidence-grounded question (AskUserQuestion, recommended option first):**
+   ```
+   Question: "Extend the existing passport setup for OAuth, or replace the auth model?"
+   Options:
+     - "Extend auth/passport-config.ts (Recommended)" — matches the existing
+       strategy pattern at auth/strategies/local.ts; smallest delta
+     - "Replace with custom JWT" — full control, but 15 files currently use
+       req.session and would need rewriting
+   ```
+   The question carries the evidence; the user decides with the trade-off visible.
+
 **What you gain:**
 - Leverages existing code (faster implementation)
 - Consistent architecture (maintainable)

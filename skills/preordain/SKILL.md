@@ -195,6 +195,9 @@ bd create "[Initiative]: [Leaf Epic Name]" \
 ## Dependencies
 Depends on: [none | [Epic Name] (bd-[id]) must complete first because [reason]]
 
+## Provenance
+[Source: <planning-repo file> @ <commit SHA>, ingested <date> — or "<path> + <date>, unversioned" for untracked input — or "None because the initiative arrived as direct user input with no governing plan document"]
+
 ## Settled Decisions
 [Choices already made during preordain, each with rationale and what was
 rejected — the brainstorm session never reopens these. "None" if nothing
