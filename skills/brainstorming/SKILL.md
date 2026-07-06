@@ -110,6 +110,8 @@ Research dispatches inherit the session model — this is design-tier investigat
 
 **Design-time friction detection.** If the architect expresses structural friction during design — uncertainty about where responsibility belongs, coupling concerns, "feels off" comments, difficulty deciding between two component boundaries, mention of a "shim" or pattern contradiction — offer /intuition explicitly. Do NOT auto-redirect; the architect decides.
 
+**Plan-impact detection.** If design work reveals that an assumption from an upstream shared plan document is wrong or must change (a contract shape, a sibling-service boundary, a sequencing constraint), emit a plan-impact notice (format: `skills/common-patterns/loop-interfaces.md`) into the epic's bd notes and surface it at the next gate — the user carries it to the planning repo; sessions never write the shared docs.
+
 Suggested phrasing: *"This sounds like structural friction. /intuition can examine your architecture for tensions before you commit. If you'd like to run it, pass prose focus describing the area — e.g., 'examine the [A]/[B] boundary for tensions' — so /intuition can target evidence gathering. Continue with current design, or run /intuition?"*
 
 ---
@@ -306,7 +308,7 @@ For refactors: define the pattern during planning so each executor task is a mec
 
 **Hard ceiling: see `skills/common-patterns/pipeline-constants.md`. No exceptions.** Tasks estimated over the ceiling must be split.
 
-Do not create any tasks until the human approves the strategy.
+Do not create any tasks until the human approves the strategy. When pausing at this gate, emit the gate-state block — including any accumulated plan-impact notices — and persist it to the epic's bd notes (format: `skills/common-patterns/loop-interfaces.md`) — the approval must be answerable in durable prose whenever the user returns.
 
 ---
 
@@ -449,7 +451,7 @@ Task summary for [epic-id]:
 Ready to hand off to executing-plans?
 ```
 
-Wait for human confirmation before proceeding.
+Wait for human confirmation before proceeding. Persist this gate to the epic's bd notes as a gate-state block — including any accumulated plan-impact notices — (format: `skills/common-patterns/loop-interfaces.md`) so a fresh session can pick up the handoff.
 
 After confirmation, present the handoff:
 

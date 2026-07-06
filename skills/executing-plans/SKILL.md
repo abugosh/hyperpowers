@@ -158,6 +158,8 @@ Executor hit an obstacle it could not resolve. Assess the scope:
 
 **Task-level block** (wrong file path, ambiguous spec, missing fixture): Clarify and re-dispatch.
 
+**Upstream-plan mismatch:** If the block reveals that an assumption from a shared planning layer is wrong (a contract, schema, or interface the plan doc asserts), emit a plan-impact notice (format: `skills/common-patterns/loop-interfaces.md`) into the epic's bd notes in addition to handling the block — the user carries it to the planning repo; sessions never write the shared docs.
+
 **Auto-promotion rung:** If this is the task's first BLOCKED return and it is not already promoted, add `Executor: opus` to the task spec before re-dispatching and note the promotion in bd (e.g. `bd update <task-id> --notes "Auto-promoted to opus after BLOCKED"`). This is one rung below interrupting the user. A BLOCKED return is always a capability-class signal — the executor could not do the work — so it always qualifies for auto-promotion, unlike Stage 2 CONCERNS, which must be classified first (see Stage 2 above). A task that is already promoted does not promote again; its next BLOCKED goes straight to the consecutive-BLOCKED threshold below (count this BLOCKED toward that task's total like any other — promotion path does not reset or bypass the count).
 
 ```
@@ -210,7 +212,7 @@ Triggered when:
    - Current failure (what failed and why)
    - Remaining tasks affected
    - One recommendation: replan remaining tasks / revert and redesign / continue with adjustments
-3. **Wait for user decision.** Use AskUserQuestion. Do NOT continue without user input.
+3. **Persist the gate, then wait.** Emit the gate-state block — including any accumulated plan-impact notices — and write it to the epic's bd notes (format: `skills/common-patterns/loop-interfaces.md`) — the user may return hours later or in a different session, and the question must be answerable in durable prose. Then wait for the user decision. Do NOT continue without user input.
 4. **After user responds:** Execute the user's chosen path. If user says "continue as-is," resume from the next unfinished task. If the specific blocked task is still blocked, skip it and note it as deferred.
 
 **Do not redesign the plan autonomously.** Present options; the user decides.
@@ -238,7 +240,7 @@ After all tasks return DONE and pass two-stage review:
 
 3. Handle the verdict:
 
-   **APPROVED:** Present final status to user. Hand off to `/hyperpowers:finish-branch`.
+   **APPROVED:** Emit the completion gate-state block and persist it to the epic's bd notes (format: `skills/common-patterns/loop-interfaces.md`), including any accumulated plan-impact notices. Present final status to user. Hand off to `/hyperpowers:finish-branch`.
 
    **GAPS FOUND:** Create fix task(s) inline for each gap and dispatch executors — this is the one exception to "all tasks planned upfront." These gap-fix tasks follow the same dispatch and two-stage review loop. After all gaps resolved, re-dispatch reviewer.
 

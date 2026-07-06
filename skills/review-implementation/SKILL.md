@@ -616,6 +616,8 @@ Fix gaps or discuss with partner.
 Re-run review after fixes.
 ```
 
+**If the review reveals sibling-relevant divergence** — the implementation departed from an upstream shared plan in a way other services or epics depend on — emit a plan-impact notice (format: `skills/common-patterns/loop-interfaces.md`) into the epic's bd notes; the user carries it to the planning repo; sessions never write the shared docs.
+
 ---
 
 ## Step 5: Architecture Update Checklist

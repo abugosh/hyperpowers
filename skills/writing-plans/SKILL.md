@@ -208,6 +208,8 @@ Include in each step:
 [Full spec using two-tier template for the task's tier]
 ```
 
+When pausing at this approval gate, emit the gate-state block and persist it to the task's (or its epic's) bd notes (format: `skills/common-patterns/loop-interfaces.md`) — the approval must be answerable in durable prose whenever the user returns.
+
 **THEN ask for approval using AskUserQuestion:**
 - Question: "Is this expansion approved for bd-[N]?"
 - Options:
