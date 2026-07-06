@@ -277,7 +277,7 @@ Before claiming preordain session is complete:
 <integration>
 **Called from:**
 - Direct user invocation (`/hyperpowers:preordain`)
-- Brainstorming Step 6a sizing gate ("continue here, or escalate to /preordain?")
+- Brainstorming sizing gate — evaluated at Step 1 exit, re-checked at Step 6a ("continue here, or escalate to /preordain?")
 
 **Calls (never auto-invokes, always offers):**
 - `/hyperpowers:intuition` — offered at Step 4 if Architecture Impact Check has any YES

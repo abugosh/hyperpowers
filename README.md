@@ -15,7 +15,7 @@ Reusable workflows for common development tasks:
 - **consider** - Lightweight Socratic thinking partner for exploring ideas before committing to build; routes to brainstorming or intuition when ready
 - **brainstorming** - Interactive design refinement — produces the epic and the complete verified task tree, batch-reviewed by SRE
 - **writing-plans** - Expand or repair specs for tasks that lack them (gap-fixes, amendments) — off the standard flow
-- **executing-plans** - Lead reads upfront task list, dispatches fresh executor subagent (Sonnet) per task, runs two-stage review (spec + code quality) after each task
+- **executing-plans** - Lead reads upfront task list, dispatches fresh executor subagent (Sonnet by default, promotable) per task, runs two-stage review (spec + code quality) after each task
 - **review-implementation** - Verify implementation matches requirements
 - **finishing-a-development-branch** - Complete workflow for PR creation and cleanup
 - **sre-task-refinement** - Ensure all corner cases and requirements are understood; runs in batch against the full task tree during brainstorming
@@ -64,7 +64,7 @@ Quick access to key workflows:
 
 Domain-specific agents for complex tasks:
 
-- **executor** - Implements a single bd task; fresh Sonnet instance dispatched per task; reads self-contained task spec, implements, commits, returns one-liner status (DONE/BLOCKED/NEEDS_HELP) to lead
+- **executor** - Implements a single bd task; fresh instance dispatched per task (Sonnet by default, promotable per `skills/common-patterns/pipeline-constants.md`); reads self-contained task spec, implements, commits, returns one-liner status (DONE/BLOCKED/NEEDS_HELP) to lead
 - **reviewer** - Verifies implementation against bd epic spec; returns APPROVED or GAPS FOUND verdict
 - **code-reviewer** - Review implementations against plans and coding standards
 - **codebase-investigator** - Understand current codebase state and patterns
@@ -155,7 +155,7 @@ Claude: I'm using the brainstorming skill to refine your authentication requirem
 
 Claude: I'm using the executing-plans skill to orchestrate execution.
 
-[Dispatches fresh executor subagent (Sonnet) per task]
+[Dispatches fresh executor subagent per task — Sonnet by default, promotable]
 [Executor reads self-contained task spec, implements, commits, returns DONE/BLOCKED/NEEDS_HELP]
 [Lead runs two-stage review (spec check + code quality) after each task]
 
