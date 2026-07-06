@@ -104,7 +104,7 @@ git diff <base-SHA>    # Diff against the commit recorded before dispatch (Step 
 Read the diff for what only the lead can see and the reviewer cannot — the reviewer is never given the epic. Check for:
 - Violations of the epic's anti-patterns (FORBIDDEN list)
 - Watering-down of any immutable requirement
-- Contradictions with other tasks' already-completed work
+- Contradictions with other tasks — already-completed work, or assumptions that remaining tasks depend on
 
 Do not re-check whether the implementation matches the task spec line-by-line — that is Stage 2's job. If any check above fails: note the violation(s), re-dispatch with feedback (see Stage 1 feedback template below).
 
@@ -158,7 +158,7 @@ Executor hit an obstacle it could not resolve. Assess the scope:
 
 **Task-level block** (wrong file path, ambiguous spec, missing fixture): Clarify and re-dispatch.
 
-**Auto-promotion rung:** If this is the task's first BLOCKED return and it is not already promoted, add `Executor: opus` to the task spec before re-dispatching and note the promotion in bd (e.g. `bd update <task-id> --notes "Auto-promoted to opus after BLOCKED"`). This is one rung below interrupting the user. A BLOCKED return is always a capability-class signal — the executor could not do the work — so it always qualifies for auto-promotion, unlike Stage 2 CONCERNS, which must be classified first (see Stage 2 above). A task that is already promoted does not promote again; its next BLOCKED goes straight to the consecutive-BLOCKED threshold below.
+**Auto-promotion rung:** If this is the task's first BLOCKED return and it is not already promoted, add `Executor: opus` to the task spec before re-dispatching and note the promotion in bd (e.g. `bd update <task-id> --notes "Auto-promoted to opus after BLOCKED"`). This is one rung below interrupting the user. A BLOCKED return is always a capability-class signal — the executor could not do the work — so it always qualifies for auto-promotion, unlike Stage 2 CONCERNS, which must be classified first (see Stage 2 above). A task that is already promoted does not promote again; its next BLOCKED goes straight to the consecutive-BLOCKED threshold below (count this BLOCKED toward that task's total like any other — promotion path does not reset or bypass the count).
 
 ```
 Re-execute this task. The prior executor was blocked: <description>.
