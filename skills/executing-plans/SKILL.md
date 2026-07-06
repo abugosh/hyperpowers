@@ -158,6 +158,8 @@ Executor hit an obstacle it could not resolve. Assess the scope:
 
 **Task-level block** (wrong file path, ambiguous spec, missing fixture): Clarify and re-dispatch.
 
+**Upstream-plan mismatch:** If the block reveals that an assumption from a shared planning layer is wrong (a contract, schema, or interface the plan doc asserts), emit a plan-impact notice (format: `skills/common-patterns/loop-interfaces.md`) into the epic's bd notes in addition to handling the block — the user carries it to the planning repo; sessions never write the shared docs.
+
 **Auto-promotion rung:** If this is the task's first BLOCKED return and it is not already promoted, add `Executor: opus` to the task spec before re-dispatching and note the promotion in bd (e.g. `bd update <task-id> --notes "Auto-promoted to opus after BLOCKED"`). This is one rung below interrupting the user. A BLOCKED return is always a capability-class signal — the executor could not do the work — so it always qualifies for auto-promotion, unlike Stage 2 CONCERNS, which must be classified first (see Stage 2 above). A task that is already promoted does not promote again; its next BLOCKED goes straight to the consecutive-BLOCKED threshold below (count this BLOCKED toward that task's total like any other — promotion path does not reset or bypass the count).
 
 ```

@@ -110,6 +110,8 @@ Research dispatches inherit the session model — this is design-tier investigat
 
 **Design-time friction detection.** If the architect expresses structural friction during design — uncertainty about where responsibility belongs, coupling concerns, "feels off" comments, difficulty deciding between two component boundaries, mention of a "shim" or pattern contradiction — offer /intuition explicitly. Do NOT auto-redirect; the architect decides.
 
+**Plan-impact detection.** If design work reveals that an assumption from an upstream shared plan document is wrong or must change (a contract shape, a sibling-service boundary, a sequencing constraint), emit a plan-impact notice (format: `skills/common-patterns/loop-interfaces.md`) into the epic's bd notes and surface it at the next gate — the user carries it to the planning repo.
+
 Suggested phrasing: *"This sounds like structural friction. /intuition can examine your architecture for tensions before you commit. If you'd like to run it, pass prose focus describing the area — e.g., 'examine the [A]/[B] boundary for tensions' — so /intuition can target evidence gathering. Continue with current design, or run /intuition?"*
 
 ---
