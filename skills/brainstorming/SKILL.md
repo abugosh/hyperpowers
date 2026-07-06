@@ -27,7 +27,7 @@ HIGH FREEDOM - The 8-step order is fixed, but Socratic questioning within steps 
 <when_to_use>
 - User describes new feature to implement
 - User has rough idea that needs refinement
-- An upstream plan document (phase-doc slice) needs designing into an epic — provide it and Step 1 ingests it as a second entry
+- An upstream plan document (phase-doc slice) needs designing into an epic — provide it and Step 1 ingests it as a second entry (slice shape: `skills/common-patterns/brainstormable-unit.md`)
 - About to write code without clear requirements
 - Need to explore approaches before committing
 - Requirements exist but architecture unclear
@@ -54,7 +54,7 @@ HIGH FREEDOM - The 8-step order is fixed, but Socratic questioning within steps 
 - Resuming an epic whose design carries a Provenance section → verify the cited planning-repo file's current state first; if it changed since the recorded SHA, surface a provenance drift flag (signal policy: `skills/common-patterns/loop-interfaces.md`) before continuing.
 
 **Ingestion (document provided):**
-Read the document. Extract what binds this work — using the slice sections in `skills/common-patterns/brainstormable-unit.md` where the doc follows them (Deliverable, Requirements, Contracts, Boundaries, Settled Decisions, Open for Design) and best judgment where it doesn't. Record provenance at ingest: source file path plus its commit SHA (`git -C <planning-repo> rev-parse HEAD`); for untracked or unversioned input, fall back to path + date, flagged unversioned. Then play back the settled/open frontier: "Settled by the plan: [...]. Open for this session: [...]." **Never re-ask what the document settles** — the question round below covers only its Open-for-design items. Several epics may cite the same slice.
+Read the document. Extract what binds this work — using the slice sections in `skills/common-patterns/brainstormable-unit.md` where the doc follows them (Deliverable & Requirements, Contracts, Dependencies, Boundaries, Settled Decisions, Open for Design, Release Framing) and best judgment where it doesn't. Dependencies and Release Framing carry binding constraints too — sequencing and release-ordering are exactly what mid-execution BLOCKED returns trace back to. Record provenance at ingest: source file path plus its commit SHA (`git -C <planning-repo> rev-parse HEAD`); for untracked or unversioned input, fall back to path + date, flagged unversioned. Then play back the settled/open frontier: "Settled by the plan: [...]. Open for this session: [...]." **Never re-ask what the document settles** — the question round below covers only its Open-for-design items. Several epics may cite the same slice.
 
 **Investigate before questioning.** When the topic touches the codebase, dispatch research agents FIRST — before the first question — and share what you find. Bring information, offer an opinion, then ask: evidence-grounded questions ("passport-config.ts already handles sessions — extend it, or is this an excuse to go stateless?") reveal the hidden constraints that generic questions miss. Do not open with an interrogation.
 
