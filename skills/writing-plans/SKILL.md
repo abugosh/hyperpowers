@@ -237,7 +237,22 @@ Ready for execution.
 ```
 
 **Offer next step:**
-"Ready to proceed? I can optionally run hyperpowers:sre-task-refinement in single-task mode against the repaired spec(s), then use hyperpowers:executing-plans to implement."
+"Ready to proceed? I can optionally have the repaired spec(s) reviewed, then use hyperpowers:executing-plans to implement."
+
+If the user opts into review, dispatch it as a fresh subagent — this session repaired the specs, so the review must come from a context that did not:
+
+```
+Agent tool:
+  subagent_type: "general-purpose"
+  mode: "bypassPermissions"
+  prompt: |
+    Load the skill hyperpowers:sre-task-refinement with the Skill tool and
+    run its SINGLE-TASK MODE against <task-id(s)>. You may strengthen the
+    spec via bd update (no placeholders). Return your findings and any
+    updates applied.
+```
+
+Do not pass a model override — the review inherits the session model.
 
 </the_process>
 
@@ -328,20 +343,20 @@ npx jest tests/auth/test_auth.test.ts
 </example>
 
 <example>
-<scenario>Developer verifies codebase state themselves instead of using codebase-investigator agent</scenario>
+<scenario>Developer assumes codebase state instead of verifying it in either lane</scenario>
 
 <code>
-Developer reads files manually:
-- Reads src/services/auth.ts directly
-- Checks package.json manually
-- Assumes file structure based on quick look
+Developer skims and assumes:
+- Glances at src/services/auth.ts without reading the cited lines
+- Guesses at package.json contents
+- Assumes file structure from a quick look
 
-Writes expansion based on quick check:
+Writes expansion based on assumption:
 "Modify src/services/auth.ts (if exists)"
 </code>
 
 <why_it_fails>
-**Manual verification problems:**
+**Assumption problems:**
 - Misses nuances (existing functions, imports, structure)
 - Creates conditional steps ("if exists")
 - Doesn't catch version mismatches
@@ -382,7 +397,7 @@ Step 2: Use argon2 (already installed 0.31.2) not bcrypt
 (no assumption - investigator confirmed actual dependency)
 ```
 
-**Result:** Plan matches actual codebase state.
+**Result:** Plan matches actual codebase state. (The other lane: for the exact lines a spec will cite — e.g. "add after login() at line 28" — read the file directly before writing the step; a direct read is ground-truth, not assumption.)
 </correction>
 </example>
 
@@ -491,7 +506,7 @@ All of these mean: Stop, apply the rule:
 
 Before marking each task complete in TodoWrite:
 - [ ] Task classified as simple or medium
-- [ ] Used codebase-investigator agent (not manual verification)
+- [ ] Verified per the split-lane rule: investigator for broad questions, direct reads for exact edit sites — no unverified references
 - [ ] Spec uses correct two-tier template for classification
 - [ ] Spec includes Why section (both tiers)
 - [ ] Medium spec includes Boundaries section
@@ -514,7 +529,7 @@ Before finishing all tasks:
 <integration>
 
 **This skill calls:**
-- codebase-investigator (REQUIRED for each task verification)
+- codebase-investigator (broad structure questions during task verification; exact edit sites are read directly per the split-lane rule)
 
 **This skill is called by:**
 - hyperpowers:executing-plans (gap-fix path — a task surfaces mid-execution without a complete spec)
@@ -522,7 +537,7 @@ Before finishing all tasks:
 - The user directly (via /hyperpowers:write-plan command) — for tasks created outside the brainstorm flow, or specs needing repair
 
 **After this skill:**
-- Optionally run hyperpowers:sre-task-refinement in single-task mode against the repaired spec
+- Optionally dispatch a fresh subagent to run hyperpowers:sre-task-refinement in single-task mode against the repaired spec (see the dispatch block in section 3)
 - Then use hyperpowers:executing-plans to implement
 
 **Agents used:**
@@ -537,9 +552,10 @@ Before finishing all tasks:
 - [Task structure examples](resources/task-examples.md) (if exists)
 
 **When stuck:**
-- Unsure about file structure → Use codebase-investigator
-- Don't know version → Use codebase-investigator
-- Tempted to write "if exists" → Use codebase-investigator first
+- Unsure about file structure → Dispatch codebase-investigator (broad lane)
+- Don't know version → Dispatch codebase-investigator (broad lane)
+- About to cite an exact line or symbol → Read the file directly first (surgical lane)
+- Tempted to write "if exists" → Verify in the appropriate lane, then write the definitive step
 - About to write placeholder → Stop, write actual content
 - Want to ask permission → Check: Is this task validation or final choice? If neither, don't ask
 

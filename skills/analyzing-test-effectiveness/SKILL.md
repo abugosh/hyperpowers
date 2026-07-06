@@ -666,6 +666,8 @@ Agent tool:
     cross-task analysis, and the list of bd updates applied.
 ```
 
+Do not pass a model override — the review inherits the session model.
+
 The review applies all 8 categories to each task, especially:
 - **Category 8 (Test Meaningfulness)**: Verify the proposed tests actually catch bugs
 - **Category 6 (Edge Cases)**: Ensure corner cases are comprehensive
