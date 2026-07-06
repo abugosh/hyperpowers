@@ -18,7 +18,7 @@ HIGH FREEDOM - The 8-step order is fixed, but Socratic questioning within steps 
 | 2 | Research codebase and external patterns; propose 2-3 approaches | Recommended option with trade-offs documented |
 | 3 | Present design in sections (200-300 words each); friction detection | Validated architecture; /intuition offered if friction detected |
 | 4 | Architecture Impact Check (5 structural questions) | Impact recorded in epic; /intuition offered if any YES |
-| 5 | Create bd epic with IMMUTABLE requirements | Epic with 7 top-level sections and anti-patterns |
+| 5 | Create bd epic with IMMUTABLE requirements | Epic with 8 top-level sections (incl. Provenance) and anti-patterns |
 | 6 | Re-check sizing gate if scope grew; decomposition strategy approval; create complete task tree | All tasks planned upfront with simple/medium classification (spec depth) |
 | 7 | Dispatch fresh subagent for SRE batch review of full task tree | Refined task tree ready for handoff |
 | 8 | Present task summary, then hand off to executing-plans | Human reviews task list; lead orchestrates executor subagents on Sonnet |
@@ -109,6 +109,8 @@ Research dispatches inherit the session model — this is design-tier investigat
 
 **Plan-impact detection.** If design work reveals that an assumption from an upstream shared plan document is wrong or must change (a contract shape, a sibling-service boundary, a sequencing constraint), emit a plan-impact notice (format: `skills/common-patterns/loop-interfaces.md`) into the epic's bd notes and surface it at the next gate — the user carries it to the planning repo; sessions never write the shared docs.
 
+**Late binding.** If an idea-first session discovers mid-design that a shared plan document governs this area, ingest the relevant slice then: extract its binding constraints, record provenance (file + commit SHA, as in Step 1's ingestion block), and reconcile the design with the document's settled decisions before proceeding.
+
 Suggested phrasing: *"This sounds like structural friction. /intuition can examine your architecture for tensions before you commit. If you'd like to run it, pass prose focus describing the area — e.g., 'examine the [A]/[B] boundary for tensions' — so /intuition can target evidence gathering. Continue with current design, or run /intuition?"*
 
 ---
@@ -182,6 +184,9 @@ bd create "[Feature Name]" \
 - [ ] Moves responsibility between components — [YES/NO]
 
 Result: [N] boxes checked. /intuition [was offered and run / was offered and deferred / was not offered (0 checks)].
+
+## Provenance
+[Source: <planning-repo file> @ <commit SHA>, ingested <date> — or "<path> + <date>, unversioned" for untracked input — or "None because idea-first entry with no governing plan document"]
 
 ## Design Rationale
 
@@ -518,7 +523,7 @@ Before handing off to executing-plans:
 - [ ] Used AskUserQuestion for all clarifying questions
 - [ ] Researched codebase + external (when applicable); proposed 2-3 approaches
 - [ ] Architecture Impact Check done (Step 4); /intuition offered if 1+ YES or friction detected
-- [ ] bd epic has all 7 sections; Design Rationale has 6 subsections; every empty subsection has "None because [reason]"
+- [ ] bd epic has all 8 sections (incl. Provenance); Design Rationale has 6 subsections; every empty subsection has "None because [reason]"
 - [ ] Anti-patterns include reasoning ("NO X (reason: Y)")
 - [ ] Sizing gate checked; decomposition strategy proposed and approved by human; all tasks classified (simple/medium for spec depth) and linked to epic
 - [ ] Every task spec reference verified against the codebase before creation
