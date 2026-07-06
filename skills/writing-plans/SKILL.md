@@ -21,7 +21,7 @@ Adapt implementation details to actual codebase state. Never use placeholders or
 |------|--------|---------------|
 | **Identify Scope** | Single task, range, or full epic | No artificial limits |
 | **Classify** | Simple or Medium (bands: skills/common-patterns/pipeline-constants.md) | No task exceeds the ceiling in skills/common-patterns/pipeline-constants.md |
-| **Verify Codebase** | Use `codebase-investigator` agent | NEVER verify yourself, report discrepancies |
+| **Verify Codebase** | Investigator for broad questions; direct reads for exact edit sites | Never write unverified references |
 | **Draft Spec** | Use two-tier format for the task's tier | Must include Why section; medium must include Boundaries |
 | **Present to User** | Show COMPLETE expansion FIRST | Then ask for approval |
 | **Update bd** | `bd update bd-N --design "..."` | Only after user approves |
@@ -94,7 +94,7 @@ Time bands and the hard ceiling are defined in skills/common-patterns/pipeline-c
 
 ### 2c. Verify Codebase State
 
-**CRITICAL: Use codebase-investigator agent, NEVER verify yourself.**
+**CRITICAL: Never write unverified references.** Two lanes: broad structure questions (does a pattern already exist, the shape of a directory, dependency presence) → dispatch `codebase-investigator`. Exact edit sites you are about to write into a spec → read the file directly first — a direct read is ground-truth verification, not assumption. Never assume in either lane.
 
 Mechanical existence-verification like this may run on a cheap model — pass model haiku explicitly in the dispatch rather than inheriting silently.
 
@@ -458,9 +458,9 @@ bd show bd-4  # Read next task
    - Simple and Medium time bands are defined in skills/common-patterns/pipeline-constants.md — cite it, don't restate the numbers
    - If a task feels larger than the ceiling: flag it for splitting, do not expand it
 
-5. **Use codebase-investigator agent** → Never verify yourself
-   - Agent gets bd assumptions
-   - Agent reports discrepancies
+5. **Never write unverified references** → Broad questions go to codebase-investigator; exact edit sites get read directly before the spec names them
+   - Agent gets bd assumptions and reports discrepancies
+   - Direct reads confirm the exact lines a spec will cite
    - You adjust plan to match reality
 
 6. **Present COMPLETE expansion before asking** → User must SEE before approving
