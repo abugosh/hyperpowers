@@ -29,6 +29,7 @@ HIGH FREEDOM — Socratic questioning within steps adapts to context. The 6-step
 <when_to_use>
 - Initiative exceeds the sizing gate (thresholds defined in `skills/common-patterns/pipeline-constants.md`)
 - Brainstorming sizing gate triggered and user chose to escalate
+- An oversized phase-doc slice arrives as the initiative input (separability rule in `skills/common-patterns/brainstormable-unit.md`)
 - Multiple independent deliverables that could ship in separate epics
 - Initiative spans multiple teams or codebases that need coordination boundaries defined
 
@@ -167,10 +168,11 @@ This is a routing mechanism, not a gate — the architect can always proceed.
 
 After user confirms the decomposition (and any /intuition run), create each leaf epic in bd.
 
-**Each leaf epic must include:**
-- **Requirements** — What this leaf epic must achieve (immutable once set)
-- **Boundaries** — What belongs here vs. adjacent epics (prevents scope creep across epics)
-- **Depends on** — Which other leaf epic must complete first (or "none")
+**Each leaf epic renders the brainstormable unit** — the seed a design
+session needs to run without the author present. Section definitions live
+in `skills/common-patterns/brainstormable-unit.md` (Transport 2 — bd leaf
+epic); do not restate or reinterpret them here. Every section is addressed:
+"None" is a statement, omission is an accident.
 
 **Creation command:**
 ```bash
@@ -193,8 +195,20 @@ bd create "[Initiative]: [Leaf Epic Name]" \
 ## Dependencies
 Depends on: [none | [Epic Name] (bd-[id]) must complete first because [reason]]
 
+## Settled Decisions
+[Choices already made during preordain, each with rationale and what was
+rejected — the brainstorm session never reopens these. "None" if nothing
+is settled beyond the requirements.]
+
+## Open for Design
+[Questions this epic's brainstorm round is expected to answer. "None"
+means the design is fully settled.]
+
 ## Context for Brainstorming
-[Background the brainstorm session will need — existing components, constraints, integration points]
+[Background the brainstorm session will need — existing components,
+constraints, integration points. Fold contracts and release framing in
+here when the epic is single-service; give them their own headings when
+the epic touches cross-service contracts.]
 EOF
 )"
 ```
@@ -267,7 +281,7 @@ Before claiming preordain session is complete:
 - [ ] Presented decomposition to user and received explicit confirmation
 - [ ] Architecture Impact Check recorded (YES/NO for all 5 questions)
 - [ ] /intuition offered if any YES (and routing decision recorded)
-- [ ] All leaf epics created in bd with Requirements, Boundaries, Dependencies sections
+- [ ] All leaf epics created in bd rendering the brainstormable unit (Requirements, Boundaries, Dependencies, Settled Decisions, Open for Design, Context for Brainstorming)
 - [ ] Blocking dependencies set in bd for epics with ordering constraints
 - [ ] Handoff presented to user with suggested brainstorm order
 - [ ] No tasks created (only epics)
@@ -284,7 +298,7 @@ Before claiming preordain session is complete:
 - `/hyperpowers:brainstorm` — offered at Step 6 handoff; user decides when and which epic to start
 
 **Produces:**
-- Leaf epics in bd (each independently brainstormable)
+- Leaf epics in bd, each conforming to the brainstormable unit's bd transport (`skills/common-patterns/brainstormable-unit.md`) and independently brainstormable
 - Blocking dependencies between epics in bd
 - Architecture Impact Check recorded in session output
 

@@ -159,6 +159,7 @@ Specialized agents run in separate contexts to handle specific tasks:
 To avoid duplication, common elements are centralized in `skills/common-patterns/`:
 
 - `bd-commands.md` - Standard bd command examples
+- `brainstormable-unit.md` - The unit schema: seven sections, two transports (phase-doc slice, bd leaf epic), cold-session test, additive-only evolution
 - `common-anti-patterns.md` - Anti-patterns to avoid
 - `common-rationalizations.md` - Excuses that signal failure
 
@@ -171,6 +172,14 @@ Skills reference these rather than duplicating content.
 When the goal isn't yet clear — exploring whether to build something, clarifying problem framing, or thinking through an idea before committing:
 
 1. **Consider** (`/hyperpowers:consider`) - Thinking partner that actively investigates the codebase, shares findings, and offers opinions. Dispatches codebase-investigator proactively when topic touches code. Routes to /brainstorm (commit-to-build) or /intuition (structural friction) when ready. Clean exit valid if no commitment made.
+
+### Phase Planning (Multiservice / Planning Repo)
+
+For initiatives planned as phase documents in a dedicated planning repo shared with colleagues:
+
+1. **Portent** (`/hyperpowers:portent`) - Two verbs, run in a planning-repo session. `draft` structures roadmap thinking into a phase doc (phase overview + per-service slices); `check` audits an existing doc per slice (schema conformance, cold-session readiness, contract symmetry, release alignment). Signals only — flags and proposes, never decides, never writes service repos.
+
+Each slice conforms to the brainstormable-unit schema (`skills/common-patterns/brainstormable-unit.md`), which is also rendered as bd leaf epics by preordain — one schema, two transports. Phase docs are colleague-facing: they read as normal engineering planning docs with no plugin vocabulary.
 
 ### Feature Development (Greenfield)
 
