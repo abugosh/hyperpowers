@@ -106,7 +106,7 @@ The **test-runner** agent solves a common problem: running tests, validations, o
 pytest tests/  # 47 tests pass, prints everything
 
 # With test-runner agent: Your context gets clean summary
-Task("Run tests", "Run pytest tests/")
+Agent(subagent_type="hyperpowers:test-runner", prompt="Run pytest tests/")
 # Agent returns: "✓ 47 tests passed, 0 failed. Exit code 0."
 ```
 

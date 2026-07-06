@@ -17,11 +17,15 @@ single most-dropped step in plugin development.
 import json
 import os
 import re
+import shlex
 import subprocess
 import sys
 
 WATCHED = ("skills/", "agents/", "commands/", "hooks/", "CLAUDE.md", "README.md")
 PLUGIN_MANIFEST = os.path.join(".claude-plugin", "plugin.json")
+
+# git global options that consume the following token
+GIT_OPTS_WITH_ARG = ("-C", "-c", "--git-dir", "--work-tree", "--exec-path", "--namespace")
 
 
 def run_git(args, cwd):
@@ -33,6 +37,66 @@ def run_git(args, cwd):
     return result.stdout.strip()
 
 
+def parse_push_invocations(command):
+    """Return a list of positional-arg lists, one per actual `git ... push`
+    invocation in the command. Substring mentions of "push" (echoed text,
+    commit messages, grep patterns) never match: each shell segment is
+    shlex-tokenized and `push` must be git's subcommand token.
+
+    Returns [] when no real push invocation exists. Raises on untokenizable
+    input (caller fails open)."""
+    invocations = []
+    for segment in re.split(r"(?:&&|\|\||[;|&\n])", command):
+        segment = segment.strip()
+        if not segment:
+            continue
+        try:
+            tokens = shlex.split(segment)
+        except ValueError:
+            continue  # unparseable segment: fail open for this segment
+        # skip leading env assignments (VAR=value git push ...)
+        while tokens and re.match(r"^[A-Za-z_][A-Za-z0-9_]*=", tokens[0]):
+            tokens = tokens[1:]
+        if not tokens or os.path.basename(tokens[0]) != "git":
+            continue
+        rest = tokens[1:]
+        # consume git global options to find the subcommand
+        i = 0
+        while i < len(rest):
+            tok = rest[i]
+            if tok in GIT_OPTS_WITH_ARG:
+                i += 2
+                continue
+            if tok.startswith("-"):
+                i += 1
+                continue
+            break
+        if i >= len(rest) or rest[i] != "push":
+            continue
+        invocations.append(rest[i + 1:])
+    return invocations
+
+
+def push_targets_default_branch(push_args, current_branch):
+    """True when this push touches main/master: explicit refspec destinations
+    are checked by literal equality; without refspecs the current branch is
+    what gets pushed."""
+    positionals = [t for t in push_args if not t.startswith("-")]
+    refspecs = positionals[1:]  # first positional is the remote
+    if not refspecs:
+        return current_branch in ("main", "master")
+    for spec in refspecs:
+        dest = spec.split(":", 1)[1] if ":" in spec else spec
+        dest = dest.strip("+")
+        if dest.startswith("refs/heads/"):
+            dest = dest[len("refs/heads/"):]
+        if dest == "HEAD":
+            dest = current_branch
+        if dest in ("main", "master"):
+            return True
+    return False
+
+
 def main():
     input_data = json.load(sys.stdin)
 
@@ -40,9 +104,13 @@ def main():
         sys.exit(0)
 
     command = input_data.get("tool_input", {}).get("command", "")
-    if not re.search(r"\bgit\b[^\n;|&]*\bpush\b", command):
+    if "git" not in command or "push" not in command:
+        sys.exit(0)  # cheap pre-filter only; real detection is structural
+
+    push_invocations = parse_push_invocations(command)
+    if not push_invocations:
         sys.exit(0)
-    if "--dry-run" in command:
+    if any("--dry-run" in args for args in push_invocations):
         sys.exit(0)
 
     cwd = input_data.get("cwd") or os.getcwd()
@@ -55,11 +123,13 @@ def main():
     if not os.path.isfile(os.path.join(repo_root, PLUGIN_MANIFEST)):
         sys.exit(0)
 
-    # Only guard pushes of the default branch — the version-bump rule targets
-    # the final push. Mid-epic feature-branch pushes stay free (false-deny bias).
-    branch = run_git(["rev-parse", "--abbrev-ref", "HEAD"], repo_root)
-    if branch not in ("main", "master") and not re.search(
-        r"\b(main|master)\b", command
+    # Only guard pushes that touch the default branch — the version-bump rule
+    # targets the final push. Mid-epic feature-branch pushes stay free
+    # (false-deny bias). Branch and refspec checks are literal equality on
+    # parsed tokens, never substring scans.
+    branch = run_git(["rev-parse", "--abbrev-ref", "HEAD"], repo_root) or ""
+    if not any(
+        push_targets_default_branch(args, branch) for args in push_invocations
     ):
         sys.exit(0)
 

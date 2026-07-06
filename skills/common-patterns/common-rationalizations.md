@@ -85,6 +85,20 @@ These rationalizations appear across multiple contexts. When you catch yourself 
 | "I know this codebase" | You don't know current state. Always verify. |
 | "Obvious solution, skip research" | Codebase may have established pattern. Check first. |
 
+## Skill Routing Shortcuts
+
+| Excuse | Reality |
+|--------|---------|
+| "This is just a simple question" | Questions are tasks. Check the routing table. |
+| "I can check git/files quickly" | Files lack context. Check for skills first. |
+| "Let me gather information first" | Skills tell you HOW to gather. Check first. |
+| "This doesn't need a formal skill" | If a skill exists, using it is mandatory. |
+| "I remember this skill" | Skills evolve. Load the current version via the Skill tool. |
+| "This doesn't count as a task" | Taking action = task. Check the routing table. |
+| "The skill is overkill for this" | Skills exist because "simple" becomes complex. |
+| "I'll just do this one thing first" | Check for skills BEFORE doing anything. |
+| "Instruction was specific so I can skip the workflow" | Specific instructions = WHAT, not HOW. Route through the table. |
+
 **All of these mean: STOP. Follow the requirements exactly.**
 
 ## Why This Matters

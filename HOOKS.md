@@ -43,8 +43,8 @@ Relevant agents for this prompt:
 
 💾 **hyperpowers:test-runner** (medium priority)
 
-Use the Task tool for agents: `Task(subagent_type="hyperpowers:<agent-name>", ...)`
-Example: `Task(subagent_type="hyperpowers:test-runner", prompt="Run: git commit...", ...)`
+Use the Agent tool for agents: `Agent(subagent_type="hyperpowers:<agent-name>", ...)`
+Example: `Agent(subagent_type="hyperpowers:test-runner", prompt="Run: git commit...", ...)`
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 

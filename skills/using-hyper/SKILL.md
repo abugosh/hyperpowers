@@ -75,7 +75,7 @@ A matching row is a mandate, not a suggestion: you MUST load and follow that cha
 
 Red flags that you are rationalizing: "instruction was specific", "seems simple", "workflow is overkill". Workflows matter MORE when instructions are specific — clear requirements are the perfect input for the structured path, and skipping process on "easy" tasks is how they become hard problems.
 
-The full excuse catalog lives in `skills/common-patterns/common-rationalizations.md` — any excuse you catch yourself making means STOP and use the skill. The classics: "this is just a simple question" (questions are tasks — check the table), "I remember this skill" (skills evolve — load it), "I'll just do this one thing first" (check BEFORE doing anything).
+The full excuse catalog lives in `skills/common-patterns/common-rationalizations.md` (see its Skill Routing Shortcuts) — any excuse you catch yourself making means STOP and use the skill. The classics: "This is just a simple question" (questions are tasks — check the table), "I remember this skill" (skills evolve — load it), "I'll just do this one thing first" (check BEFORE doing anything).
 </instructions_vs_workflows>
 
 <understanding_rigidity>
