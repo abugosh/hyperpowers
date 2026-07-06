@@ -312,6 +312,23 @@ Do not create any tasks until the human approves the strategy.
 
 Create ALL tasks for the epic upfront. Every task must be classified as **simple** or **medium** (time bands defined in `skills/common-patterns/pipeline-constants.md`) and linked to the epic.
 
+**Pre-create verification (MANDATORY):** Before any task is created in bd, verify every file, section, and symbol its spec references against the actual codebase — for each drafted task:
+
+- **Broad structure questions** (does a pattern already exist, what's the shape of a directory, is a dependency present) → dispatch `hyperpowers:codebase-investigator`. Report findings as:
+  - ✓ Confirmed assumptions → use in the spec as drafted
+  - ✗ Incorrect assumptions → adjust the spec to match reality
+  - + Found additional → document and incorporate
+- **Exact edit sites** (the specific file/line/function a Changes or Implementation entry will name) → read directly with the Read tool before writing the exact change into the spec.
+- Adjust drafts to match what verification found before moving on to the next task.
+
+**Conditional steps are forbidden.** Every Changes/Implementation line states a definitive action against a verified target.
+
+❌ "Update `index.js` if exists"
+❌ "Modify `config.py` (if present)"
+
+✅ "Create `src/auth.ts`" (verified: doesn't exist)
+✅ "Modify `src/index.ts:45`" (verified: exists)
+
 **Simple task spec** — Goal, Why, Changes, Verification:
 
 ```bash
@@ -464,6 +481,7 @@ Worked examples (skipped-research, upfront-task-tree, missing-anti-patterns) liv
 8. **Offer /intuition when design-time friction detected** → Architect-decides routing, not a gate
 9. **Architecture Impact Check required before epic finalization** → 5 questions, record result in epic, offer /intuition if any YES
 10. **Subsection 'None' requires grounded justification** → "None because [specific reason]"; bare "None" enables skip-thinking
+11. **No task created with unverified references** → Verify files, sections, and symbols before bd create
 
 **Common excuses that mean STOP and follow the process:**
 - "Requirements obvious, don't need questions" — Questions reveal hidden complexity
@@ -486,6 +504,7 @@ Before handing off to executing-plans:
 - [ ] bd epic has all 7 sections; Design Rationale has 6 subsections; every empty subsection has "None because [reason]"
 - [ ] Anti-patterns include reasoning ("NO X (reason: Y)")
 - [ ] Sizing gate checked; decomposition strategy proposed and approved by human; all tasks classified (simple/medium for spec depth) and linked to epic
+- [ ] Every task spec reference verified against the codebase before creation
 - [ ] Batch SRE review run against full task tree; refinements applied
 - [ ] Announced handoff to executing-plans
 
