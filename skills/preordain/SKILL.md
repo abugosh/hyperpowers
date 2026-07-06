@@ -59,22 +59,7 @@ Ask focused questions to understand what the user wants to build and why. Use th
 - Are there ordering constraints — work that must ship before other work can start?
 - What's the timeline or priority?
 
-**Question format:**
-```
-Question: [Clear question ending with ?]
-Options:
-  A. [Option] (Recommended) - [Why this is the default]
-  B. [Option] - [Trade-off]
-  C. Other (please specify)
-
-Priority: CRITICAL | IMPORTANT | NICE_TO_HAVE
-```
-
-**Guidelines:**
-- 1-5 questions maximum per round
-- One CRITICAL question at a time; group IMPORTANT/NICE_TO_HAVE
-- Stop when the initiative scope and success condition are clear
-- Record each answer in a "Key Decisions Made" running log
+**Question format:** follow `skills/common-patterns/question-format.md` (AskUserQuestion-native; at most 4 per round; recommended option first with evidence; one critical/blocking question at a time). Stop when the initiative scope and success condition are clear. Record each answer in a "Key Decisions Made" running log.
 
 ---
 
@@ -143,24 +128,10 @@ Continue decomposing until every proposed leaf epic would pass the brainstorming
 
 ## Step 4 — Architecture Impact Check at Initiative Level
 
-After decomposition is agreed, ask these 5 structural questions against the entire initiative (not per leaf epic):
+After decomposition is agreed, run the Architecture Impact Check against the entire initiative (not per leaf epic). The 5 questions, recording rule, and routing live in `skills/common-patterns/architecture-impact-check.md` — do not restate them.
 
-1. Creates a new component/module?
-2. Changes the public interface of an existing component?
-3. Adds or removes a cross-component dependency?
-4. Creates a new request path through 2 or more components?
-5. Moves responsibility from one component to another?
-
-Record YES/NO for each.
-
-**Routing:**
-- 0 boxes checked → proceed to epic creation
-- 1+ boxes checked → offer /intuition before creating epics. Pass prose focus naming the initiative-level tensions. Architect decides; record the routing decision.
-
-Suggested phrasing:
+Suggested phrasing when 1+ YES:
 *"This initiative touches [components] in ways that suggest structural changes. /intuition can examine the architecture for tensions before you commit leaf epics. If you'd like to run it, pass prose focus — e.g., 'examine the [A]/[B] boundary under the [initiative] initiative'. Continue with decomposition, or run /intuition first?"*
-
-This is a routing mechanism, not a gate — the architect can always proceed.
 
 ---
 

@@ -58,12 +58,7 @@ Read the document. Extract what binds this work — using the slice sections in 
 
 **Investigate before questioning.** When the topic touches the codebase, dispatch research agents FIRST — before the first question — and share what you find. Bring information, offer an opinion, then ask: evidence-grounded questions ("passport-config.ts already handles sessions — extend it, or is this an excuse to go stateless?") reveal the hidden constraints that generic questions miss. Do not open with an interrogation.
 
-**Questioning (AskUserQuestion tool — do not print questions and wait):**
-- At most 4 questions per round; multiple choice preferred
-- Put your recommended option FIRST, labeled "(Recommended)", with the evidence for it in the description
-- Ask one critical/blocking question at a time; group lesser ones
-- Stop once the design space is clear — remaining minor unknowns become Open Questions in the epic
-- An expired question box is not an answer: the user may be in another window. Re-ask in durable prose and hold at the gate patiently (`skills/common-patterns/loop-interfaces.md`)
+**Questioning:** follow `skills/common-patterns/question-format.md` (AskUserQuestion-native; at most 4 per round; recommended option first with evidence; one critical/blocking question at a time; expired box is not an answer — re-ask in durable prose and hold at the gate).
 
 **As each question is answered, record in "Key Decisions Made":**
 - Question asked
@@ -117,21 +112,7 @@ Suggested phrasing: *"This sounds like structural friction. /intuition can exami
 
 ## Step 4 — Architecture Impact Check
 
-After the design is validated, ask these 5 structural questions against the designed solution:
-
-1. Creates a new component/module?
-2. Changes the public interface of an existing component?
-3. Adds or removes a cross-component dependency?
-4. Creates a new request path through 2 or more components?
-5. Moves responsibility from one component to another?
-
-Record YES/NO for each in the epic's Architecture Impact section (Step 5 template).
-
-**Routing:**
-- 0 boxes checked → proceed to epic creation
-- 1+ boxes checked → offer /intuition before epic creation. Pass prose focus naming the affected components. Architect decides; record the routing decision in the epic.
-
-This is a routing mechanism, not a gate — the architect can always proceed.
+After the design is validated, run the Architecture Impact Check against the designed solution. The 5 questions, recording rule, and routing live in `skills/common-patterns/architecture-impact-check.md` — do not restate them. Record YES/NO for each in the epic's Architecture Impact section (Step 5 template); if 1+ YES, offer /intuition per that file's routing.
 
 ---
 
@@ -175,15 +156,15 @@ bd create "[Feature Name]" \
 [Key components, data flow, integration points, affected files]
 
 ## Architecture Impact
-(Result of Step 4 Architecture Impact Check)
+(Step 4 result — questions per skills/common-patterns/architecture-impact-check.md)
 
-- [ ] Creates a new component/module — [YES/NO]
-- [ ] Changes public interface of existing component — [YES/NO]
-- [ ] Adds/removes cross-component dependency — [YES/NO]
-- [ ] Creates new request path through 2+ components — [YES/NO]
-- [ ] Moves responsibility between components — [YES/NO]
+- Q1 new component: [YES/NO]
+- Q2 public interface change: [YES/NO]
+- Q3 cross-component dependency added/removed: [YES/NO]
+- Q4 new request path (2+ components): [YES/NO]
+- Q5 responsibility moved: [YES/NO]
 
-Result: [N] boxes checked. /intuition [was offered and run / was offered and deferred / was not offered (0 checks)].
+Result: [N] YES. /intuition [was offered and run / was offered and deferred / was not offered (0 YES)].
 
 ## Provenance
 [Source: <planning-repo file> @ <commit SHA>, ingested <date> — or "<path> + <date>, unversioned" for untracked input — or "None because idea-first entry with no governing plan document"]
