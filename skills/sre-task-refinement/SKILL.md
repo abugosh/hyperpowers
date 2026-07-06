@@ -462,7 +462,7 @@ After reviewing all tasks:
 
 #### [Task Name] (bd-N)
 **Type**: [epic/feature/task]
-**Classification**: [simple (2-5 min) / medium (5-30 min)]
+**Classification**: [simple / medium]
 **Status**: [✅ Ready / ⚠️ Needs Minor Improvements / ❌ Needs Major Revision]
 **Estimated Effort**: [X min] ([✅ Within range / ❌ Too large - needs breakdown])
 
