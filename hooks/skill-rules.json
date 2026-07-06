@@ -246,19 +246,6 @@
       ]
     }
   },
-  "using-hyper": {
-    "type": "process",
-    "enforcement": "suggest",
-    "priority": "critical",
-    "promptTriggers": {
-      "keywords": ["start", "begin", "first time", "how to use"],
-      "intentPatterns": [
-        "(start|begin|first).*?(conversation|task|work)",
-        "how.*?use.*?(skills|hyper)",
-        "getting started"
-      ]
-    }
-  },
   "writing-skills": {
     "type": "workflow",
     "enforcement": "suggest",

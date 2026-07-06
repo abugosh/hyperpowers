@@ -90,10 +90,6 @@ All regex patterns in skill-rules.json have been designed to avoid catastrophic 
 - `(mock|stub|fake).*?(behavior|dependency)` - Safe: lazy quantifier
 - `test.*?only.*?method` - Safe: lazy quantifier
 
-**using-hyper**
-- `(start|begin|first).*?(conversation|task|work)` - Safe: lazy quantifier
-- `how.*?use.*?(skills|hyper)` - Safe: lazy quantifier
-
 **writing-skills**
 - `(create|write|build|edit).*?skill` - Safe: lazy quantifier, close proximity
 
