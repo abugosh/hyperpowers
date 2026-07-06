@@ -71,9 +71,10 @@ Track the refactoring work:
 ```bash
 bd create "Refactor: Extract user validation logic" \
   --type task \
-  --priority P2
+  --priority P2 \
+  --description "Deduplicate validation logic shared by 3 services"
 
-bd edit bd-456 --design "
+bd update bd-456 --design "
 ## Goal
 Extract user validation logic from UserService into separate Validator class.
 
@@ -246,7 +247,7 @@ git diff main...HEAD
 **Close bd task:**
 
 ```bash
-bd edit bd-456 --design "
+bd update bd-456 --design "
 ... (append to existing design)
 
 ## Completed

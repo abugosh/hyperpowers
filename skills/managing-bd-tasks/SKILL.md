@@ -56,7 +56,8 @@ Use this skill for **advanced** bd operations:
 # Already completed: Login form
 # Remaining work gets split:
 
-bd create "Auth API endpoints" --type task --priority P1 --design "
+bd create "Auth API endpoints" --type task --priority P1 \
+  --description "Login/logout endpoints split out of bd-5" --design "
 POST /api/login and POST /api/logout endpoints.
 ## Success Criteria
 - [ ] POST /api/login validates credentials, returns JWT
@@ -65,7 +66,8 @@ POST /api/login and POST /api/logout endpoints.
 "
 # Returns bd-12
 
-bd create "Session management" --type task --priority P1 --design "
+bd create "Session management" --type task --priority P1 \
+  --description "JWT session tracking split out of bd-5" --design "
 JWT token tracking and validation.
 ## Success Criteria
 - [ ] JWT generated on login
@@ -75,7 +77,8 @@ JWT token tracking and validation.
 "
 # Returns bd-13
 
-bd create "Password hashing" --type task --priority P1 --design "
+bd create "Password hashing" --type task --priority P1 \
+  --description "bcrypt hashing split out of bd-5" --design "
 Secure password hashing with bcrypt.
 ## Success Criteria
 - [ ] Passwords hashed before storage
@@ -102,7 +105,7 @@ bd dep tree bd-5
 ### Step 3: Update original task and close
 
 ```bash
-bd edit bd-5 --design "
+bd update bd-5 --design "
 Implement user authentication.
 
 ## Status
@@ -161,7 +164,7 @@ bd show bd-7
 bd show bd-9
 
 # Combine into bd-7
-bd edit bd-7 --design "
+bd update bd-7 --design "
 Add email validation to user creation and update.
 
 ## Background
@@ -193,7 +196,7 @@ bd dep add bd-10 bd-7
 ### Step 4: Close duplicate with reference
 
 ```bash
-bd edit bd-9 --design "DUPLICATE: Merged into bd-7
+bd update bd-9 --design "DUPLICATE: Merged into bd-7
 
 This task was duplicate of bd-7. All work tracked there."
 
@@ -386,7 +389,7 @@ bd dep add bd-10 bd-9     # Add correct
 git log -p -- .beads/issues.jsonl | grep -A 50 "bd-10"
 # Find previous version, copy
 
-bd edit bd-10 --design "[paste previous]"
+bd update bd-10 --design "[paste previous]"
 ```
 
 ### Epic structure wrong
@@ -433,7 +436,7 @@ bd show bd-7  # Only mentions validation on creation
 bd show bd-9  # Mentions validation on update too
 
 # Merge information
-bd edit bd-7 --design "
+bd update bd-7 --design "
 Email validation for user creation and update.
 
 ## Background
@@ -446,7 +449,7 @@ Merged from bd-9.
 "
 
 # Then close duplicate with reference
-bd edit bd-9 --design "DUPLICATE: Merged into bd-7"
+bd update bd-9 --design "DUPLICATE: Merged into bd-7"
 bd close bd-9
 ```
 
@@ -494,7 +497,7 @@ bd-15: "Implement payment processing" (started)
 ```bash
 # 3 hours in, stop and split
 
-bd edit bd-15 --design "
+bd update bd-15 --design "
 Implement payment processing.
 
 ## Status
@@ -585,7 +588,7 @@ bd create "Analytics API endpoints" ...  # bd-20
 bd dep add bd-15 bd-20
 
 # UPDATE bd-15 to document new requirement
-bd edit bd-15 --design "
+bd update bd-15 --design "
 Add analytics to dashboard.
 
 ## Dependencies

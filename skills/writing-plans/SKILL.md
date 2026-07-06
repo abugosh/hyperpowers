@@ -70,7 +70,7 @@ bd dep tree bd-1  # View complete dependency tree
 ### 2a. Mark In Progress and Read Current State
 
 ```bash
-# Mark in TodoWrite: in_progress
+# Mark in the tracker: in_progress
 bd show bd-3  # Read current task design
 ```
 
@@ -128,66 +128,7 @@ Verify these assumptions and report:
 
 ### 2d. Draft the Task Spec (Two-Tier Format)
 
-Use the template for the task's tier. Both tiers REQUIRE a Why section.
-
----
-
-**Simple task spec template:**
-
-```markdown
-## Goal
-[One sentence: what changes]
-
-## Why
-[How this task fits into the epic — what breaks if it is skipped]
-
-## Changes
-- `exact/path/to/file.ext` line N: [exact change, complete replacement text]
-- `exact/path/to/other.ext`: [add/remove/replace what]
-
-## Verification
-[Exact command to confirm the change is correct, e.g. grep, test run, or manual check]
-```
-
----
-
-**Medium task spec template:**
-
-```markdown
-## Goal
-[One sentence: what is delivered]
-
-## Why
-[How this task fits into the epic — what depends on it, what breaks if skipped]
-
-## Context
-[Key files, functions, or patterns the executor must read before starting]
-
-## Implementation guidance
-[Step-by-step: what to create/modify/delete, with exact file paths. Follow the spec-depth rule (skills/common-patterns/pipeline-constants.md): write intent — goal, constraints, test cases, verification commands, boundaries. Complete code only where this session verified the exact site during planning.]
-
-For new features (TDD):
-1. Write the failing test
-2. Run to confirm RED
-3. Implement minimal code
-4. Run to confirm GREEN
-5. Refactor, keep green
-
-Include in each step:
-- Exact file path
-- Complete code where this session verified the exact site; otherwise the constraints and expected shape, per the spec-depth rule
-- Exact command to run
-- Expected output
-
-## Tests
-[Which tests to write and what they must assert — omit this section for pure-documentation tasks]
-
-## Verification
-[Exact commands to confirm all success criteria]
-
-## Boundaries
-[What is explicitly out of scope for this task]
-```
+Use the template for the task's tier from `skills/common-patterns/spec-templates.md` — the single source for both tiers (simple: Goal, Why, Changes, Verification; medium: Goal, Why, Context, Implementation, Tests, Verification, Boundaries). Both tiers REQUIRE a Why section. The canonical medium field name is `## Implementation`. Do not restate or improvise the templates here.
 
 ---
 
@@ -221,13 +162,13 @@ When pausing at this approval gate, emit the gate-state block and persist it to 
 
 ```bash
 bd update bd-3 --design "[paste complete expansion]"
-# Mark completed in TodoWrite
+# Mark completed in the tracker
 # IMMEDIATELY continue to next task (NO asking permission)
 ```
 
 ### 2g. If Needs Revision: Iterate
 
-- Keep as in_progress in TodoWrite
+- Keep as in_progress in the tracker
 - Revise based on feedback
 - Present again (step 2e)
 
@@ -304,7 +245,7 @@ The executing-plans skill dispatches a fresh executor per task. Session cleanup 
 - tests/auth/test_auth.test.ts — existing test file for this service
 - argon2 (0.31.2) is installed; no new dependencies needed
 
-## Implementation guidance
+## Implementation
 
 ### Step 1: Write failing test
 # tests/auth/test_auth.test.ts — add at end of file:
@@ -420,7 +361,7 @@ Should I continue to bd-4 now? What's your preference?"
 - Unnecessary interruption
 - User has to respond multiple times
 - Slows down batch processing
-- TodoWrite list IS the plan
+- The tracker list IS the plan
 
 **Why it happens:** Over-asking for permission instead of executing the plan.
 </why_it_fails>
@@ -430,7 +371,7 @@ Should I continue to bd-4 now? What's your preference?"
 
 ```bash
 bd update bd-3 --design "[expansion]"  # Update bd
-# Mark completed in TodoWrite
+# Mark completed in the tracker
 ```
 
 **IMMEDIATELY continue to bd-4:**
@@ -486,7 +427,7 @@ bd show bd-4  # Read next task
    - Never ask without showing first
 
 7. **Continue automatically between validations** → Don't ask permission
-   - TodoWrite list IS your plan
+   - The tracker list IS your plan
    - Execute it completely
    - Only ask: (a) task validation, (b) final next-step offer
 
@@ -506,7 +447,7 @@ All of these mean: Stop, apply the rule:
 
 <verification_checklist>
 
-Before marking each task complete in TodoWrite:
+Before marking each task complete in the tracker:
 - [ ] Task classified as simple or medium
 - [ ] Verified per the split-lane rule: investigator for broad questions, direct reads for exact edit sites — no unverified references
 - [ ] Spec uses correct two-tier template for classification
@@ -519,7 +460,7 @@ Before marking each task complete in TodoWrite:
 - [ ] No meta-references in design field
 
 Before finishing all tasks:
-- [ ] All tasks in TodoWrite marked completed
+- [ ] All tasks marked completed in the tracker
 - [ ] All bd tasks updated with two-tier specs
 - [ ] No task exceeds the hard ceiling in skills/common-patterns/pipeline-constants.md
 - [ ] No conditional steps ("if exists")

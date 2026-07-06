@@ -85,7 +85,7 @@ for dir in src/*/; do
 done
 ```
 
-**Create inventory TodoWrite:**
+**Create inventory in the repo's tracker (bd when the repo uses beads, TodoWrite otherwise):**
 ```
 - Analyze tests in src/auth/
 - Analyze tests in src/api/
@@ -530,6 +530,7 @@ For each module, identify missing corner case tests:
 bd create "Test Quality Improvement: [Module/Project]" \
   --type epic \
   --priority 1 \
+  --description "Remove tautological tests, strengthen weak ones, add missing corner cases" \
   --design "$(cat <<'EOF'
 ## Goal
 Improve test effectiveness by removing tautological tests, strengthening weak tests, and adding missing corner case coverage.
@@ -560,6 +561,7 @@ EOF
 bd create "Remove tautological tests from [module]" \
   --type task \
   --priority 0 \
+  --description "Delete RED-rated tests that pass regardless of code correctness" \
   --design "$(cat <<'EOF'
 ## Goal
 Remove tests that provide false confidence by passing regardless of code correctness.
@@ -589,6 +591,7 @@ EOF
 bd create "Strengthen weak assertions in [module]" \
   --type task \
   --priority 1 \
+  --description "Replace YELLOW-rated weak assertions with exact value checks" \
   --design "$(cat <<'EOF'
 ## Goal
 Replace weak assertions with meaningful ones that catch real bugs.
@@ -621,6 +624,7 @@ EOF
 bd create "Add missing corner case tests for [module]" \
   --type task \
   --priority 1 \
+  --description "Cover P0 corner cases that could cause production bugs" \
   --design "$(cat <<'EOF'
 ## Goal
 Add tests for corner cases that could cause production bugs.
@@ -692,6 +696,7 @@ bd dep add bd-4 bd-3  # add depends on strengthen
 bd create "Validate test improvements with mutation testing" \
   --type task \
   --priority 1 \
+  --description "Prove the improved suite catches more bugs via mutation score" \
   --design "$(cat <<'EOF'
 ## Goal
 Verify test improvements actually catch more bugs using mutation testing.

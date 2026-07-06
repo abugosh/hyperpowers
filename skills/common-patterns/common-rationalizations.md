@@ -41,19 +41,19 @@ These rationalizations appear across multiple contexts. When you catch yourself 
 | "Can skip exploring alternatives" | Comparison reveals issues. Always propose 2-3. |
 | "Partner knows what they want" | Questions reveal hidden constraints. Always ask. |
 | "Whole design at once for efficiency" | Incremental validation catches problems early. |
-| "Checklist is just suggestion" | Create TodoWrite todos. Track properly. |
+| "Checklist is just suggestion" | Track every item in the repo's tracker (bd when beads is present, TodoWrite otherwise). |
 | "Subtask can reference parent for details" | NO. Subtasks must be complete. NO placeholders, NO "see parent". |
 | "I'll use placeholder and fill in later" | NO. Write actual content NOW. No meta-references like "[detailed above]". |
 | "Design field is too long, use placeholder" | Length doesn't matter. Write full content. Placeholder defeats the purpose. |
-| "Should I continue to the next task?" | YES. You have a TodoWrite plan. Execute it. Don't interrupt your own workflow. |
+| "Should I continue to the next task?" | YES. You have a tracked plan. Execute it. Don't interrupt your own workflow. |
 | "Let me ask user's preference for remaining tasks" | NO. The user gave you the work. Do it. Only ask at natural completion points. |
-| "Should I stop here or keep going?" | Your TodoWrite list tells you. If tasks remain, continue. |
+| "Should I stop here or keep going?" | Your tracker tells you. If tasks remain, continue. |
 
 ## Execution Shortcuts
 
 | Excuse | Reality |
 |--------|---------|
-| "Task is tracked in TodoWrite, don't need step tracking" | Tasks have 4-8 implementation steps. Without substep tracking, steps 4-8 get skipped. |
+| "Task is already tracked, don't need step tracking" | Tasks have 4-8 implementation steps. Without substep tracking, steps 4-8 get skipped. |
 | "Made progress on the task, can move on" | Progress ≠ complete. All substeps must finish. 2/6 steps = 33%, not done. |
 | "Other tasks are waiting, should continue" | Current task incomplete = blocked. Finish all substeps first. |
 | "Can finish remaining steps later" | Later never comes. Complete all substeps now before closing task. |
@@ -84,6 +84,20 @@ These rationalizations appear across multiple contexts. When you catch yourself 
 | "Agent didn't find it first try, must not exist" | Be persistent. Refine query and try again. |
 | "I know this codebase" | You don't know current state. Always verify. |
 | "Obvious solution, skip research" | Codebase may have established pattern. Check first. |
+
+## Skill Routing Shortcuts
+
+| Excuse | Reality |
+|--------|---------|
+| "This is just a simple question" | Questions are tasks. Check the routing table. |
+| "I can check git/files quickly" | Files lack context. Check for skills first. |
+| "Let me gather information first" | Skills tell you HOW to gather. Check first. |
+| "This doesn't need a formal skill" | If a skill exists, using it is mandatory. |
+| "I remember this skill" | Skills evolve. Load the current version via the Skill tool. |
+| "This doesn't count as a task" | Taking action = task. Check the routing table. |
+| "The skill is overkill for this" | Skills exist because "simple" becomes complex. |
+| "I'll just do this one thing first" | Check for skills BEFORE doing anything. |
+| "Instruction was specific so I can skip the workflow" | Specific instructions = WHAT, not HOW. Route through the table. |
 
 **All of these mean: STOP. Follow the requirements exactly.**
 

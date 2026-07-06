@@ -70,7 +70,7 @@ Skills use the exact same TDD cycle as code:
 **Create pressure scenarios for subagent:**
 
 ```
-Task tool with general-purpose agent:
+Agent tool with subagent_type general-purpose:
 
 "You are implementing a payment processing feature. User requirements:
 - Process credit card payments
@@ -574,7 +574,7 @@ Before deploying ANY skill:
 <integration>
 **This skill requires:**
 - hyperpowers:test-driven-development (understand TDD before applying to docs)
-- Task tool (for running subagent tests)
+- Agent tool (for running subagent tests as blocking subagents)
 
 **This skill is called by:**
 - Anyone creating or editing skills

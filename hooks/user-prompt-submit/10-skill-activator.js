@@ -168,8 +168,8 @@ function generateContext(skills) {
         lines.push('Use the Skill tool for skills: `Skill command="hyperpowers:<skill-name>"`');
     }
     if (hasAgents) {
-        lines.push('Use the Task tool for agents: `Task(subagent_type="hyperpowers:<agent-name>", ...)`');
-        lines.push('Example: `Task(subagent_type="hyperpowers:test-runner", prompt="Run: git commit...", ...)`');
+        lines.push('Use the Agent tool for agents: `Agent(subagent_type="hyperpowers:<agent-name>", ...)`');
+        lines.push('Example: `Agent(subagent_type="hyperpowers:test-runner", prompt="Run: git commit...", ...)`');
     }
     lines.push('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     lines.push('');

@@ -128,7 +128,8 @@ bd dep add bd-[t3] bd-[t2] --type blocking
 <scenario>Epic created without anti-patterns section</scenario>
 
 <code>
-bd create "Epic: OAuth Authentication" --design "
+bd create "Epic: OAuth Authentication" \
+  --description "Google OAuth2 login" --design "
 ## Requirements
 - Users authenticate via Google OAuth2
 - Tokens stored securely
@@ -158,7 +159,8 @@ bd create "Epic: OAuth Authentication" --design "
 **Correct approach with anti-patterns and design rationale:**
 
 ```bash
-bd create "Epic: OAuth Authentication" --design "
+bd create "Epic: OAuth Authentication" \
+  --description "Google OAuth2 login with httpOnly-cookie sessions" --design "
 ## Requirements (IMMUTABLE)
 - Users authenticate via Google OAuth2
 - Tokens stored in httpOnly cookies (NOT localStorage)
@@ -188,13 +190,14 @@ Extend existing passport.js setup at auth/passport-config.ts with Google OAuth2 
 - routes/auth.ts — OAuth callback routes
 
 ## Architecture Impact
-- [ ] Creates a new component/module — NO
-- [x] Changes public interface of existing component — YES (User model: add googleId field)
-- [ ] Adds/removes cross-component dependency — NO
-- [ ] Creates new request path through 2+ components — NO
-- [ ] Moves responsibility between components — NO
+(questions per skills/common-patterns/architecture-impact-check.md)
+- Q1 new component: NO
+- Q2 public interface change: YES (User model: add googleId field)
+- Q3 cross-component dependency added/removed: NO
+- Q4 new request path (2+ components): NO
+- Q5 responsibility moved: NO
 
-Result: 1 box checked. /intuition was offered and deferred (user chose to proceed).
+Result: 1 YES. /intuition was offered and deferred (user chose to proceed).
 
 ## Design Rationale
 

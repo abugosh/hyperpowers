@@ -43,8 +43,8 @@ Relevant agents for this prompt:
 
 💾 **hyperpowers:test-runner** (medium priority)
 
-Use the Task tool for agents: `Task(subagent_type="hyperpowers:<agent-name>", ...)`
-Example: `Task(subagent_type="hyperpowers:test-runner", prompt="Run: git commit...", ...)`
+Use the Agent tool for agents: `Agent(subagent_type="hyperpowers:<agent-name>", ...)`
+Example: `Agent(subagent_type="hyperpowers:test-runner", prompt="Run: git commit...", ...)`
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
@@ -91,6 +91,22 @@ Direct file access bypasses bd validation and often fails due to file size. The 
 - Use proper tooling (husky, pre-commit framework)
 - Document changes and get them reviewed
 - Never bypass with --no-verify
+
+**File:** `hooks/pre-tool-use/02-version-bump-guard.py`
+**Purpose:** Blocks `git push` of a plugin's default branch when plugin content changed without a version-bump guard passing
+**Input:** `{"tool_name": "Bash", "cwd": "...", "tool_input": {"command": "git push ..."}}`
+**Output:** `{"hookSpecificOutput": {"permissionDecision": "deny", ...}}` (blocking) or silent allow
+
+**How it works:**
+1. Fires only on Bash commands containing `git ... push`, only in repos with `.claude-plugin/plugin.json` at the root, and only when pushing the default branch (main/master) — feature-branch pushes are never blocked
+2. Diffs the outgoing range (upstream or origin/main → HEAD) for changes under `skills/`, `agents/`, `commands/`, `hooks/`, or to `CLAUDE.md`/`README.md`
+3. If plugin content changed but `.claude-plugin/plugin.json` has no version change in the same range, denies with a bump reminder (patch for fixes, minor for features/rewrites)
+
+**Fail-open design:**
+Every error path (unparseable input, git failure, missing upstream, unexpected state) allows the push. False-allows are acceptable; false-denies are not. A hook bug can never block work.
+
+**To disable (veto path):**
+Remove the `Bash` matcher block referencing `02-version-bump-guard.py` from `hooks/hooks.json`.
 
 ### PostToolUse Hooks
 

@@ -31,6 +31,7 @@ bd list --parent bd-1
 bd create "Epic: Feature Name" \
   --type epic \
   --priority [0-4] \
+  --description "[One-line summary for bd list views]" \
   --design "## Goal
 [Epic description]
 
@@ -42,12 +43,14 @@ bd create "Epic: Feature Name" \
 bd create "Phase 1: Phase Name" \
   --type feature \
   --priority [0-4] \
+  --description "[One-line summary]" \
   --design "[Phase design]"
 
 # Create task
 bd create "Task Name" \
   --type task \
   --priority [0-4] \
+  --description "[One-line summary]" \
   --design "[Task design]"
 ```
 
@@ -61,7 +64,7 @@ EOF
 )"
 ```
 
-**IMPORTANT**: Use `--design` for the full detailed description, NOT `--description` (which is title only).
+**IMPORTANT**: Provide BOTH on create — `--description` is the one-line summary shown in list views (bd warns when it is missing); `--design` carries the full detailed spec. Never put the full spec in `--description`.
 
 ## Managing Status
 

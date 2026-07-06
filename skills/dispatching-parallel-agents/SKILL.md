@@ -16,14 +16,14 @@ MEDIUM FREEDOM - Follow the 6-step process (identify, create tasks, dispatch, mo
 |------|--------|---------------|
 | 1. Identify Domains | Test independence (fix A doesn't affect B) | 3+ independent domains required |
 | 2. Create Agent Tasks | Write focused prompts (scope, goal, constraints, output) | One prompt per domain |
-| 3. Dispatch Agents | Launch all agents in SINGLE message | Multiple Task() calls in parallel |
+| 3. Dispatch Agents | Launch all agents in SINGLE message | Multiple Agent tool calls in parallel |
 | 4. Monitor Progress | Track completions, don't integrate until ALL done | Wait for all agents |
 | 5. Review Results | Read summaries, check conflicts | Manual conflict resolution |
 | 6. Verify Integration | Run full test suite | Use verification-before-completion |
 
 **Why 3+?** With only 2 failures, coordination overhead often exceeds sequential time.
 
-**Critical:** Dispatch all agents in single message with multiple Task() calls, or they run sequentially.
+**Critical:** Dispatch all agents in single message with multiple Agent tool calls, or they run sequentially.
 </quick_reference>
 
 <when_to_use>
@@ -50,7 +50,7 @@ Don't use when:
 
 **Announce:** "I'm using hyperpowers:dispatching-parallel-agents to investigate these independent failures concurrently."
 
-**Create TodoWrite tracker:**
+**Create a tracker (bd when the repo uses beads, TodoWrite otherwise):**
 ```
 - Identify independent domains (3+ domains identified)
 - Create agent tasks (one prompt per domain drafted)
@@ -151,24 +151,24 @@ Return: Summary of what you found and what you fixed.
 
 ## Step 3: Dispatch All Agents in Parallel
 
-**CRITICAL:** You must dispatch all agents in a SINGLE message with multiple Task() calls.
+**CRITICAL:** You must dispatch all agents in a SINGLE message with multiple Agent tool calls.
 
 ```typescript
 // ✅ CORRECT - Single message with multiple parallel tasks
-Task("Fix agent-tool-abort.test.ts failures", prompt1)
-Task("Fix batch-completion-behavior.test.ts failures", prompt2)
-Task("Fix tool-approval-race-conditions.test.ts failures", prompt3)
+Agent("Fix agent-tool-abort.test.ts failures", prompt1)
+Agent("Fix batch-completion-behavior.test.ts failures", prompt2)
+Agent("Fix tool-approval-race-conditions.test.ts failures", prompt3)
 // All three run concurrently
 
 // ❌ WRONG - Sequential messages
-Task("Fix agent-tool-abort.test.ts failures", prompt1)
+Agent("Fix agent-tool-abort.test.ts failures", prompt1)
 // Wait for response
-Task("Fix batch-completion-behavior.test.ts failures", prompt2)
+Agent("Fix batch-completion-behavior.test.ts failures", prompt2)
 // This is sequential, not parallel!
 ```
 
 **After dispatch:**
-- Mark "Dispatch agents in parallel" as completed in TodoWrite
+- Mark "Dispatch agents in parallel" as completed in the tracker
 - Mark "Monitor agent progress" as in_progress
 - Wait for all agents to complete before integration
 
@@ -183,7 +183,7 @@ As agents work:
 
 **If an agent gets stuck (>5 minutes):**
 
-1. Check AgentOutput to see what it's doing
+1. Check TaskOutput to see what it's doing
 2. If stuck on wrong path: Cancel and retry with clearer prompt
 3. If needs context from other domain: Wait for other agent, then restart with context
 4. If hit real blocker: Investigate blocker yourself, then retry
@@ -243,15 +243,15 @@ npm test  # or cargo test, pytest, etc.
 # Creates 3 agent prompts
 
 # Dispatches first agent
-Task("Fix agent-tool-abort.test.ts failures", prompt1)
+Agent("Fix agent-tool-abort.test.ts failures", prompt1)
 # Waits for response from agent 1
 
 # Then dispatches second agent
-Task("Fix batch-completion-behavior.test.ts failures", prompt2)
+Agent("Fix batch-completion-behavior.test.ts failures", prompt2)
 # Waits for response from agent 2
 
 # Then dispatches third agent
-Task("Fix tool-approval-race-conditions.test.ts failures", prompt3)
+Agent("Fix tool-approval-race-conditions.test.ts failures", prompt3)
 
 # Total time: Sum of all three agents (sequential)
 </code>
@@ -269,18 +269,18 @@ Task("Fix tool-approval-race-conditions.test.ts failures", prompt3)
 **Dispatch all agents in SINGLE message:**
 
 ```typescript
-// Single message with multiple Task() calls
-Task("Fix agent-tool-abort.test.ts failures", `
+// Single message with multiple Agent tool calls
+Agent("Fix agent-tool-abort.test.ts failures", `
 Fix the 3 failing tests in src/agents/agent-tool-abort.test.ts:
 [prompt 1 content]
 `)
 
-Task("Fix batch-completion-behavior.test.ts failures", `
+Agent("Fix batch-completion-behavior.test.ts failures", `
 Fix the 2 failing tests in src/agents/batch-completion-behavior.test.ts:
 [prompt 2 content]
 `)
 
-Task("Fix tool-approval-race-conditions.test.ts failures", `
+Agent("Fix tool-approval-race-conditions.test.ts failures", `
 Fix the 1 failing test in src/agents/tool-approval-race-conditions.test.ts:
 [prompt 3 content]
 `)
@@ -509,7 +509,7 @@ npm test
 - Agent hit a blocker (missing file, unclear error)
 
 **Recovery:**
-1. Use AgentOutput tool to check what it's doing
+1. Use the TaskOutput tool to check what it's doing
 2. If stuck on wrong path: Cancel and retry with clearer prompt
 3. If needs context from other domain: Wait for other agent, then restart with context
 4. If hit real blocker: Investigate blocker yourself, then retry
@@ -567,11 +567,11 @@ npm test
 
 1. **Verify independence first** → Test with questions before dispatching
 2. **3+ domains required** → 2 failures: overhead exceeds benefit, do sequentially
-3. **Single message dispatch** → All agents in one message with multiple Task() calls
+3. **Single message dispatch** → All agents in one message with multiple Agent tool calls
 4. **Wait for ALL agents** → Don't integrate until all complete
 5. **Check conflicts manually** → Read summaries, verify no contradictions
 6. **Verify integration** → Run full suite yourself, don't trust agents
-7. **TodoWrite tracking** → Track agent progress explicitly
+7. **Tracked progress** → Track agent progress explicitly in the repo's tracker
 
 ## Common Excuses
 
@@ -582,7 +582,7 @@ All of these mean: **STOP. Follow the process.**
 - "Can dispatch sequentially to save syntax" (WRONG - must dispatch in single message)
 - "Agent failed, but others succeeded - ship it" (All agents must succeed or re-investigate)
 - "Conflicts are minor, can ignore" (Resolve all conflicts explicitly)
-- "Don't need TodoWrite for just tracking agents" (Use TodoWrite, track properly)
+- "Don't need a tracker for just tracking agents" (Use the repo's tracker, track properly)
 - "Can skip verification, agents ran tests" (Agents can make mistakes, YOU verify)
 </critical_rules>
 
@@ -592,7 +592,7 @@ Before completing parallel agent work:
 - [ ] Verified independence with 3 questions (fix A affects B? same code? same error pattern?)
 - [ ] 3+ independent domains identified (not 2 or fewer)
 - [ ] Created focused agent prompts (scope, goal, constraints, output)
-- [ ] Dispatched all agents in single message (multiple Task() calls)
+- [ ] Dispatched all agents in single message (multiple Agent tool calls)
 - [ ] Waited for ALL agents to complete (didn't integrate early)
 - [ ] Read all agent summaries carefully
 - [ ] Checked for conflicts (same files, contradictory assumptions)
@@ -614,9 +614,9 @@ Before completing parallel agent work:
 - hyperpowers:test-runner (run tests without context pollution)
 
 **This skill uses:**
-- Task tool (dispatch parallel agents)
-- AgentOutput tool (monitor stuck agents)
-- TodoWrite (track agent progress)
+- Agent tool (dispatch parallel agents — blocking subagents, no team_name)
+- TaskOutput tool (monitor stuck agents)
+- The repo's tracker — bd when the repo uses beads, TodoWrite otherwise (track agent progress)
 
 **Workflow integration:**
 ```
@@ -655,7 +655,7 @@ hyperpowers:verification-before-completion
 - Full verification catches agent mistakes
 
 **When stuck:**
-- Agent not making progress → Check AgentOutput, retry with clearer prompt
+- Agent not making progress → Check TaskOutput, retry with clearer prompt
 - Conflicts after dispatch → Domains weren't independent, merge and retry
 - Integration fails tests → Identify which agent caused regression
 - Unclear if independent → Test with 3 questions (affects? same code? same error?)

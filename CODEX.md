@@ -6,7 +6,7 @@ This repo ships a Codex-adapted skill pack under `.agents/skills`.
 
 - Claude-only features (hooks and slash commands) are not included.
 - Skills include a short Codex compatibility note explaining how to interpret
-  Claude-specific terms (e.g., “Skill tool”, “TodoWrite”, “Task()”).
+  Claude-specific terms (e.g., “Skill tool”, “TodoWrite”, “Agent tool”).
 - `dispatching-parallel-agents` now uses `spawn_agent` + `multi_tool_use.parallel`.
 - A new skill, `hyperpowers-agents`, maps the specialized agent prompts into Codex subagents.
 
