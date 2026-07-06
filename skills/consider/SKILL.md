@@ -58,7 +58,7 @@ Then proceed to investigation once you have a topic.
 The user gave you a topic. Investigate it before asking anything.
 
 **Investigation rules:**
-- **Topic touches the codebase** → dispatch `hyperpowers:codebase-investigator` to understand current state. This is cheap. Do it.
+- **Topic touches the codebase** → dispatch `hyperpowers:codebase-investigator` to understand current state. Grounded evidence beats speculation — do it early, without waiting to be asked.
 - **Topic involves external tech/APIs** → dispatch `hyperpowers:internet-researcher` for current docs
 - **Topic is purely strategic** (team process, priorities, tradeoffs) → no investigation needed, go straight to discussion
 - **Both codebase and external?** → dispatch both in parallel

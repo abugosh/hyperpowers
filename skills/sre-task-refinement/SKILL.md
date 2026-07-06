@@ -48,6 +48,12 @@ Don't use when:
 </when_to_use>
 
 <the_process>
+## How This Skill Is Invoked
+
+This skill is loaded and executed BY a dispatched review subagent — the lead dispatches a fresh subagent (Agent tool, blocking) whose prompt loads this skill and names the epic or task to review. The review never runs in the context that authored or repaired the plan: an author reviewing its own just-written tasks is the weakest possible comparator, and fresh-context review is the point of this skill. Batch mode arrives via brainstorming Step 7's dispatch block; single-task mode arrives via a dispatch after writing-plans repairs a spec.
+
+If you are reading this as the dispatched reviewer: the process below is yours to execute. Apply bd updates directly where the process says to; return your verdict and findings as your final message — it is data for the lead, not prose for a human.
+
 ## Announcement
 
 **Announce:** "I'm using hyperpowers:sre-task-refinement to review this plan with Google Fellow-level scrutiny."
@@ -938,6 +944,8 @@ Before completing SRE review:
 **Modes:**
 - **Single-task mode** (default): review one task at a time — for specs hyperpowers:writing-plans repaired or expanded, or for gap-fix tasks during execution
 - **Batch mode**: review full task tree as a unit — required from brainstorming Step 7 after the complete task tree is created; this is the mainline path
+
+**Both modes run in a dispatched fresh subagent** (see "How This Skill Is Invoked") — never inline in the context that authored or repaired the plan.
 
 **Call chains:**
 ```

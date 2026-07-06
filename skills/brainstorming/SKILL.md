@@ -20,7 +20,7 @@ HIGH FREEDOM - The 8-step order is fixed, but Socratic questioning within steps 
 | 4 | Architecture Impact Check (5 structural questions) | Impact recorded in epic; /intuition offered if any YES |
 | 5 | Create bd epic with IMMUTABLE requirements | Epic with 7 top-level sections and anti-patterns |
 | 6 | Re-check sizing gate if scope grew; decomposition strategy approval; create complete task tree | All tasks planned upfront with simple/medium classification (spec depth) |
-| 7 | Run SRE batch review on full task tree | Refined task tree ready for handoff |
+| 7 | Dispatch fresh subagent for SRE batch review of full task tree | Refined task tree ready for handoff |
 | 8 | Present task summary, then hand off to executing-plans | Human reviews task list; lead orchestrates executor subagents on Sonnet |
 </quick_reference>
 
@@ -91,6 +91,8 @@ This is a gate the user can override — not a hard block. If the user says "pro
 - Similar feature exists in the codebase → dispatch `hyperpowers:codebase-investigator`
 - New integration or unfamiliar library → dispatch `hyperpowers:internet-researcher`
 - Both apply → dispatch both
+
+Research dispatches inherit the session model — this is design-tier investigation; do not pass a cheaper model override.
 
 **Capture research findings** as you go: file paths/patterns from codebase, API capabilities/constraints from external sources, dead-end paths (what was explored, why abandoned).
 
@@ -403,9 +405,25 @@ Set task dependencies in bd so execution order is clear: `bd dep add bd-[task-B]
 
 **REQUIRED. Do not skip.**
 
+Dispatch the review as a fresh blocking subagent — the review must come from a context that did not author the plan. Fresh eyes are the point: an author reviewing its own just-written tasks is the weakest possible comparator.
+
 ```
-Use Skill tool: hyperpowers:sre-task-refinement
+Agent tool:
+  subagent_type: "general-purpose"
+  mode: "bypassPermissions"
+  prompt: |
+    Load the skill hyperpowers:sre-task-refinement with the Skill tool and
+    run its BATCH MODE against epic <epic-id>.
+    Inputs: bd show <epic-id>, then bd show each child task.
+    You may strengthen task specs directly via bd update (preserve existing
+    sections; never insert placeholders). Do not create, close, or
+    re-classify tasks — structural suggestions go in your report.
+    Return: the batch verdict (APPROVE / NEEDS REVISION / REJECT), the
+    cross-task analysis including the epic-coverage table, per-task
+    one-liners, and an exact list of bd updates you applied.
 ```
+
+Do not pass a model override — the review inherits the session model.
 
 SRE refinement runs **once against the full task tree** — not per-task, not just the first task. It applies an 8-category corner-case analysis across all tasks: granularity, implementability, success criteria quality, dependency structure, safety standards, edge cases, red flags, and test meaningfulness.
 
@@ -477,7 +495,7 @@ Worked examples (skipped-research, upfront-task-tree, missing-anti-patterns) liv
 4. **Epic requirements IMMUTABLE** → Tasks adapt, requirements don't
 5. **Include anti-patterns section with reasoning** → Prevents watering down requirements when blockers occur
 6. **Propose decomposition strategy before creating tasks** → Present simple/medium split with justifications for medium tasks; get human approval before any bd create
-7. **Run SRE batch review before handoff** → Reviews full task tree once; catches systemic gaps and weak criteria
+7. **Run SRE batch review before handoff, as a fresh subagent** → Reviews full task tree once from a context that did not author it; catches systemic gaps and weak criteria
 8. **Offer /intuition when design-time friction detected** → Architect-decides routing, not a gate
 9. **Architecture Impact Check required before epic finalization** → 5 questions, record result in epic, offer /intuition if any YES
 10. **Subsection 'None' requires grounded justification** → "None because [specific reason]"; bare "None" enables skip-thinking
@@ -505,7 +523,7 @@ Before handing off to executing-plans:
 - [ ] Anti-patterns include reasoning ("NO X (reason: Y)")
 - [ ] Sizing gate checked; decomposition strategy proposed and approved by human; all tasks classified (simple/medium for spec depth) and linked to epic
 - [ ] Every task spec reference verified against the codebase before creation
-- [ ] Batch SRE review run against full task tree; refinements applied
+- [ ] Batch SRE review dispatched as fresh subagent against full task tree; refinements applied
 - [ ] Announced handoff to executing-plans
 
 **Can't check all boxes?** Return to the process and complete the missing steps.
