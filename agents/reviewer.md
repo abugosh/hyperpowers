@@ -308,6 +308,11 @@ Recommendation: Ready for manual validation.
 
 ### Epic: <epic-id> - <title>
 
+### Tasks Reviewed
+- <task-id>: <title> — PASS
+- <task-id>: <title> — [specific gap summary]
+- <task-id>: <title> — NOT YET REVIEWED (open)
+
 ### Critical Gaps
 1. [gap description] — Evidence: [file:line or command output]
 2. [gap description] — Evidence: [evidence]
