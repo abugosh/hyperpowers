@@ -39,19 +39,27 @@ Let me check the bd task that was created. What was the full command?
 
 **Good response (improving the plugin):**
 ```
-This is a pattern we can prevent with a hook. Let me create a PostToolUse hook
-that blocks bd commands containing truncation markers.
+This is a pattern we can prevent by strengthening the relevant skill. Let me
+add an anti-pattern entry to writing-plans naming this exact failure, so
+future specs can't be authored with truncated step lists.
 ```
 
 ### Translation Guide
 
 | What user says | What they actually want |
 |----------------|------------------------|
-| "Claude truncated the bd task" | Create hook to block bd truncation |
-| "Claude edited pre-commit with sed" | Create hook to block pre-commit modifications |
-| "The test-runner agent didn't activate" | Improve skill-rules.json triggers |
-| "Claude ignored the skill" | Improve skill description or add hook |
-| "This caused incomplete implementation" | Add blocking hook to prevent pattern |
+| "Claude truncated the bd task" | Strengthen the relevant skill (e.g. writing-plans' self-contained spec format) so the failure mode is designed out |
+| "Claude edited pre-commit with sed" | Add a hard MUST rule to the relevant skill prohibiting workaround edits to git hooks; a one-off workaround fails the keep-criterion below |
+| "The test-runner agent didn't activate" | Improve the agent's or skill's description so Claude recognizes when to invoke it |
+| "Claude ignored the skill" | Strengthen the skill's description, add a Red Flag / anti-pattern entry, or sharpen the MUST wording |
+| "This caused incomplete implementation" | Add an anti-pattern entry to the relevant skill naming exactly what went wrong |
+
+A hook is the right fix only when the failure meets **all three** legs of the
+keep-criterion: (a) mechanically checkable at a tool boundary, (b) recurrent
+despite prompt-level instruction, and (c) cheap to verify against Claude
+Code's real I/O contract (see `HOOKS.md`). Most behavior complaints are
+prompt-level problems — they fail leg (a) or (b) — and belong in a skill,
+not a hook.
 
 ### Your Goal in This Repository
 
@@ -65,23 +73,22 @@ You cannot access other sessions. You cannot fix past problems. You CAN prevent 
 **User:** "Claude edited .git/hooks/pre-commit with `sed -i` to work around an error"
 
 **Correct response:**
-- Create PreToolUse hook blocking Edit/Write to pre-commit
-- Create PostToolUse hook blocking Bash commands modifying pre-commit
-- Update HOOKS.md with documentation
+- Check the keep-criterion first: this is a one-off workaround, not a pattern recurring despite prompt-level instruction — it fails leg (b), so a hook is not the answer
+- Add a hard MUST rule to the relevant skill (e.g. verification-before-completion or test-driven-development, whichever governed the commit) prohibiting edits to git hooks as a way to bypass a failing check
+- Only revisit the hook question if the same workaround recurs after the skill fix ships — that recurrence is the evidence the keep-criterion requires
 
 **User:** "The bd task had '[Remaining steps truncated]' which caused incomplete implementation"
 
 **Correct response:**
-- Create PostToolUse hook blocking bd create/update with truncation markers
-- Add regex patterns for all truncation variations
-- Test hook with sample commands
+- Add an anti-pattern entry to writing-plans / executing-plans naming the truncation pattern explicitly and requiring self-contained task specs
+- Add the phrase to the skill's Common Rationalizations or Red Flags section so future spec authors recognize it immediately
+- This fails keep-criterion leg (a) too — "incomplete implementation" isn't mechanically checkable at a tool boundary without unacceptable false positives — so it stays a skill fix, not a hook
 
 **User:** "Claude ran `./scripts/docker-test.sh` with 700+ lines of output and didn't suggest test-runner agent"
 
 **Correct response:**
-- Add test script patterns to skill-rules.json
-- Add keywords like "npm test", "pytest", test runner names
-- Test activation with sample prompts
+- Improve the test-runner agent's description (and any skill that references it) with the concrete trigger — verbose test/build output — so Claude recognizes the pattern
+- Skill and agent activation is judged from descriptions Claude reads at runtime, not a separate matcher process; strengthening the description is the whole fix
 
 ## Plugin Structure
 
@@ -247,7 +254,11 @@ The `verification-before-completion` skill makes this mandatory.
 
 ## Development Commands
 
-This is a plugin repository with no build system - it's pure markdown files. There are no tests, linters, or build commands.
+This is a markdown plugin — skills, commands, and agent prompts are documentation with no runtime execution of their own. The one executable surface is `hooks/`, and it has real contract tests:
+
+```bash
+./hooks/test/contract-test.sh
+```
 
 ### Testing Skills
 
