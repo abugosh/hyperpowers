@@ -78,7 +78,7 @@ Used for single-repo work. The unit renders into the epic's design field:
 | Open for Design | `## Open for Design` |
 | Contracts, Release Framing | Fold into `## Context for Brainstorming` when the epic is single-service; keep as their own headings when the epic touches cross-service contracts |
 
-Creation scaffold: `skills/preordain/SKILL.md` Step 5.
+Creation scaffold: `skills/preordain/SKILL.md` (leaf-epic creation).
 
 ## Schema Evolution (additive-only)
 

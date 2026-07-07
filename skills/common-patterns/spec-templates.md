@@ -1,8 +1,8 @@
 # Task Spec Templates (Two-Tier)
 
-Single source of truth for the two-tier task spec format. Brainstorming
-(Step 6c), writing-plans (Step 2d), and sre-task-refinement (classification
-consistency checks) all reference this file — never restate the templates.
+Single source of truth for the two-tier task spec format. Brainstorming,
+writing-plans, and sre-task-refinement (classification consistency checks)
+all reference this file — never restate the templates.
 
 Time bands, the hard ceiling, and the spec-depth rule are defined in
 `skills/common-patterns/pipeline-constants.md`. This file carries the

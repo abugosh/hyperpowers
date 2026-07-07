@@ -1,8 +1,8 @@
 # Architecture Impact Check
 
-Single source of truth for the 5 structural questions. Brainstorming (Step 4,
-asked against the designed solution) and preordain (Step 4, asked against the
-entire initiative) reference this file — never restate the questions.
+Single source of truth for the 5 structural questions. Brainstorming (asked
+against the designed solution) and preordain (asked against the entire
+initiative) reference this file — never restate the questions.
 
 ## The 5 Questions
 

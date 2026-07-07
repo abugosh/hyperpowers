@@ -22,12 +22,12 @@ MEDIUM FREEDOM — Pre-dispatch verification uses judgment. Dispatch, review, an
 | **Stage 2** | Spec-match + code quality review | Agent tool (Sonnet unless promoted) |
 | **Escalation** | Halt, summarize, recommend, wait | AskUserQuestion |
 
-**Critical:** Executor returns a one-liner (DONE:, BLOCKED:, or NEEDS_HELP:) — not a multi-section envelope. Parse the first word only.
+**Critical:** Executor returns a one-liner (DONE:, BLOCKED:, or NEEDS_HELP:) — not a multi-section envelope. Parse the first word only. All three loop verdict vocabularies are single-sourced in `skills/common-patterns/loop-interfaces.md` (Verdict Contracts).
 
 </quick_reference>
 
 <when_to_use>
-**Use after brainstorming produces a complete task tree for an epic.**
+**Use after brainstorming produces a complete task tree for an epic** (contract defined in `skills/common-patterns/pipeline-constants.md`, Complete Task Tree).
 
 All tasks must exist in bd with specs before invoking this skill. If tasks are missing specs, route the spec-less tasks through writing-plans (the off-mainline spec repair utility) first.
 
@@ -47,6 +47,8 @@ bd list --parent <epic-id>     # List all child tasks
 - **Requirements** — IMMUTABLE. Never water down.
 - **Success Criteria** — Your completion checklist.
 - **Anti-Patterns** — FORBIDDEN. Reject any executor action that violates these.
+
+**Read the epic's bd notes for the latest GATE STATE block** — if one exists, resume from the state it records rather than re-deriving it (format: `skills/common-patterns/loop-interfaces.md`).
 
 **Verify:** Every task has a non-empty spec (design field). If any task is missing a spec, do not start execution — route the spec-less tasks through writing-plans (the off-mainline spec repair utility).
 
@@ -242,7 +244,7 @@ After all tasks return DONE and pass two-stage review:
 
    **APPROVED:** Emit the completion gate-state block and persist it to the epic's bd notes (format: `skills/common-patterns/loop-interfaces.md`), including any accumulated plan-impact notices. Present final status to user. Hand off to `/hyperpowers:finish-branch`.
 
-   **GAPS FOUND:** Create fix task(s) inline for each gap and dispatch executors — this is the one exception to "all tasks planned upfront." These gap-fix tasks follow the same dispatch and two-stage review loop. After all gaps resolved, re-dispatch reviewer.
+   **GAPS FOUND:** Create fix task(s) inline for each gap — spec body per the tier templates in `skills/common-patterns/spec-templates.md` — and dispatch executors. This is the one exception to "all tasks planned upfront." These gap-fix tasks follow the same dispatch and two-stage review loop. After all gaps resolved, re-dispatch reviewer.
 
 </the_process>
 

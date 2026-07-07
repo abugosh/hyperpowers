@@ -48,3 +48,14 @@ Default executor model is Sonnet. A task spec containing the line
 2. SRE batch review, as a recommendation
 3. The lead automatically on re-dispatch after a BLOCKED or CONCERNS
    failure — one escalation rung before interrupting the user
+
+## Complete Task Tree (Handoff Contract)
+
+What brainstorming hands to executing-plans. "Complete" means all four:
+1. Every task for the epic exists in bd (no tasks created during execution;
+   sole exception: reviewer gap-fix tasks).
+2. Every task has a self-contained two-tier spec
+   (`skills/common-patterns/spec-templates.md`).
+3. Dependencies are recorded so execution order is derivable from bd alone.
+4. The tree passed batch SRE review.
+Producers and consumers cite this definition; neither restates it.

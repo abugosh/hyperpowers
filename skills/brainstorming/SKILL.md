@@ -51,7 +51,7 @@ HIGH FREEDOM - The 8-step order is fixed, but Socratic questioning within steps 
 **Entry detection (automatic — never interrogate about mode):**
 - The user provided an upstream plan document (a path into a planning-repo checkout, or a pasted slice) → run **Ingestion** below, then question only what it leaves open.
 - No document → **idea-first** entry, fully supported: proceed directly to investigation and questioning. Nothing ever asks for a doc that doesn't exist.
-- Resuming an epic whose design carries a Provenance section → verify the cited planning-repo file's current state first; if it changed since the recorded SHA, surface a provenance drift flag (signal policy: `skills/common-patterns/loop-interfaces.md`) before continuing.
+- Resuming an epic whose design carries a Provenance section → verify the cited planning-repo file's current state first; if it changed since the recorded SHA, surface a provenance drift flag (signal policy: `skills/common-patterns/loop-interfaces.md`) before continuing. On any resume, also read the epic's bd notes for the latest GATE STATE block and pick up from the state it records.
 
 **Ingestion (document provided):**
 Read the document. Extract what binds this work — using the slice sections in `skills/common-patterns/brainstormable-unit.md` where the doc follows them (Deliverable & Requirements, Contracts, Dependencies, Boundaries, Settled Decisions, Open for Design, Release Framing) and best judgment where it doesn't. Dependencies and Release Framing carry binding constraints too — sequencing and release-ordering are exactly what mid-execution BLOCKED returns trace back to. Record provenance at ingest: source file path plus its commit SHA (`git -C <planning-repo> rev-parse HEAD`); for untracked or unversioned input, fall back to path + date, flagged unversioned. Then play back the settled/open frontier: "Settled by the plan: [...]. Open for this session: [...]." **Never re-ask what the document settles** — the question round below covers only its Open-for-design items. Several epics may cite the same slice.
@@ -298,7 +298,7 @@ Do not create any tasks until the human approves the strategy. When pausing at t
 
 ### 6c — Create Complete Task Tree
 
-Create ALL tasks for the epic upfront. Every task must be classified as **simple** or **medium** (time bands defined in `skills/common-patterns/pipeline-constants.md`) and linked to the epic.
+Create ALL tasks for the epic upfront — the handoff contract this step must satisfy is defined in `skills/common-patterns/pipeline-constants.md` (Complete Task Tree). Every task must be classified as **simple** or **medium** (time bands defined in the same file) and linked to the epic.
 
 **Pre-create verification (MANDATORY):** Before any task is created in bd, verify every file, section, and symbol its spec references against the actual codebase — for each drafted task:
 
