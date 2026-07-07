@@ -29,8 +29,13 @@ GIT_OPTS_WITH_ARG = ("-C", "-c", "--git-dir", "--work-tree", "--exec-path", "--n
 
 # bare wrapper commands that may precede the real invocation (time git push,
 # env VAR=1 git push, command git push, nice git push, nohup git push ...).
-# Only the bare token is recognized here — see the fixpoint-skip loop below
-# for the decision on flagged wrappers (e.g. "nice -n 10 git push").
+# Only the bare token is recognized here. Flagged wrapper forms (nice -n 10
+# git push, env -i git push) are intentionally unhandled: recognizing them
+# would require per-wrapper flag-arity knowledge (does -n take an argument?
+# does -i?), which pushes toward the regex-like command parsing the task
+# Boundaries forbid. An unhandled flagged wrapper falls through to "not a
+# push invocation" and resolves to allow — the accepted-side error under
+# this hook's documented false-allows-acceptable bias (see module docstring).
 WRAPPER_TOKENS = {"time", "command", "env", "nice", "nohup"}
 
 
