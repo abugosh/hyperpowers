@@ -1,4 +1,0 @@
-interface:
-  display_name: "Refactoring Diagnosis"
-  short_description: "Help with Refactoring Diagnosis tasks"
-  default_prompt: "Use $refactoring-diagnosis to run this workflow."
