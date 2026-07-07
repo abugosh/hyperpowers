@@ -45,7 +45,6 @@ Reusable workflows for common development tasks:
 
 **Infrastructure & Customization:**
 - **building-hooks** - Create custom hooks for automating quality checks and workflow enhancements
-- **skills-auto-activation** - Solve skills not activating reliably through better descriptions or custom hooks
 
 ### Slash Commands
 
@@ -75,18 +74,13 @@ Domain-specific agents for complex tasks:
 
 ### Hooks System
 
-Intelligent hooks that provide context-aware assistance:
+Two hooks, each doing one job:
 
-**Automatic Skill Activation** - The UserPromptSubmit hook analyzes your prompts and suggests relevant skills before Claude responds. Simply type what you want to do, and you'll get skill recommendations if applicable.
+**Context Injection** (`SessionStart`) - Loads the `using-hyper` skill into context at the start of every session, so skill-routing guidance is present from the first prompt. It cannot block or deny anything — it only informs.
 
-**Context Tracking** - The PostToolUse hook tracks file edits during your session, maintaining context for intelligent reminders.
+**Version Bump Guard** (`PreToolUse`, `Bash` matcher) - Denies a `git push` of the default branch when the outgoing range touches `skills/`, `agents/`, `commands/`, `hooks/`, `CLAUDE.md`, or `README.md` but `.claude-plugin/plugin.json`'s version didn't change in the same range.
 
-**Gentle Reminders** - The Stop hook provides helpful reminders after Claude responds:
-- 💭 TDD reminder when editing source without tests
-- ✅ Verification reminder when claiming completion
-- 💾 Commit reminder after multiple file edits
-
-See [HOOKS.md](HOOKS.md) for configuration, troubleshooting, and customization details.
+See [HOOKS.md](HOOKS.md) for full I/O contracts, the criterion for adding a new hook, and how to run the contract tests.
 
 ## Key Benefits
 

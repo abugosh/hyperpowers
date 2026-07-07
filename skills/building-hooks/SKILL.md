@@ -204,11 +204,11 @@ fi
 
 ---
 
-## Pattern 4: Skills Auto-Activation
+## Pattern 4: Contextual Reminder Injection
 
-**See:** hyperpowers:skills-auto-activation for complete implementation
+**See:** [resources/hook-examples.md](resources/hook-examples.md) Example 4 for a complete implementation
 
-**Summary:** Analyzes prompt keywords, injects skill activation reminder before Claude processes.
+**Summary:** Analyzes prompt keywords, injects a reminder into context before Claude processes the prompt.
 </common_hook_patterns>
 
 <hook_composition>
@@ -236,8 +236,8 @@ If Hook B depends on Hook A's output:
 
 **Example:**
 ```bash
-# 10-track-edits.sh writes to edit-log.txt
-# 20-check-builds.sh reads from edit-log.txt
+# 10-log-edits.sh writes to file-edits.log
+# 20-check-builds.sh reads from file-edits.log
 ```
 </hook_composition>
 
@@ -580,7 +580,7 @@ Before deploying hook:
 **This skill covers:** Hook creation and patterns
 
 **Related skills:**
-- hyperpowers:skills-auto-activation (complete skill activation hook)
+- hyperpowers:using-hyper (the routing skill injected into context by `hooks/session-start.sh` — see HOOKS.md)
 - hyperpowers:verification-before-completion (quality hooks automate this)
 - hyperpowers:testing-anti-patterns (avoid in hooks)
 

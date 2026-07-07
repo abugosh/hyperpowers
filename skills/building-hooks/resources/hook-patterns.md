@@ -91,14 +91,14 @@ TARGET_REPO="backend"
 # Check if should run
 should_run() {
     # Count recent edits
-    local edit_count=$(tail -20 ~/.claude/edit-log.txt | wc -l)
+    local edit_count=$(tail -20 ~/.claude/logs/file-edits.log | wc -l)
 
     if [ "$edit_count" -lt "$MIN_CHANGES" ]; then
         return 1
     fi
 
     # Check if target repo was modified
-    if ! tail -20 ~/.claude/edit-log.txt | grep -q "$TARGET_REPO"; then
+    if ! tail -20 ~/.claude/logs/file-edits.log | grep -q "$TARGET_REPO"; then
         return 1
     fi
 
@@ -392,12 +392,15 @@ echo '{}'
 Inject helpful context into Claude's prompt.
 
 ```javascript
-// UserPromptSubmit hook
-function injectContext(prompt) {
+// UserPromptSubmit hook. `input` is the parsed stdin event; the prompt text
+// is on input.prompt (Claude Code's real field name), and any injected
+// context goes under hookSpecificOutput.additionalContext — the same
+// wrapper hooks/session-start.sh uses for SessionStart (see HOOKS.md).
+function injectContext(input) {
     const context = [];
 
     // Add relevant documentation
-    if (prompt.includes('API')) {
+    if (input.prompt.includes('API')) {
         context.push('📖 API Documentation: https://docs.example.com/api');
     }
 
@@ -414,12 +417,14 @@ function injectContext(prompt) {
     }
 
     if (context.length === 0) {
-        return { decision: 'approve' };
+        return {};  // nothing to add: no output needed
     }
 
     return {
-        decision: 'approve',
-        additionalContext: `\n\n---\n${context.join('\n')}\n---\n`
+        hookSpecificOutput: {
+            hookEventName: 'UserPromptSubmit',
+            additionalContext: `\n\n---\n${context.join('\n')}\n---\n`
+        }
     };
 }
 ```
@@ -479,16 +484,21 @@ echo '{}'
 
 ## Pattern: Conditional Blocking
 
-Block only on critical errors, warn on others.
+Block only on critical errors, warn on others. PreToolUse hook — deny goes
+under `hookSpecificOutput.permissionDecision`, never a bare `decision` field.
 
 ```bash
 #!/bin/bash
+
+# Real PreToolUse schema: top-level tool_name/tool_input.
+tool_use_json=$(cat)
+file_path=$(echo "$tool_use_json" | jq -r '.tool_input.file_path // empty')
 
 ERROR_LEVEL="none"  # none, warning, critical
 
 # Check for issues
 check_critical_issues() {
-    if grep -q "FIXME\|XXX\|TODO: CRITICAL" "$file_path"; then
+    if [ -f "$file_path" ] && grep -q "FIXME\|XXX\|TODO: CRITICAL" "$file_path"; then
         ERROR_LEVEL="critical"
         return 1
     fi
@@ -496,7 +506,7 @@ check_critical_issues() {
 }
 
 check_warnings() {
-    if grep -q "console.log\|debugger" "$file_path"; then
+    if [ -f "$file_path" ] && grep -q "console.log\|debugger" "$file_path"; then
         ERROR_LEVEL="warning"
         return 1
     fi
@@ -510,17 +520,15 @@ check_warnings
 # Return appropriate decision
 case "$ERROR_LEVEL" in
     "critical")
-        echo '{
-            "decision": "block",
-            "reason": "🚫 CRITICAL: Found critical TODOs or FIXMEs that must be addressed"
-        }' | jq -c '.'
+        jq -n \
+            '{hookSpecificOutput: {hookEventName: "PreToolUse", permissionDecision: "deny", permissionDecisionReason: "CRITICAL: Found critical TODOs or FIXMEs that must be addressed"}}'
         ;;
     "warning")
-        echo "⚠️  Warning: Found debug statements (console.log, debugger)"
-        echo '{}'
+        echo "⚠️  Warning: Found debug statements (console.log, debugger)" >&2
+        # Allow: no output needed, exit 0
         ;;
     *)
-        echo '{}'
+        # Allow: no output needed, exit 0
         ;;
 esac
 ```

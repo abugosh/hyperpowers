@@ -90,42 +90,38 @@ test_validate_file_path
 **Example: Testing prompt analysis**
 
 ```javascript
-// skill-activator.js
+// keyword-reminder.js (see resources/hook-examples.md Example 4)
 function analyzePrompt(text, rules) {
     const lowerText = text.toLowerCase();
-    const activated = [];
+    const matched = [];
 
-    for (const [skillName, config] of Object.entries(rules)) {
-        if (config.promptTriggers?.keywords) {
-            for (const keyword of config.promptTriggers.keywords) {
-                if (lowerText.includes(keyword.toLowerCase())) {
-                    activated.push({ skill: skillName, priority: config.priority || 'medium' });
-                    break;
-                }
+    for (const [reminderName, config] of Object.entries(rules)) {
+        for (const keyword of config.keywords) {
+            if (lowerText.includes(keyword.toLowerCase())) {
+                matched.push({ name: reminderName, priority: config.priority || 'medium' });
+                break;
             }
         }
     }
 
-    return activated;
+    return matched;
 }
 
 // test.js
 const assert = require('assert');
 
 const testRules = {
-    'backend-dev': {
+    'backend-conventions': {
         priority: 'high',
-        promptTriggers: {
-            keywords: ['backend', 'API', 'endpoint']
-        }
+        keywords: ['backend', 'API', 'endpoint']
     }
 };
 
 // Test keyword matching
 function testKeywordMatching() {
     const result = analyzePrompt('How do I create a backend endpoint?', testRules);
-    assert.equal(result.length, 1, 'Should find one skill');
-    assert.equal(result[0].skill, 'backend-dev', 'Should match backend-dev');
+    assert.equal(result.length, 1, 'Should find one reminder');
+    assert.equal(result[0].name, 'backend-conventions', 'Should match backend-conventions');
     assert.equal(result[0].priority, 'high', 'Should have high priority');
     console.log('✅ Keyword matching test passed');
 }
@@ -133,7 +129,7 @@ function testKeywordMatching() {
 // Test no match
 function testNoMatch() {
     const result = analyzePrompt('How do I write Python?', testRules);
-    assert.equal(result.length, 0, 'Should find no skills');
+    assert.equal(result.length, 0, 'Should find no reminders');
     console.log('✅ No match test passed');
 }
 
@@ -154,20 +150,21 @@ testCaseInsensitive();
 
 ### Creating Mock Events
 
+Match Claude Code's real event schemas here, not what a hook assumes — a
+mock event that just encodes the hook's own guess about its input will pass
+even when the hook is wrong against the live contract. `hooks/test/contract-test.sh`
+in this repo pipes fixtures like these through the two hooks the plugin
+actually ships; see it for a worked, executable version of this idea.
+
 **PostToolUse event:**
 ```json
 {
-  "event": "PostToolUse",
-  "tool": {
-    "name": "Edit",
-    "input": {
-      "file_path": "/Users/test/project/src/file.ts",
-      "old_string": "const x = 1;",
-      "new_string": "const x = 2;"
-    }
-  },
-  "result": {
-    "success": true
+  "hook_event_name": "PostToolUse",
+  "tool_name": "Edit",
+  "tool_input": {
+    "file_path": "/Users/test/project/src/file.ts",
+    "old_string": "const x = 1;",
+    "new_string": "const x = 2;"
   }
 }
 ```
@@ -175,18 +172,16 @@ testCaseInsensitive();
 **UserPromptSubmit event:**
 ```json
 {
-  "event": "UserPromptSubmit",
-  "text": "How do I create a new API endpoint?",
-  "timestamp": "2025-01-15T10:30:00Z"
+  "hook_event_name": "UserPromptSubmit",
+  "prompt": "How do I create a new API endpoint?"
 }
 ```
 
 **Stop event:**
 ```json
 {
-  "event": "Stop",
-  "sessionId": "abc123",
-  "messageCount": 10
+  "hook_event_name": "Stop",
+  "session_id": "abc123"
 }
 ```
 
@@ -196,16 +191,14 @@ testCaseInsensitive();
 #!/bin/bash
 # test-hook.sh
 
-# Create mock event
+# Create mock event (real schema: top-level tool_name/tool_input)
 create_mock_edit_event() {
     cat <<EOF
 {
-  "event": "PostToolUse",
-  "tool": {
-    "name": "Edit",
-    "input": {
-      "file_path": "/tmp/test-file.ts"
-    }
+  "hook_event_name": "PostToolUse",
+  "tool_name": "Edit",
+  "tool_input": {
+    "file_path": "/tmp/test-file.ts"
   }
 }
 EOF
@@ -214,11 +207,11 @@ EOF
 # Test hook
 test_edit_tracker() {
     # Setup
-    export LOG_FILE="/tmp/test-edit-log.txt"
+    export LOG_FILE="/tmp/test-file-edits.log"
     rm -f "$LOG_FILE"
 
     # Run hook with mock event
-    create_mock_edit_event | bash hooks/post-tool-use/01-track-edits.sh
+    create_mock_edit_event | bash hooks/post-tool-use/log-edits.sh
 
     # Verify
     if [ -f "$LOG_FILE" ]; then
@@ -238,37 +231,38 @@ test_edit_tracker
 ### Testing JavaScript Hooks
 
 ```javascript
-// test-skill-activator.js
+// test-keyword-reminder.js
 const { execSync } = require('child_process');
 
-function testSkillActivator(prompt) {
-    const mockEvent = JSON.stringify({
-        text: prompt
-    });
+function testKeywordReminder(prompt) {
+    // Real UserPromptSubmit schema: top-level "prompt" field.
+    const mockEvent = JSON.stringify({ prompt });
 
     const result = execSync(
-        'node hooks/user-prompt-submit/skill-activator.js',
+        'node hooks/user-prompt-submit/keyword-reminder.js',
         {
             input: mockEvent,
             encoding: 'utf8',
             env: {
                 ...process.env,
-                SKILL_RULES: './test-skill-rules.json'
+                KEYWORD_RULES: './test-keyword-rules.json'
             }
         }
     );
 
-    return JSON.parse(result);
+    // No output means no match (see hook-examples.md Example 4).
+    return result.trim() ? JSON.parse(result) : {};
 }
 
 // Test activation
 function testBackendActivation() {
-    const result = testSkillActivator('How do I create a backend endpoint?');
+    const result = testKeywordReminder('How do I create a backend endpoint?');
+    const context = result.hookSpecificOutput?.additionalContext;
 
-    if (result.additionalContext && result.additionalContext.includes('backend')) {
-        console.log('✅ Backend activation test passed');
+    if (context && context.includes('backend')) {
+        console.log('✅ Backend reminder test passed');
     } else {
-        console.log('❌ Backend activation test failed');
+        console.log('❌ Backend reminder test failed');
         process.exit(1);
     }
 }
@@ -340,7 +334,7 @@ mkdir -p "$TEST_DIR"
 
 # Setup test environment
 setup() {
-    export LOG_FILE="$TEST_DIR/edit-log.txt"
+    export LOG_FILE="$TEST_DIR/file-edits.log"
     export PROJECT_ROOT="$TEST_DIR/projects"
     mkdir -p "$PROJECT_ROOT"
 }
@@ -352,8 +346,8 @@ teardown() {
 
 # Test 1: Edit tracker logs edits
 test_edit_tracker_logs() {
-    echo '{"tool": {"name": "Edit", "input": {"file_path": "/test/file.ts"}}}' | \
-        bash hooks/post-tool-use/01-track-edits.sh
+    echo '{"hook_event_name": "PostToolUse", "tool_name": "Edit", "tool_input": {"file_path": "/test/file.ts"}}' | \
+        bash hooks/post-tool-use/log-edits.sh
 
     if grep -q "file.ts" "$LOG_FILE"; then
         echo "✅ Test 1 passed"
