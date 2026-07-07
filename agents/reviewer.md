@@ -91,11 +91,13 @@ rg -i "backward.*compat|legacy.*support|shim|polyfill" src/ || echo "None found"
 rg "@deprecated|#\[deprecated\]|// deprecated|DEPRECATED|@Deprecated" src/ || echo "None found"
 
 # Unused code (language-specific — run whichever applies to the project)
-cargo build 2>&1 | grep -E "warning.*never used|warning.*dead_code" || echo "None found"      # Rust
+cargo build 2>&1 | grep -E "warning.*never used|warning.*dead_code" || echo "cargo not run / no Rust, check manually"   # Rust
 npx eslint --rule 'no-unused-vars: error' src/ 2>/dev/null || echo "Check manually"            # TS/JS
 swiftlint lint --reporter json 2>/dev/null | jq '.[] | select(.rule_id == "unused")' || echo "Check manually"  # Swift
 vulture src/ --min-confidence 80 2>/dev/null || echo "vulture not installed, check manually"    # Python
 ```
+
+For markdown-only projects (like plugin repos), skip these language-specific tool runs and keep the orphaned-tests reasoning below where applicable.
 
 Orphaned tests: for each production file in `git diff main...HEAD --name-only`, confirm the tests exercising it still reference functionality that exists — flag any test whose target function/class was removed in this diff.
 
@@ -199,7 +201,7 @@ For every item in the task's Verification section:
   - **0.5** — Uncertain (partial evidence, assumptions made)
   - **0.3** — Weak (limited investigation, needs more verification)
 
-Then map coverage of the epic's Success Criteria (extracted in Startup Protocol step 2): for each epic-level criterion, identify which task(s) satisfy it and record the same evidence and confidence scoring.
+Then map coverage of the epic's Success Criteria (extracted in Startup Protocol step 2): for each epic-level criterion, identify which task(s) satisfy it and record the same evidence and confidence scoring. Do this mapping once, after all tasks are reviewed — not per task — and let its output be the verdict's Evidence Summary table (which is already keyed "Epic Criterion").
 
 Findings below 0.8 confidence must be investigated further until they reach 0.8 or are marked UNCERTAIN.
 
@@ -226,11 +228,6 @@ Record findings for this task before moving to the next. Use this format:
 | Verification Item | Status | Confidence | Evidence |
 |--------------------|--------|------------|----------|
 | [item text] | Met/Not met/Uncertain | 0.0-1.0 | [file:line or command output] |
-
-#### Epic Criteria Coverage
-| Epic Criterion | Status | Confidence | Evidence |
-|-----------------|--------|------------|----------|
-| [criterion text] | Met/Not met/Uncertain | 0.0-1.0 | [file:line or command output] |
 
 #### Automated Checks
 - TODOs: [result]
@@ -278,6 +275,7 @@ After reviewing ALL tasks, compile findings into one of two verdicts.
 ### Tasks Reviewed
 - <task-id>: <title> — PASS
 - <task-id>: <title> — PASS
+- <task-id>: <title> — NOT YET REVIEWED (open)
 
 ### Evidence Summary
 | Epic Criterion | Status | Confidence | Evidence |
