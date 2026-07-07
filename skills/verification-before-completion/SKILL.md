@@ -289,7 +289,7 @@ All of these mean: Stop, run verification:
 - "I'm tired" (exhaustion ≠ excuse)
 - "Partial check is enough"
 
-Bare-claim and secondhand-report classes ("should work now", "agent said success") live in `skills/common-patterns/common-rationalizations.md` (Verification Shortcuts) — the single source.
+Bare-claim, confidence, and secondhand-report classes ("should work now", "I'm confident this fixes it", "agent said success") live in `skills/common-patterns/common-rationalizations.md` (Verification Shortcuts) — the single source.
 
 ## Current Changes Assumption
 

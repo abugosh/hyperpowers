@@ -109,8 +109,11 @@ Capture rationalizations from baseline testing (see Testing section below). Ever
 |--------|---------|
 | "Too simple to test" | Simple code breaks. Test takes 30 seconds. |
 | "I'll test after" | Tests passing immediately prove nothing. |
-| "Tests after achieve same goals" | Tests-after = "what does this do?" Tests-first = "what should this do?" |
+| "Instruction was specific so I can skip the workflow" | Specific instructions = WHAT, not HOW. Route through the workflow. |
 ```
+
+(That third example is the counter class proven load-bearing by A/B flip against
+current lead-tier models — RW6b P8. Use counters your own baselines earn.)
 
 ### Create Red Flags List
 
@@ -121,9 +124,9 @@ Make it easy for agents to self-check when rationalizing:
 
 - Code before test
 - "I already manually tested it"
-- "Tests after achieve the same purpose"
 - "It's about spirit not ritual"
 - "This is different because..."
+- "Instruction was specific, so the workflow doesn't apply"
 
 **All of these mean: Delete code. Start over with TDD.**
 ```

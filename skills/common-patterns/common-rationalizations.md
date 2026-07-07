@@ -24,6 +24,7 @@ These rationalizations appear across multiple contexts. When you catch yourself 
 | "Linter passed, must be fine" | Linter ≠ compiler ≠ tests. Run everything. |
 | "Partial check is enough" | Partial proves nothing about the whole. |
 | "Agent said success" | Agents lie/hallucinate. Verify independently. |
+| "I'm confident this fixes it" | Confidence ≠ evidence. Run the verification. |
 
 ## Documentation Shortcuts
 
@@ -75,6 +76,8 @@ These rationalizations appear across multiple contexts. When you catch yourself 
 | "Will adapt this code while writing test" | Delete it. Start fresh from the test. |
 | "Can keep it as reference" | No. Delete means delete. |
 | "Test is simple, don't need to run it" | Simple tests fail for subtle reasons. Run it. |
+| "Tests after achieve the same goals" (deadline/authority pressure) | Tests-after prove nothing about intent. Test first, even shipping in 10 minutes. |
+| "Deleting X hours of work is wasteful" | Sunk cost. Untested code is the waste. |
 
 ## Research Shortcuts
 
