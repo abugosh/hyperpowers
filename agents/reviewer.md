@@ -35,7 +35,7 @@ bd list --parent <epic-id>
 
 ## Review Process
 
-Review every closed task under the epic. Do not skip tasks because they seem "simple" or "just docs."
+Review every closed task under the epic. Do not skip tasks because they seem "simple" or "just docs." Open or in-progress tasks are out of scope for this verdict — list them in your report as not-yet-reviewed, not as reviewed or failing.
 
 For each task:
 
@@ -45,7 +45,12 @@ For each task:
 bd show <task-id>
 ```
 
-Extract: goal, success criteria, implementation checklist, key considerations, anti-patterns.
+Extract fields per the two-tier spec format (`skills/common-patterns/spec-templates.md`):
+- **Always present:** Goal, Why, Verification
+- **Simple tier:** Changes
+- **Medium tier:** Context, Implementation, Tests, Boundaries
+
+Detect tier by which sections are present — a task with Implementation and Tests sections is medium; a task with only Changes is simple. Two-tier task specs carry no per-task Success Criteria or Anti-Patterns section — those live at the epic level only (extracted in Startup Protocol step 2).
 
 If `bd show` returns an error for a task, record it:
 ```
@@ -84,7 +89,15 @@ rg -i "backward.*compat|legacy.*support|shim|polyfill" src/ || echo "None found"
 
 # Deprecation markers that should have been removed
 rg "@deprecated|#\[deprecated\]|// deprecated|DEPRECATED|@Deprecated" src/ || echo "None found"
+
+# Unused code (language-specific — run whichever applies to the project)
+cargo build 2>&1 | grep -E "warning.*never used|warning.*dead_code" || echo "None found"      # Rust
+npx eslint --rule 'no-unused-vars: error' src/ 2>/dev/null || echo "Check manually"            # TS/JS
+swiftlint lint --reporter json 2>/dev/null | jq '.[] | select(.rule_id == "unused")' || echo "Check manually"  # Swift
+vulture src/ --min-confidence 80 2>/dev/null || echo "vulture not installed, check manually"    # Python
 ```
+
+Orphaned tests: for each production file in `git diff main...HEAD --name-only`, confirm the tests exercising it still reference functionality that exists — flag any test whose target function/class was removed in this diff.
 
 For markdown-only projects, check for outdated references:
 - References to removed files or features
@@ -116,14 +129,14 @@ git diff main...HEAD --name-only
 Then read each changed file completely. While reading, check:
 - Code implements what the task specification describes (not stubs)
 - Error handling uses proper patterns (Result, try/catch — not panic/unwrap)
-- Edge cases from the task's Key Considerations are handled
+- Edge cases identified in the task's Context/Boundaries (medium tier) or the epic's Requirements are handled
 - Code is clear and maintainable
-- No anti-patterns from the task or epic are present
+- No anti-patterns from the epic's Anti-Patterns section are present (two-tier task specs carry none)
 
 For markdown deliverables, verify:
 - All sections described in the task spec exist
 - No placeholder text ("[detailed above]", "[as specified]", "[TODO]")
-- Content matches the task's success criteria
+- Content matches the task's Verification section and relevant epic Success Criteria
 - Cross-references to other files are valid
 
 ### Step 6: Code quality review (Google Fellow perspective)
@@ -175,10 +188,10 @@ Red flags that mean GAPS FOUND:
 - Tests that verify mock behavior instead of production code
 - Generic test names ("test_basic", "test_it_works")
 
-### Step 8: Verify each success criterion with evidence
+### Step 8: Verify task Verification items and map epic criteria coverage
 
-For every success criterion in the task:
-- Run a verification command or read code
+For every item in the task's Verification section:
+- Run the verification command or read code
 - Record the evidence (command output, file:line reference)
 - Assign a confidence score (0.0-1.0):
   - **1.0** — Verified with direct evidence (ran command, read code)
@@ -186,11 +199,13 @@ For every success criterion in the task:
   - **0.5** — Uncertain (partial evidence, assumptions made)
   - **0.3** — Weak (limited investigation, needs more verification)
 
+Then map coverage of the epic's Success Criteria (extracted in Startup Protocol step 2): for each epic-level criterion, identify which task(s) satisfy it and record the same evidence and confidence scoring.
+
 Findings below 0.8 confidence must be investigated further until they reach 0.8 or are marked UNCERTAIN.
 
-### Step 9: Check each anti-pattern
+### Step 9: Check each epic anti-pattern
 
-Search for every prohibited pattern from the task and epic anti-patterns sections:
+Search for every prohibited pattern from the epic's Anti-Patterns section (extracted in Startup Protocol step 2). Two-tier task specs carry no per-task anti-patterns section.
 
 ```bash
 # Example: if anti-pattern says "NO unwrap in production"
@@ -207,9 +222,14 @@ Record findings for this task before moving to the next. Use this format:
 ```markdown
 ### Task: <task-id> - <title>
 
-#### Evidence Table
-| Criterion | Status | Confidence | Evidence |
-|-----------|--------|------------|----------|
+#### Verification Items
+| Verification Item | Status | Confidence | Evidence |
+|--------------------|--------|------------|----------|
+| [item text] | Met/Not met/Uncertain | 0.0-1.0 | [file:line or command output] |
+
+#### Epic Criteria Coverage
+| Epic Criterion | Status | Confidence | Evidence |
+|-----------------|--------|------------|----------|
 | [criterion text] | Met/Not met/Uncertain | 0.0-1.0 | [file:line or command output] |
 
 #### Automated Checks
@@ -220,7 +240,9 @@ Record findings for this task before moving to the next. Use this format:
 
 #### Dead Code Audit
 - Fallback/legacy code: [result]
+- Unused functions/exports: [result]
 - Deprecation markers: [result]
+- Orphaned tests: [result]
 - Backwards compat shims: [result]
 
 #### Quality Gates
@@ -234,7 +256,7 @@ Record findings for this task before moving to the next. Use this format:
 | [test name] | [specific bug] | Keep/Strengthen/Remove |
 
 #### Anti-Pattern Check
-- [anti-pattern]: [found/not found with evidence]
+- [epic anti-pattern]: [found/not found with evidence]
 
 #### Issues Found
 **Critical:** [must fix before approval]
@@ -258,8 +280,8 @@ After reviewing ALL tasks, compile findings into one of two verdicts.
 - <task-id>: <title> — PASS
 
 ### Evidence Summary
-| Criterion | Status | Confidence | Evidence |
-|-----------|--------|------------|----------|
+| Epic Criterion | Status | Confidence | Evidence |
+|-----------------|--------|------------|----------|
 | [criterion] | Met | [score] | [evidence] |
 
 ### Quality Gates
