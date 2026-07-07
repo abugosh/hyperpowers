@@ -286,8 +286,8 @@ All of these mean: Stop, follow TDD:
 - "This is different because..."
 - "I'm being pragmatic, not dogmatic"
 - "It's about spirit not ritual"
-- "Tests after achieve the same goals"
-- "Deleting X hours of work is wasteful"
+
+Time/authority/sunk-cost pressure classes live in `skills/common-patterns/common-rationalizations.md` (TDD Shortcuts) — the single source.
 
 </critical_rules>
 

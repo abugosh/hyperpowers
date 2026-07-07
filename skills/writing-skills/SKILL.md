@@ -529,6 +529,17 @@ NO SKILL WITHOUT FAILING TEST FIRST
 - Edits to existing skills
 
 **Write skill before testing?** Delete it. Start over.
+
+## Double-Loop Rule (observed failure → skill edit)
+
+An edit motivated by an observed failure MUST cite the recorded observation
+(the epic's bd notes carry the ledger — record failures verbatim when you see
+them) and still run the test cycle: RED reproducing that failure class before
+the edit, GREEN after. Pruning has the inverse burden — an A-COMPLIES baseline
+(rule present, counter absent) per the A/B method in
+[resources/testing-methodology.md](resources/testing-methodology.md).
+The loop stays human-routed: tests and ledgers inform the author; nothing
+edits skills autonomously.
 </critical_rules>
 
 <verification_checklist>
