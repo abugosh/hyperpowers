@@ -6,16 +6,17 @@ This guide provides complete, production-ready hook implementations you can use 
 
 **Purpose:** Track which files were edited and in which repos for later analysis.
 
-**File:** `~/.claude/hooks/post-tool-use/01-track-edits.sh`
+**File:** `~/.claude/hooks/post-tool-use/log-edits.sh`
 
 ```bash
 #!/bin/bash
 
 # Configuration
-LOG_FILE="$HOME/.claude/edit-log.txt"
+LOG_FILE="$HOME/.claude/logs/file-edits.log"
 MAX_LOG_LINES=1000
 
 # Create log if doesn't exist
+mkdir -p "$(dirname "$LOG_FILE")"
 touch "$LOG_FILE"
 
 # Function to log edit
@@ -40,20 +41,20 @@ find_repo() {
     echo "unknown"
 }
 
-# Read tool use event from stdin
+# Read tool use event from stdin (Claude Code's real PostToolUse schema:
+# top-level tool_name/tool_input, not a nested "tool" object)
 read -r tool_use_json
 
-# Extract file path from tool use
-tool_name=$(echo "$tool_use_json" | jq -r '.tool.name')
+tool_name=$(echo "$tool_use_json" | jq -r '.tool_name')
 file_path=""
 
 case "$tool_name" in
     "Edit"|"Write")
-        file_path=$(echo "$tool_use_json" | jq -r '.tool.input.file_path')
+        file_path=$(echo "$tool_use_json" | jq -r '.tool_input.file_path')
         ;;
     "MultiEdit")
         # MultiEdit has multiple files - log each
-        echo "$tool_use_json" | jq -r '.tool.input.edits[].file_path' | while read -r path; do
+        echo "$tool_use_json" | jq -r '.tool_input.edits[].file_path' | while read -r path; do
             log_edit "$path"
         done
         exit 0
@@ -72,22 +73,27 @@ if [ "$line_count" -gt "$MAX_LOG_LINES" ]; then
     mv "$LOG_FILE.tmp" "$LOG_FILE"
 fi
 
-# Return success (non-blocking)
-echo '{}'
+# Non-blocking, nothing to report: exit 0 with no output.
+exit 0
 ```
 
-**Configuration (`hooks.json`):**
+**Configuration (`hooks.json`):** wiring uses a matcher plus a `hooks` array, not a
+flat list — this is the shape `hooks/hooks.json` actually uses in this plugin:
 ```json
 {
-  "hooks": [
-    {
-      "event": "PostToolUse",
-      "command": "~/.claude/hooks/post-tool-use/01-track-edits.sh",
-      "description": "Track file edits for build checking",
-      "blocking": false,
-      "timeout": 1000
-    }
-  ]
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/post-tool-use/log-edits.sh"
+          }
+        ]
+      }
+    ]
+  }
 }
 ```
 
@@ -101,7 +107,7 @@ echo '{}'
 #!/bin/bash
 
 # Configuration
-LOG_FILE="$HOME/.claude/edit-log.txt"
+LOG_FILE="$HOME/.claude/logs/file-edits.log"
 PROJECT_ROOT="$HOME/git/myproject"
 ERROR_THRESHOLD=5
 
@@ -212,7 +218,7 @@ echo '{}'
 #!/bin/bash
 
 # Configuration
-LOG_FILE="$HOME/.claude/edit-log.txt"
+LOG_FILE="$HOME/.claude/logs/file-edits.log"
 PROJECT_ROOT="$HOME/git/myproject"
 
 # Get recently edited files
@@ -281,11 +287,11 @@ echo "✅ Formatted $formatted_count file(s)"
 echo '{}'
 ```
 
-## Example 4: Skill Activation Injector (UserPromptSubmit)
+## Example 4: Contextual Reminder Injector (UserPromptSubmit)
 
-**Purpose:** Analyze user prompt and inject skill activation reminders.
+**Purpose:** Analyze the user's prompt and inject a contextual reminder before Claude processes it.
 
-**File:** `~/.claude/hooks/user-prompt-submit/skill-activator.js`
+**File:** `~/.claude/hooks/user-prompt-submit/keyword-reminder.js`
 
 ```javascript
 #!/usr/bin/env node
@@ -293,102 +299,74 @@ echo '{}'
 const fs = require('fs');
 const path = require('path');
 
-// Load skill rules
-const rulesPath = process.env.SKILL_RULES || path.join(process.env.HOME, '.claude/skill-rules.json');
+// Load keyword rules (a small local config, not shared with anything else)
+const rulesPath = process.env.KEYWORD_RULES || path.join(process.env.HOME, '.claude/keyword-rules.json');
 const rules = JSON.parse(fs.readFileSync(rulesPath, 'utf8'));
 
-// Read prompt from stdin
-let promptData = '';
+// Read the event from stdin. Claude Code's real UserPromptSubmit schema
+// carries the text in a top-level "prompt" field, not "text".
+let inputData = '';
 process.stdin.on('data', chunk => {
-    promptData += chunk;
+    inputData += chunk;
 });
 
 process.stdin.on('end', () => {
-    const prompt = JSON.parse(promptData);
-    const activatedSkills = analyzePrompt(prompt.text);
+    const input = JSON.parse(inputData);
+    const matches = analyzePrompt(input.prompt);
 
-    if (activatedSkills.length > 0) {
-        const context = generateContext(activatedSkills);
+    if (matches.length > 0) {
+        // Context injection lives under hookSpecificOutput, mirroring the
+        // shape hooks/session-start.sh uses for SessionStart (see HOOKS.md).
         console.log(JSON.stringify({
-            decision: 'approve',
-            additionalContext: context
+            hookSpecificOutput: {
+                hookEventName: 'UserPromptSubmit',
+                additionalContext: generateContext(matches)
+            }
         }));
     } else {
-        console.log(JSON.stringify({ decision: 'approve' }));
+        // No match: no output needed, exit 0 (nothing printed above).
     }
 });
 
 function analyzePrompt(text) {
     const lowerText = text.toLowerCase();
-    const activated = [];
+    const matched = [];
 
-    for (const [skillName, config] of Object.entries(rules)) {
-        // Check keywords
-        if (config.promptTriggers?.keywords) {
-            for (const keyword of config.promptTriggers.keywords) {
-                if (lowerText.includes(keyword.toLowerCase())) {
-                    activated.push({ skill: skillName, priority: config.priority || 'medium' });
-                    break;
-                }
-            }
-        }
-
-        // Check intent patterns
-        if (config.promptTriggers?.intentPatterns) {
-            for (const pattern of config.promptTriggers.intentPatterns) {
-                if (new RegExp(pattern, 'i').test(text)) {
-                    activated.push({ skill: skillName, priority: config.priority || 'medium' });
-                    break;
-                }
+    for (const [reminderName, config] of Object.entries(rules)) {
+        for (const keyword of config.keywords) {
+            if (lowerText.includes(keyword.toLowerCase())) {
+                matched.push({ name: reminderName, priority: config.priority || 'medium' });
+                break;
             }
         }
     }
 
-    // Sort by priority
-    return activated.sort((a, b) => {
+    return matched.sort((a, b) => {
         const priorityOrder = { high: 0, medium: 1, low: 2 };
         return priorityOrder[a.priority] - priorityOrder[b.priority];
     });
 }
 
-function generateContext(skills) {
-    const skillList = skills.map(s => s.skill).join(', ');
-
+function generateContext(matches) {
     return `
-🎯 SKILL ACTIVATION CHECK
+🎯 REMINDER CHECK
 
-The following skills may be relevant to this prompt:
-${skills.map(s => `- **${s.skill}** (${s.priority} priority)`).join('\n')}
-
-Before responding, check if any of these skills should be used.
+The following reminders may be relevant to this prompt:
+${matches.map(m => `- **${m.name}** (${m.priority} priority)`).join('\n')}
 `;
 }
 ```
 
-**Configuration (`skill-rules.json`):**
+**Configuration (`keyword-rules.json`):**
 ```json
 {
-  "backend-dev-guidelines": {
-    "type": "domain",
+  "backend-conventions": {
     "priority": "high",
-    "promptTriggers": {
-      "keywords": ["backend", "controller", "service", "API", "endpoint"],
-      "intentPatterns": [
-        "(create|add).*?(route|endpoint|controller)",
-        "(how to|best practice).*?(backend|API)"
-      ]
-    }
+    "keywords": ["backend", "controller", "service", "API", "endpoint"]
   },
-  "frontend-dev-guidelines": {
-    "type": "domain",
+  "frontend-conventions": {
     "priority": "high",
-    "promptTriggers": {
-      "keywords": ["frontend", "component", "react", "UI", "layout"],
-      "intentPatterns": [
-        "(create|build).*?(component|page|view)",
-        "(how to|pattern).*?(react|frontend)"
-      ]
-    }
+    "keywords": ["frontend", "component", "react", "UI", "layout"]
   }
 }
 ```
@@ -402,7 +380,7 @@ Before responding, check if any of these skills should be used.
 ```bash
 #!/bin/bash
 
-LOG_FILE="$HOME/.claude/edit-log.txt"
+LOG_FILE="$HOME/.claude/logs/file-edits.log"
 
 # Get recently edited files
 get_edited_files() {
@@ -484,11 +462,13 @@ echo '{}'
 ```bash
 #!/bin/bash
 
-# Read tool use event
+# Read tool use event. Real PreToolUse schema: top-level tool_name/tool_input
+# (see hooks/pre-tool-use/02-version-bump-guard.py and HOOKS.md for the
+# hook this plugin actually ships).
 read -r tool_use_json
 
-tool_name=$(echo "$tool_use_json" | jq -r '.tool.name')
-file_path=$(echo "$tool_use_json" | jq -r '.tool.input.file_path // empty')
+tool_name=$(echo "$tool_use_json" | jq -r '.tool_name')
+file_path=$(echo "$tool_use_json" | jq -r '.tool_input.file_path // empty')
 
 # Dangerous paths (customize for your project)
 PROTECTED_PATHS=(
@@ -514,18 +494,17 @@ is_dangerous() {
 # Check dangerous operations
 if [ "$tool_name" == "Write" ] || [ "$tool_name" == "Edit" ]; then
     if is_dangerous "$file_path"; then
-        cat <<EOF | jq -c '.'
-{
-  "decision": "block",
-  "reason": "⛔ BLOCKED: Attempting to modify protected path\\n\\nFile: $file_path\\n\\nThis path is protected from automatic modification.\\nIf you need to make changes:\\n1. Review changes carefully\\n2. Use manual file editing\\n3. Confirm with teammate\\n\\nTo override, edit ~/.claude/hooks/pre-tool-use/dangerous-ops.sh"
-}
-EOF
+        reason="BLOCKED: Attempting to modify protected path ${file_path}. This path is protected from automatic modification. Use manual file editing and confirm with a teammate, or edit the PROTECTED_PATHS list in this hook to override."
+        jq -n --arg reason "$reason" \
+            '{hookSpecificOutput: {hookEventName: "PreToolUse", permissionDecision: "deny", permissionDecisionReason: $reason}}'
         exit 0
     fi
 fi
 
-# Allow operation (NOTE: PreToolUse hooks should use hookSpecificOutput format with permissionDecision)
-echo '{"decision": "allow"}'
+# Allow: no output needed, exit 0 (the guard shipped with this plugin,
+# hooks/pre-tool-use/02-version-bump-guard.py, follows the same
+# fail-open-with-no-output convention on its allow path).
+exit 0
 ```
 
 ## Testing These Examples
@@ -533,7 +512,8 @@ echo '{"decision": "allow"}'
 ### Test Edit Tracker
 ```bash
 # Create test log entry
-echo "2025-01-15 10:30:00 | frontend | /path/to/file.ts" > ~/.claude/edit-log.txt
+mkdir -p ~/.claude/logs
+echo "2025-01-15 10:30:00 | frontend | /path/to/file.ts" > ~/.claude/logs/file-edits.log
 
 # Test formatting script
 bash ~/.claude/hooks/stop/30-format-code.sh
@@ -542,16 +522,16 @@ bash ~/.claude/hooks/stop/30-format-code.sh
 ### Test Build Checker
 ```bash
 # Add some edits to log
-echo "2025-01-15 10:30:00 | backend | /path/to/backend/file.ts" >> ~/.claude/edit-log.txt
+echo "2025-01-15 10:30:00 | backend | /path/to/backend/file.ts" >> ~/.claude/logs/file-edits.log
 
 # Run build checker
 bash ~/.claude/hooks/stop/20-build-checker.sh
 ```
 
-### Test Skill Activator
+### Test Contextual Reminder Injector
 ```bash
-# Test with mock prompt
-echo '{"text": "How do I create a new API endpoint?"}' | node ~/.claude/hooks/user-prompt-submit/skill-activator.js
+# Test with a mock UserPromptSubmit event (real field is "prompt", not "text")
+echo '{"prompt": "How do I create a new API endpoint?"}' | node ~/.claude/hooks/user-prompt-submit/keyword-reminder.js
 ```
 
 ## Debugging Tips

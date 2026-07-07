@@ -2,490 +2,122 @@
 
 ## Overview
 
-Hyperpowers uses Claude Code's hooks system to provide intelligent, context-aware assistance throughout your development workflow. Hooks automatically enhance your experience without requiring manual intervention.
-
-## Hook Types
-
-### UserPromptSubmit Hook
-
-**File:** `hooks/user-prompt-submit/10-skill-activator.js`
-**Purpose:** Analyzes prompts and suggests relevant skills and agents
-**Input:** `{"text": "user prompt text"}`
-**Output:** `{"additionalContext": "skill/agent suggestions"}` (no decision field)
-
-**How it works:**
-1. You type a prompt (e.g., "I want to write a test for the login function")
-2. Hook analyzes prompt against patterns in `hooks/skill-rules.json`
-3. Returns top 3 matching skills/agents sorted by priority
-4. Suggestions appear before Claude responds
-
-**Example output (skills):**
-```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🎯 SKILL/AGENT ACTIVATION CHECK
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-Relevant skills for this prompt:
-
-🔴 **test-driven-development** (critical priority, process)
-
-Use the Skill tool for skills: `Skill command="hyperpowers:<skill-name>"`
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-```
-
-**Example output (agents):**
-```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🎯 SKILL/AGENT ACTIVATION CHECK
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-Relevant agents for this prompt:
-
-💾 **hyperpowers:test-runner** (medium priority)
-
-Use the Agent tool for agents: `Agent(subagent_type="hyperpowers:<agent-name>", ...)`
-Example: `Agent(subagent_type="hyperpowers:test-runner", prompt="Run: git commit...", ...)`
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-```
-
-**Configuration:**
-- Edit `hooks/skill-rules.json` to adjust skill/agent triggers
-- Add keywords or intent patterns for your skills or agents
-- Set type to "agent" for agents (e.g., test-runner)
-- Set `DEBUG_HOOKS=true` environment variable for troubleshooting
-
-### PreToolUse Hooks
-
-**File:** `hooks/block-beads-direct-read.py`
-**Purpose:** Blocks direct Read/Grep access to `.beads/issues.jsonl`
-**Input:** `{"tool_name": "Read", "tool_input": {"file_path": "..."}}`
-**Output:** `{"hookSpecificOutput": {"permissionDecision": "deny", ...}}` (blocking)
-
-**How it works:**
-1. Intercepts Read and Grep tool calls
-2. Checks if path contains `.beads/issues.jsonl`
-3. Blocks the operation and suggests using `bd` CLI instead
-
-**Why blocking is necessary:**
-Direct file access bypasses bd validation and often fails due to file size. The bd CLI provides the correct interface.
-
-**File:** `hooks/pre-tool-use/01-block-pre-commit-edits.py`
-**Purpose:** Blocks direct Edit/Write modifications to `.git/hooks/pre-commit`
-**Input:** `{"tool_name": "Edit|Write", "tool_input": {"file_path": "..."}}`
-**Output:** `{"hookSpecificOutput": {"permissionDecision": "deny", ...}}` (blocking)
-
-**How it works:**
-1. Intercepts Edit and Write tool calls
-2. Checks if file path contains `.git/hooks/pre-commit`
-3. Blocks the operation if detected
-4. Provides guidance on proper hook management
-
-**Why blocking is necessary:**
-- Pre-commit hooks enforce critical quality standards
-- Direct modifications bypass code review
-- Changes can break CI/CD pipelines
-- Hook modifications should be version controlled
-
-**If hooks need modification:**
-- Edit source templates in version control
-- Use proper tooling (husky, pre-commit framework)
-- Document changes and get them reviewed
-- Never bypass with --no-verify
-
-**File:** `hooks/pre-tool-use/02-version-bump-guard.py`
-**Purpose:** Blocks `git push` of a plugin's default branch when plugin content changed without a version-bump guard passing
-**Input:** `{"tool_name": "Bash", "cwd": "...", "tool_input": {"command": "git push ..."}}`
-**Output:** `{"hookSpecificOutput": {"permissionDecision": "deny", ...}}` (blocking) or silent allow
-
-**How it works:**
-1. Fires only on Bash commands containing `git ... push`, only in repos with `.claude-plugin/plugin.json` at the root, and only when pushing the default branch (main/master) — feature-branch pushes are never blocked
-2. Diffs the outgoing range (upstream or origin/main → HEAD) for changes under `skills/`, `agents/`, `commands/`, `hooks/`, or to `CLAUDE.md`/`README.md`
-3. If plugin content changed but `.claude-plugin/plugin.json` has no version change in the same range, denies with a bump reminder (patch for fixes, minor for features/rewrites)
-
-**Fail-open design:**
-Every error path (unparseable input, git failure, missing upstream, unexpected state) allows the push. False-allows are acceptable; false-denies are not. A hook bug can never block work.
-
-**To disable (veto path):**
-Remove the `Bash` matcher block referencing `02-version-bump-guard.py` from `hooks/hooks.json`.
-
-### PostToolUse Hooks
-
-**File:** `hooks/post-tool-use/01-track-edits.sh`
-**Purpose:** Tracks file edits for context awareness
-**Input:** `{"tool": {"name": "Edit", "input": {"file_path": "..."}}}`
-**Output:** `{}` (empty response, no decision field)
-
-**How it works:**
-1. Intercepts Edit and Write tool usage
-2. Logs timestamp, repo, tool name, and file path
-3. Stores in `hooks/context/edit-log.txt`
-4. Automatically rotates log at 1000 lines
-
-**Context Storage:**
-- **Log file:** `hooks/context/edit-log.txt`
-- **Format:** `timestamp | repo | tool | filepath`
-- **Example:** `2025-10-30 15:35:05 | hyper | Edit | /Users/ryan/src/hyper/test.txt`
-
-**Utility functions** (in `hooks/utils/context-query.sh`):
-- `get_recent_edits [since_timestamp]` - Query edits since timestamp
-- `get_session_files [session_start]` - Get unique files edited in session
-- `was_file_edited <file_path> [since]` - Check if specific file was edited
-- `get_repo_stats [since]` - Get edit counts by repo
-
-**File:** `hooks/post-tool-use/02-block-bd-truncation.py`
-**Purpose:** Prevents bd tasks from being created with truncated specifications
-**Input:** `{"tool_name": "Bash", "tool_input": {"command": "bd create ..."}}`
-**Output:** `{"hookSpecificOutput": {"permissionDecision": "deny", ...}}` (blocking)
-
-**How it works:**
-1. Intercepts Bash tool calls containing `bd create` or `bd update`
-2. Scans command for truncation markers like "[Remaining steps truncated]", "[etc.]", etc.
-3. Blocks the command if truncation detected
-4. Provides helpful error message explaining the issue
-
-**Detected truncation patterns:**
-- `[Remaining ... truncated]`
-- `[truncated]`
-- `[...]`
-- `[etc.]`
-- `[Omitted ...]`
-- `(truncated)`
-- `(abbreviated)`
-
-**Why blocking is necessary:**
-Truncated bd tasks lead to incomplete implementations. Brainstorming, writing-plans, and sre-task-refinement skills sometimes generate partial specifications marked with truncation indicators. This hook prevents these from being saved, forcing complete specifications.
-
-**File:** `hooks/post-tool-use/03-block-pre-commit-bash.py`
-**Purpose:** Blocks Bash commands that modify `.git/hooks/pre-commit`
-**Input:** `{"tool_name": "Bash", "tool_input": {"command": "..."}}`
-**Output:** `{"hookSpecificOutput": {"permissionDecision": "deny", ...}}` (blocking)
-
-**How it works:**
-1. Intercepts Bash tool calls
-2. Scans command for patterns that modify pre-commit hooks
-3. Blocks commands containing modification attempts
-4. Provides guidance on proper hook management
-
-**Detected modification patterns:**
-- `sed -i ... pre-commit` (in-place editing)
-- `> .git/hooks/pre-commit` (redirect to file)
-- `>> .git/hooks/pre-commit` (append to file)
-- `mv ... pre-commit` (moving to pre-commit)
-- `cp ... pre-commit` (copying to pre-commit)
-- `chmod ... pre-commit` (changing permissions)
-- `cat > .git/hooks/pre-commit` (creating with cat)
-- `tee .git/hooks/pre-commit` (piping with tee)
-- Heredoc redirects to pre-commit
-
-**Why blocking is necessary:**
-Claude sometimes attempts "clever" workarounds when pre-commit hooks produce errors:
-- Using `sed` to comment out failing checks
-- Redirecting empty content to disable hooks
-- Moving backup files over hooks
-- Changing permissions to bypass hooks
-
-These modifications bypass code review, break CI/CD, and hide underlying issues. The hook forces proper problem resolution instead of hook circumvention.
-
-**Works in tandem with:** `hooks/pre-tool-use/01-block-pre-commit-edits.py` (blocks direct Edit/Write)
-
-**File:** `hooks/post-tool-use/04-block-pre-existing-checks.py`
-**Purpose:** Blocks git checkout commands used to check if errors are "pre-existing"
-**Input:** `{"tool_name": "Bash", "tool_input": {"command": "..."}}`
-**Output:** `{"hookSpecificOutput": {"permissionDecision": "deny", ...}}` (blocking)
-
-**How it works:**
-1. Intercepts Bash tool calls
-2. Detects patterns of checking previous commits for test/lint results
-3. Blocks commands that combine git checkout with verification commands
-4. Provides guidance on fixing errors directly
-
-**Detected patterns:**
-- `git checkout <commit-sha>` combined with test/lint commands
-- `git stash && git checkout` (common pattern for checking previous commits)
-- Running verification commands (ruff, pytest, mypy, cargo test, npm test, etc.) on previous commits
-
-**Why blocking is necessary:**
-Checking if errors are "pre-existing" wastes time and shifts responsibility away from fixing them. The focus should be on resolving current issues, not investigating history.
-
-Claude sometimes attempts to verify errors are new by:
-- Checking out previous commits to run tests
-- Running linters on previous commits to compare results
-- Using git history to investigate when errors were introduced
-
-These investigations are unnecessary for resolving current issues. The hook forces Claude to fix errors directly instead of investigating git history.
-
-**Related skills:** `verification-before-completion`, `debugging-with-tools` document the approach of fixing errors directly.
-
-### Stop Hook
-
-**File:** `hooks/stop/10-gentle-reminders.sh`
-**Purpose:** Shows context-aware reminders after Claude responds
-**Input:** `{"text": "claude's response"}` (optional)
-**Output:** Brief reminders to stdout
-
-**How it works:**
-1. Reads Claude's response and session context
-2. Checks for relevant reminder patterns:
-   - Source files edited without test files → TDD reminder
-   - User claims "done/complete" with edits → Verification reminder
-   - 3+ files edited → Commit reminder
-3. Shows maximum 5 lines of non-intrusive output
-
-**Example output:**
-```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-💭 Remember: Write tests first (TDD)
-✅ Before claiming complete: Run tests
-💾 Consider: 5 files edited - use hyperpowers:test-runner agent
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-```
-
-## Installation
-
-Hooks are automatically activated when the Hyperpowers plugin is installed.
-
-**Prerequisites:**
-- Node.js (for UserPromptSubmit hook)
-- Bash (for PostToolUse and Stop hooks)
-- jq (for JSON processing)
-
-**Verify installation:**
-```bash
-ls hooks/
-# Should show: hooks.json, user-prompt-submit/, post-tool-use/, stop/, utils/, context/
-```
-
-## Troubleshooting
-
-### Skill activator not working
-
-**Symptoms:** No skill suggestions appear when typing prompts
-
-**Debug steps:**
-```bash
-# 1. Enable debug mode
-export DEBUG_HOOKS=true
-
-# 2. Test manually
-echo '{"text": "I want to write a test"}' | node hooks/user-prompt-submit/10-skill-activator.js
-
-# 3. Check skill rules exist
-cat hooks/skill-rules.json | jq 'keys'
-
-# 4. Verify Node.js is installed
-node --version
-```
-
-### Context not tracking
-
-**Symptoms:** Edit log is empty or not updating
-
-**Debug steps:**
-```bash
-# 1. Check log file exists
-ls -la hooks/context/edit-log.txt
-
-# 2. Test manually
-echo '{"tool": {"name": "Edit", "input": {"file_path": "/test.ts"}}}' | \
-  bash hooks/post-tool-use/01-track-edits.sh
-
-# 3. Verify log was written
-cat hooks/context/edit-log.txt
-
-# 4. Check permissions
-ls -la hooks/context/
-```
-
-### Reminders not showing
-
-**Symptoms:** No reminders after Claude responds
-
-**Debug steps:**
-```bash
-# 1. Add some edits to context
-echo "$(date +"%Y-%m-%d %H:%M:%S") | hyper | Edit | src/main.ts" > hooks/context/edit-log.txt
-
-# 2. Test manually
-echo '{"text": "All done!"}' | bash hooks/stop/10-gentle-reminders.sh
-
-# 3. Check for bash errors
-bash -x hooks/stop/10-gentle-reminders.sh <<< '{"text": "Done"}'
-```
-
-### General debugging
-
-**Check hooks.json is valid:**
-```bash
-jq . hooks/hooks.json
-```
-
-**View hook execution (if available in Claude Code):**
-- Check Claude Code logs for hook errors
-- Look for hook timeout messages
-
-## Customization
-
-### Adjusting skill/agent triggers
-
-Edit `hooks/skill-rules.json` to add or modify skill/agent activation patterns:
-
-**Adding a skill:**
-```json
-{
-  "my-custom-skill": {
-    "type": "workflow",
-    "enforcement": "suggest",
-    "priority": "high",
-    "promptTriggers": {
-      "keywords": ["deploy", "release", "ship"],
-      "intentPatterns": [
-        "(deploy|release|ship).*?(prod|production)",
-        "prepare.*?(release|deployment)"
-      ]
-    }
-  }
-}
-```
-
-**Adding an agent:**
-```json
-{
-  "my-custom-agent": {
-    "type": "agent",
-    "enforcement": "suggest",
-    "priority": "medium",
-    "promptTriggers": {
-      "keywords": ["commit", "git commit"],
-      "intentPatterns": [
-        "(git )?commit.*?(changes|files)",
-        "(make|create).*?commit"
-      ]
-    }
-  }
-}
-```
-
-**Pattern tips:**
-- Use lowercase keywords (matching is case-insensitive)
-- Intent patterns are regex (use `.*?` for non-greedy matching)
-- Test patterns on [regex101.com](https://regex101.com) first
-- Priority: `critical` > `high` > `medium` > `low`
-- Type: `process|domain|workflow|agent`
-
-### Adjusting reminder thresholds
-
-Edit `hooks/stop/10-gentle-reminders.sh`:
-
-```bash
-# Change commit reminder threshold (default: 3 files)
-if [ "$FILE_COUNT" -ge 5 ]; then  # Now triggers at 5 files
-    SHOW_COMMIT_REMINDER=true
-fi
-```
-
-### Disabling specific hooks
-
-**Option 1:** Remove from `hooks/hooks.json`
+Hyperpowers wires exactly two hooks into Claude Code, and they do two
+different jobs:
+
+- **Context injection** (`SessionStart`) — adds text to the model's context.
+  It cannot block or deny anything; it only informs.
+- **Enforcement** (`PreToolUse`) — can deny a tool call outright by returning
+  a `permissionDecision`. This is the only place in the plugin where a hook
+  actually stops an action.
+
+Everything else that used to look like enforcement (skill suggestions,
+edit logging, "blocking" PostToolUse checks, Stop-hook reminders) has been
+removed. It never worked: those hooks read fields Claude Code doesn't send,
+or emitted `permissionDecision` from event types where that field has no
+effect. See **History** below. Behavior those hooks were meant to prevent is
+now the job of prompt-level MUST rules in skills and `CLAUDE.md` — see
+**The Keep-Criterion** for why that split is deliberate, not a downgrade.
+
+`hooks/hooks.json` is the single source of truth for what's wired:
 
 ```json
 {
   "hooks": {
-    "UserPromptSubmit": [...],
-    "PostToolUse": [...],
-    // "Stop": [...]  ← Commented out or removed
+    "SessionStart": [{ "matcher": "startup|resume|clear|compact",
+      "hooks": [{ "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/hooks/session-start.sh" }] }],
+    "PreToolUse": [{ "matcher": "Bash",
+      "hooks": [{ "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/hooks/pre-tool-use/02-version-bump-guard.py" }] }]
   }
 }
 ```
 
-**Option 2:** Rename hook file
+## The Hooks
+
+### `hooks/session-start.sh`
+
+- **Event:** `SessionStart`
+- **Input:** `{"hook_event_name": "SessionStart", "source": "startup|resume|clear|compact"}`
+- **Output:** `{"hookSpecificOutput": {"hookEventName": "SessionStart", "additionalContext": "..."}}`
+
+Injects the contents of `skills/using-hyper/SKILL.md` into the model's
+context at session start, plus a one-time warning if a legacy
+`~/.config/hyperpowers/skills` directory is found. It always exits 0 and
+always emits `additionalContext` — there is no decision field, because
+`SessionStart` has nothing to deny.
+
+### `hooks/pre-tool-use/02-version-bump-guard.py`
+
+- **Event:** `PreToolUse`, matcher `Bash`
+- **Input:** `{"tool_name": "Bash", "tool_input": {"command": "..."}, "cwd": "..."}`
+- **Output (deny):** `{"hookSpecificOutput": {"hookEventName": "PreToolUse", "permissionDecision": "deny", "permissionDecisionReason": "..."}}`
+- **Output (allow):** no output; exit 0
+
+**What it guards:** a `git push` of the repo's default branch (resolved via
+`origin/HEAD`, falling back to the literal `main`/`master` names), in a repo
+that has `.claude-plugin/plugin.json` at its root, where the outgoing range
+touches `skills/`, `agents/`, `commands/`, `hooks/`, `CLAUDE.md`, or
+`README.md` but `plugin.json`'s `version` field did not change in that same
+range. It denies with a reminder to bump the version. It recognizes the
+push regardless of shell line-continuations, and regardless of
+`time`/`command`/`env`/`nice`/`nohup` wrapper prefixes, by tokenizing each
+shell segment rather than substring-matching on "push".
+
+**Fail-open contract:** every error path — unparseable stdin, git command
+failures, no resolvable upstream, no plugin manifest, non-default-branch
+push, `--dry-run` — exits 0 and allows the push. A bug in this hook must
+never block work; false-allows are acceptable, false-denies are not.
+
+## The Keep-Criterion
+
+A hook earns its place only when the failure is:
+
+> (a) mechanically checkable at a tool boundary, (b) recurrent despite
+> prompt-level instruction, and (c) cheap to verify against Claude Code's
+> real I/O contract.
+
+`version-bump-guard` passes all three: forgetting the version bump before
+the final push is a documented, repeated failure, checkable purely from
+`tool_input.command` and git state, and verifiable without any special
+setup. `session-start.sh` is not a deny hook and isn't evaluated against
+this criterion — it exists to deliver context, not to block a tool call.
+
+Every hook removed in the 2026-07-07 teardown failed at least one leg of
+this test. Do not re-add a hook to work around a behavior problem without
+checking it against all three legs first — most behavior problems belong in
+a skill or in `CLAUDE.md`, not in a hook.
+
+## Testing
+
+Run the contract tests before trusting either hook:
 
 ```bash
-mv hooks/stop/10-gentle-reminders.sh hooks/stop/10-gentle-reminders.sh.disabled
+./hooks/test/contract-test.sh
 ```
 
-### Adding custom hooks
+The runner builds throwaway git repos under `mktemp -d` and pipes fixture
+JSON through the live hook scripts, asserting on their real output. The
+fixtures are written to match **Claude Code's actual hook schemas** —
+`tool_name`/`tool_input` for `PreToolUse`, `hookSpecificOutput` wrapping the
+output — never the hook's own assumptions about its input. That distinction
+is the whole point: the previous test suite encoded each hook's incorrect
+assumptions and passed regardless of whether the hook worked against the
+real contract. If you change either hook's input/output handling, update
+the fixtures only after confirming the new shape against Claude Code's
+documented schema, not against what the hook happens to produce.
 
-1. Create hook script in appropriate directory
-2. Make executable: `chmod +x hooks/<type>/<name>.sh`
-3. Add to `hooks/hooks.json`
-4. Test manually before relying on it
+## History
 
-See [building-hooks skill](skills/building-hooks/SKILL.md) for detailed guidance.
-
-## Performance
-
-All hooks are designed to be fast and non-blocking:
-
-- **UserPromptSubmit:** <100ms per prompt (typical: ~29ms)
-- **PostToolUse:** <10ms per edit
-- **Stop:** <50ms per response (typical: ~22ms)
-
-If hooks are slow, check:
-- Large skill-rules.json file (>50KB)
-- Slow regex patterns (catastrophic backtracking)
-- Network calls (should never happen)
-- Large edit log (should auto-rotate at 1000 lines)
-
-## Architecture
-
-### Hook execution flow
-
-```
-User types prompt
-    ↓
-UserPromptSubmit hook runs
-    ↓
-Skill suggestions added to context
-    ↓
-Claude processes prompt
-    ↓
-Claude uses Edit/Write tools
-    ↓
-PostToolUse hook logs edits
-    ↓
-Claude returns response
-    ↓
-Stop hook checks context
-    ↓
-Reminders shown (if relevant)
-```
-
-### File locking
-
-PostToolUse hook uses directory-based locking to prevent race conditions:
-- Creates `.edit-log.lock` directory atomically
-- Timeout after 5 seconds (non-blocking)
-- Automatically cleaned up on exit
-
-### Log rotation
-
-Edit log automatically rotates when exceeding 1000 lines:
-- Keeps most recent 1000 lines
-- Prevents unbounded disk usage
-- Happens during PostToolUse hook execution
-
-## FAQ
-
-**Q: Can I disable all hooks?**
-A: Yes, remove all entries from `hooks/hooks.json` or rename the `hooks/` directory.
-
-**Q: Do hooks slow down Claude Code?**
-A: No, hooks are designed to be fast (<100ms) and run in the background.
-
-**Q: Can hooks fail and block me?**
-A: No, all hooks are non-blocking and always return empty responses `{}` even on error.
-
-**Q: How do I add my own skills/agents to the activator?**
-A: Edit `hooks/skill-rules.json` to add your skill/agent with keywords and patterns. Use `"type": "agent"` for agents.
-
-**Q: Can I see what patterns matched?**
-A: Yes, set `DEBUG_HOOKS=true` to see match reasons in hook output.
-
-**Q: Are hooks project-specific or global?**
-A: Hooks are part of the Hyperpowers plugin, so they work in all projects where the plugin is active.
-
-## See Also
-
-- [building-hooks skill](skills/building-hooks/SKILL.md) - Guide for creating custom hooks
-- [skills-auto-activation skill](skills/skills-auto-activation/SKILL.md) - Advanced skill activation patterns
-- [README.md](README.md) - Main Hyperpowers documentation
+On 2026-07-07 a six-dimension review found that seven of the plugin's nine
+hooks never worked as documented: the skill/agent suggestion hook read a
+prompt field Claude Code doesn't send, three "blocking" PostToolUse hooks
+emitted a `permissionDecision` field that only has effect on `PreToolUse`
+(and so never blocked anything, despite being labeled "(blocking)" in this
+file), the Stop-hook reminders read a nonexistent field, and a beads-read
+guard and two guards protecting `.git/hooks/` from direct edits had either
+no recurrence evidence or a root cause already fixed upstream. All of it
+was deleted rather than
+repaired — each failed the keep-criterion above, most on more than one
+leg — leaving `session-start.sh` and the hardened `version-bump-guard.py`
+as the only two hooks in the plane. See epic bd-854 for the full review,
+per-hook verdicts, and the reference-graph cleanup that went with it.

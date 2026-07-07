@@ -56,7 +56,6 @@ HIGH FREEDOM - The meta-process (check for skills, use Skill tool, announce usag
 | 3+ independent failures to investigate | hyperpowers:dispatching-parallel-agents |
 | Creating or editing skills | hyperpowers:writing-skills |
 | Creating Claude Code hooks | hyperpowers:building-hooks |
-| Skills not activating reliably | hyperpowers:skills-auto-activation |
 
 A matching row is a mandate, not a suggestion: you MUST load and follow that chain. If several rows match, chain them in the order shown.
 </routing_table>
