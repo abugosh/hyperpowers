@@ -58,7 +58,7 @@ Checks for risky patterns (try-catch blocks, database operations, async function
 Displays a gentle self-check reminder
 "Did you add error handling? Are Prisma operations using the repository pattern?"
 Non-blocking, just keeps Claude aware without being annoying
-skill-rules.json Configuration
+The Configuration File
 
 I created a central configuration file that defines every skill with:
 Keywords: Explicit topic matches ("layout", "workflow", "database")

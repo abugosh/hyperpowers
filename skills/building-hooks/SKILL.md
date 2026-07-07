@@ -99,7 +99,7 @@ Use hooks for:
 # Stop hook - runs after Claude finishes
 
 # Check modified repos
-modified_repos=$(grep -h "edited" ~/.claude/edit-log.txt | cut -d: -f1 | sort -u)
+modified_repos=$(grep -h "edited" ~/.claude/hooks/changed-files.log | cut -d: -f1 | sort -u)
 
 for repo in $modified_repos; do
   echo "Building $repo..."
@@ -120,13 +120,19 @@ for repo in $modified_repos; do
 done
 ```
 
-**Configuration:**
+**Configuration** (in `hooks.json`, matching Claude Code's real schema):
 ```json
 {
-  "event": "Stop",
-  "command": "~/.claude/hooks/build-checker.sh",
-  "description": "Run builds on modified repos",
-  "blocking": false
+  "hooks": {
+    "Stop": [
+      {
+        "matcher": "*",
+        "hooks": [
+          { "type": "command", "command": "~/.claude/hooks/build-checker.sh" }
+        ]
+      }
+    ]
+  }
 }
 ```
 
@@ -143,7 +149,7 @@ done
 #!/bin/bash
 # Stop hook - format all edited files
 
-edited_files=$(tail -20 ~/.claude/edit-log.txt | grep "^/" | sort -u)
+edited_files=$(tail -20 ~/.claude/hooks/changed-files.log | grep "^/" | sort -u)
 
 for file in $edited_files; do
   repo_dir=$(dirname "$file")
@@ -173,7 +179,7 @@ echo "✅ Formatting complete"
 #!/bin/bash
 # Stop hook - gentle reminder
 
-edited_files=$(tail -20 ~/.claude/edit-log.txt | grep "^/")
+edited_files=$(tail -20 ~/.claude/hooks/changed-files.log | grep "^/")
 
 risky_patterns=0
 for file in $edited_files; do
@@ -256,10 +262,10 @@ echo $?  # 0 = success
 
 ```bash
 # Create mock log
-echo "/path/to/test/file.ts" > /tmp/test-edit-log.txt
+echo "/path/to/test/file.ts" > /tmp/test-changed-files.log
 
 # Run with test data
-EDIT_LOG=/tmp/test-edit-log.txt bash ~/.claude/hooks/build-checker.sh
+CHANGED_FILES_LOG=/tmp/test-changed-files.log bash ~/.claude/hooks/build-checker.sh
 ```
 
 ## Test Non-Blocking Behavior
@@ -444,12 +450,12 @@ echo "⏳ Tests running in background (check /tmp/test-results.txt)"
 #!/bin/bash
 # Hook with no error handling
 
-file=$(tail -1 ~/.claude/edit-log.txt)
+file=$(tail -1 ~/.claude/hooks/changed-files.log)
 prettier --write "$file"
 </code>
 
 <why_it_fails>
-- If edit-log.txt missing → hook fails silently
+- If changed-files.log missing → hook fails silently
 - If file path invalid → prettier errors not caught
 - If prettier not installed → silent failure
 - No logging, can't debug
@@ -467,12 +473,12 @@ set -euo pipefail  # Exit on error, undefined vars
 echo "[$(date)] Hook started" >> ~/.claude/hooks/formatter.log
 
 # Validate input
-if [ ! -f ~/.claude/edit-log.txt ]; then
-  echo "[$(date)] ERROR: edit-log.txt not found" >> ~/.claude/hooks/formatter.log
+if [ ! -f ~/.claude/hooks/changed-files.log ]; then
+  echo "[$(date)] ERROR: changed-files.log not found" >> ~/.claude/hooks/formatter.log
   exit 1
 fi
 
-file=$(tail -1 ~/.claude/edit-log.txt | grep "^/.*\.ts$")
+file=$(tail -1 ~/.claude/hooks/changed-files.log | grep "^/.*\.ts$")
 
 if [ -z "$file" ]; then
   echo "[$(date)] No TypeScript file to format" >> ~/.claude/hooks/formatter.log
@@ -526,14 +532,14 @@ fi
 ❌ **Don't:**
 ```bash
 # DANGEROUS - executes arbitrary code
-cmd=$(tail -1 ~/.claude/edit-log.txt)
+cmd=$(tail -1 ~/.claude/hooks/changed-files.log)
 eval "$cmd"
 ```
 
 ✅ **Do:**
 ```bash
 # SAFE - validates and sanitizes
-file=$(tail -1 ~/.claude/edit-log.txt | grep "^/.*\.ts$")
+file=$(tail -1 ~/.claude/hooks/changed-files.log | grep "^/.*\.ts$")
 if [ -f "$file" ]; then
   prettier --write "$file"
 fi
