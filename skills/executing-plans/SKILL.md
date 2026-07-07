@@ -242,9 +242,17 @@ After all tasks return DONE and pass two-stage review:
 
 3. Handle the verdict:
 
-   **APPROVED:** Emit the completion gate-state block and persist it to the epic's bd notes (format: `skills/common-patterns/loop-interfaces.md`), including any accumulated plan-impact notices. Present final status to user. Hand off to `/hyperpowers:finish-branch`.
+   **APPROVED:**
+
+   a. Persist the completion gate-state block to the epic's bd notes (format: `skills/common-patterns/loop-interfaces.md`), including any accumulated plan-impact notices.
+   b. Run the post-build Architecture Impact Check against the work just completed for this epic, per `skills/common-patterns/architecture-impact-check.md` (Post-Build Routing) — cite that file, do not restate the 5 questions here. Any YES routes per that file: dispatch `/ponder` in UPDATE mode when a model exists, or note-and-suggest in the completion report when no model exists.
+   c. Present final status to the user.
+   d. **STOP here.** Do not automatically call finishing-a-development-branch. The user needs time to test the implementation manually in their environment, verify edge cases automated tests don't cover, and confirm the feature works as expected in context. Closing the epic removes context the user may need during manual validation — let them explicitly trigger closure when ready.
+   e. The epic remains open. The user runs `/hyperpowers:finish-branch` when ready.
 
    **GAPS FOUND:** Create fix task(s) inline for each gap — spec body per the tier templates in `skills/common-patterns/spec-templates.md` — and dispatch executors. This is the one exception to "all tasks planned upfront." These gap-fix tasks follow the same dispatch and two-stage review loop. After all gaps resolved, re-dispatch reviewer.
+
+   **If the review reveals sibling-relevant divergence** — the implementation departed from an upstream shared plan in a way other services or epics depend on — emit a plan-impact notice (format: `skills/common-patterns/loop-interfaces.md`) into the epic's bd notes; the user carries it to the planning repo; sessions never write the shared docs.
 
 </the_process>
 
@@ -343,7 +351,8 @@ After each DONE return:
 Before completion:
 - [ ] `bd list --parent <epic-id> --status open` returns 0
 - [ ] Reviewer dispatched as blocking subagent
-- [ ] Verdict handled (APPROVED → finish-branch; GAPS FOUND → fix tasks)
+- [ ] APPROVED → gate-state persisted, post-build Architecture Impact Check run (per `architecture-impact-check.md`), final status presented, then STOP — no automatic call to finish-branch
+- [ ] GAPS FOUND → fix tasks created and dispatched, reviewer re-run
 
 </verification_checklist>
 
@@ -353,13 +362,14 @@ Before completion:
 
 **Called by:** User via /hyperpowers:execute-plan · after brainstorming produces the task tree
 
-**Flow:** Startup → Pre-dispatch verification → Record base SHA → Dispatch executor (blocks) → Parse one-liner → Two-stage review → Next task → ... → Reviewer gate → Present → /hyperpowers:finish-branch
+**Flow:** Startup → Pre-dispatch verification → Record base SHA → Dispatch executor (blocks) → Parse one-liner → Two-stage review → Next task → ... → Reviewer gate → Architecture check → Present + STOP (manual validation) → user → /hyperpowers:finish-branch
 
 **bd command reference:** See [bd commands](../common-patterns/bd-commands.md)
 
 **When stuck:**
 - Executor timed out → Re-dispatch same task with prompt: 'Prior executor timed out. Check git log for progress. Continue from where it left off.'
 - Reviewer GAPS FOUND → Create gap-fix tasks, dispatch executors, re-dispatch reviewer
+- Reviewer APPROVED → Persist gate-state, run the post-build Architecture Impact Check, present, then STOP — never auto-call finish-branch
 - Escalation → Summarize, recommend, wait for user
 
 </integration>
