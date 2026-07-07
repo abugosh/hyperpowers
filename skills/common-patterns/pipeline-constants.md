@@ -11,7 +11,7 @@ Escalate when ANY of:
 - Work spans 3 or more distinct components
 - Multiple independent deliverables that could ship separately
 
-Evaluated at brainstorm Step 1 exit — as soon as a scope estimate exists,
+Evaluated in brainstorming as soon as a scope estimate exists,
 before any epic is created. Re-checked before task creation only if scope
 grew during design. The gate is an offer, not a hard block: the architect
 can override, and the override is recorded in the epic.

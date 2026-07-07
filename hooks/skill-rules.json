@@ -1,5 +1,5 @@
 {
-  "_comment": "Skill and agent activation rules for hyperpowers plugin - 19 skills + 1 agent = 20 total",
+  "_comment": "Skill and agent activation rules for hyperpowers plugin - 27 entries (skills + test-runner agent)",
   "_schema": {
     "description": "Each skill/agent has type, enforcement, priority, and triggers",
     "type": "process|domain|workflow|agent",
@@ -264,7 +264,7 @@
     "enforcement": "suggest",
     "priority": "medium",
     "promptTriggers": {
-      "keywords": ["large initiative", "decompose", "leaf epics", "break this down", "multiple epics"],
+      "keywords": ["large initiative", "decompose the initiative", "leaf epics", "break this down", "multiple epics"],
       "intentPatterns": [
         "(decompose|break (down|up)).*?(initiative|project|effort)",
         "(initiative|scope).*?(too (big|large)|huge|massive)",
@@ -289,7 +289,7 @@
     "enforcement": "suggest",
     "priority": "medium",
     "promptTriggers": {
-      "keywords": ["code smell", "smells", "bad design", "diagnose refactor", "refactor target"],
+      "keywords": ["code smell", "design smells", "bad design", "diagnose refactor", "refactor target"],
       "intentPatterns": [
         "(diagnose|identify|find).*?(smell|refactor target)",
         "(what|which|where).*?(should|worth).*?refactor",
@@ -314,7 +314,7 @@
     "enforcement": "suggest",
     "priority": "medium",
     "promptTriggers": {
-      "keywords": ["architecture audit", "structural friction", "coupling", "complected", "feels off", "tensions"],
+      "keywords": ["architecture audit", "structural friction", "hidden coupling", "complected", "feels off", "structural tensions"],
       "intentPatterns": [
         "(audit|examine|check).*?architecture",
         "(structural|architectural).*?(tension|friction|drift|smell)",
@@ -327,7 +327,7 @@
     "enforcement": "suggest",
     "priority": "medium",
     "promptTriggers": {
-      "keywords": ["architecture model", "likec4", "c4 model", ".c4 file"],
+      "keywords": ["architecture model", "c4 model", ".c4 file", "update the model"],
       "intentPatterns": [
         "(update|bootstrap|review|create).*?(architecture|c4|likec4).*?model",
         "model.*?(out of date|stale|drift)"
