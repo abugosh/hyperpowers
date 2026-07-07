@@ -2,6 +2,8 @@
 
 Common bd commands used across multiple skills. Reference this instead of duplicating.
 
+Never Read/Grep `.beads/issues.jsonl` directly — the bd CLI is the only interface (a PreToolUse hook enforces this; direct access bypasses validation and usually fails on file size).
+
 ## Reading Issues
 
 ```bash

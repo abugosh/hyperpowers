@@ -66,6 +66,8 @@ Your final message must be exactly one of:
 
 No prose preamble. No section headers. No "## Status:" envelope. Just the one-liner.
 
+This contract is single-sourced in `skills/common-patterns/loop-interfaces.md` (Verdict Contracts).
+
 ## Boundaries
 
 Only modify files specified in your task spec or directly required by the changes it describes.

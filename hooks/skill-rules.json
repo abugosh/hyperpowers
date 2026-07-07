@@ -1,5 +1,5 @@
 {
-  "_comment": "Skill and agent activation rules for hyperpowers plugin - 19 skills + 1 agent = 20 total",
+  "_comment": "Skill and agent activation rules for hyperpowers plugin - 27 entries (skills + test-runner agent)",
   "_schema": {
     "description": "Each skill/agent has type, enforcement, priority, and triggers",
     "type": "process|domain|workflow|agent",
@@ -243,6 +243,107 @@
         "(mock|stub|fake).*?(behavior|dependency)",
         "test.*?only.*?method",
         "(testing|test).*?(anti-pattern|smell|problem)"
+      ]
+    }
+  },
+  "consider": {
+    "type": "process",
+    "enforcement": "suggest",
+    "priority": "medium",
+    "promptTriggers": {
+      "keywords": ["thinking about", "exploring an idea", "not sure what to build", "worth building", "kick around"],
+      "intentPatterns": [
+        "(think|thinking|explore|exploring).*?(idea|whether|if we should)",
+        "should (we|i) (build|make|add)",
+        "not sure.*?(what|whether|how).*?(build|approach)"
+      ]
+    }
+  },
+  "preordain": {
+    "type": "workflow",
+    "enforcement": "suggest",
+    "priority": "medium",
+    "promptTriggers": {
+      "keywords": ["large initiative", "decompose the initiative", "leaf epics", "break this down", "multiple epics"],
+      "intentPatterns": [
+        "(decompose|break (down|up)).*?(initiative|project|effort)",
+        "(initiative|scope).*?(too (big|large)|huge|massive)",
+        "(plan|split).*?(into|multiple).*?epics"
+      ]
+    }
+  },
+  "portent": {
+    "type": "workflow",
+    "enforcement": "suggest",
+    "priority": "medium",
+    "promptTriggers": {
+      "keywords": ["phase doc", "planning repo", "phase document", "service slice"],
+      "intentPatterns": [
+        "(draft|check|audit).*?phase.*?doc",
+        "planning.*?repo.*?(draft|check|slice|phase)"
+      ]
+    }
+  },
+  "refactoring-diagnosis": {
+    "type": "workflow",
+    "enforcement": "suggest",
+    "priority": "medium",
+    "promptTriggers": {
+      "keywords": ["code smell", "design smells", "bad design", "diagnose refactor", "refactor target"],
+      "intentPatterns": [
+        "(diagnose|identify|find).*?(smell|refactor target)",
+        "(what|which|where).*?(should|worth).*?refactor",
+        "(rewrite|refactor).*?(or|vs).*?(refactor|rewrite)"
+      ]
+    }
+  },
+  "refactoring-design": {
+    "type": "workflow",
+    "enforcement": "suggest",
+    "priority": "medium",
+    "promptTriggers": {
+      "keywords": ["refactor design", "design the refactor", "DI seams", "composition seams"],
+      "intentPatterns": [
+        "design.*?(the|a|this).*?refactor",
+        "refactor.*?(plan|design|approach|strategy)"
+      ]
+    }
+  },
+  "intuition": {
+    "type": "process",
+    "enforcement": "suggest",
+    "priority": "medium",
+    "promptTriggers": {
+      "keywords": ["architecture audit", "structural friction", "hidden coupling", "complected", "feels off", "structural tensions"],
+      "intentPatterns": [
+        "(audit|examine|check).*?architecture",
+        "(structural|architectural).*?(tension|friction|drift|smell)",
+        "something.*?feels.*?(off|wrong).*?(structure|architecture|design)"
+      ]
+    }
+  },
+  "ponder": {
+    "type": "workflow",
+    "enforcement": "suggest",
+    "priority": "medium",
+    "promptTriggers": {
+      "keywords": ["architecture model", "c4 model", ".c4 file", "update the model"],
+      "intentPatterns": [
+        "(update|bootstrap|review|create).*?(architecture|c4|likec4).*?model",
+        "model.*?(out of date|stale|drift)"
+      ]
+    }
+  },
+  "analyzing-test-effectiveness": {
+    "type": "workflow",
+    "enforcement": "suggest",
+    "priority": "medium",
+    "promptTriggers": {
+      "keywords": ["test quality", "tautological", "coverage gaming", "weak assertions", "audit tests"],
+      "intentPatterns": [
+        "(analyze|audit|review).*?test.*?(quality|effectiveness)",
+        "coverage.*?(gaming|fake|meaningless|but.*?bugs)",
+        "tests.*?(pass|green).*?(but|yet).*?(bugs|broken)"
       ]
     }
   },

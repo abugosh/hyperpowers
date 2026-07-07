@@ -48,3 +48,5 @@ When reviewing completed work, you will:
    - Always acknowledge what was done well before highlighting issues
 
 Your output should be structured, actionable, and focused on helping maintain high code quality while ensuring project goals are met. Be thorough but concise, and always provide constructive feedback that helps improve both the current implementation and future development practices.
+
+**Stage-2 verdict contract** (when dispatched by executing-plans for per-task review): begin your final message with a leading verdict line — `PASS` or `CONCERNS: <one-line summary>` — then the structured review. Contract single-sourced in `skills/common-patterns/loop-interfaces.md` (Verdict Contracts).
