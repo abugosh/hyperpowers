@@ -27,6 +27,12 @@ PLUGIN_MANIFEST = os.path.join(".claude-plugin", "plugin.json")
 # git global options that consume the following token
 GIT_OPTS_WITH_ARG = ("-C", "-c", "--git-dir", "--work-tree", "--exec-path", "--namespace")
 
+# bare wrapper commands that may precede the real invocation (time git push,
+# env VAR=1 git push, command git push, nice git push, nohup git push ...).
+# Only the bare token is recognized here — see the fixpoint-skip loop below
+# for the decision on flagged wrappers (e.g. "nice -n 10 git push").
+WRAPPER_TOKENS = {"time", "command", "env", "nice", "nohup"}
+
 
 def run_git(args, cwd):
     result = subprocess.run(
@@ -45,6 +51,12 @@ def parse_push_invocations(command):
 
     Returns [] when no real push invocation exists. Raises on untokenizable
     input (caller fails open)."""
+    # Collapse shell line continuations ("git push \" + newline) into a
+    # single space *before* the segment split below, so a continued command
+    # stays one segment instead of leaving a dangling backslash on one half
+    # and an orphan continuation on the other (both of which used to either
+    # fail shlex.split or simply not tokenize as `git push`).
+    command = re.sub(r"\\\r?\n", " ", command)
     invocations = []
     for segment in re.split(r"(?:&&|\|\||[;|&\n])", command):
         segment = segment.strip()
@@ -54,9 +66,18 @@ def parse_push_invocations(command):
             tokens = shlex.split(segment)
         except ValueError:
             continue  # unparseable segment: fail open for this segment
-        # skip leading env assignments (VAR=value git push ...)
-        while tokens and re.match(r"^[A-Za-z_][A-Za-z0-9_]*=", tokens[0]):
-            tokens = tokens[1:]
+        # Skip leading wrapper commands (time/command/env/nice/nohup) and
+        # env assignments (VAR=value ...). These interleave and stack
+        # ("time env VAR=1 git push", "command nice git push"), so strip
+        # to a fixpoint rather than a single pass over each kind.
+        while tokens:
+            if tokens[0] in WRAPPER_TOKENS:
+                tokens = tokens[1:]
+                continue
+            if re.match(r"^[A-Za-z_][A-Za-z0-9_]*=", tokens[0]):
+                tokens = tokens[1:]
+                continue
+            break
         if not tokens or os.path.basename(tokens[0]) != "git":
             continue
         rest = tokens[1:]
@@ -77,14 +98,32 @@ def parse_push_invocations(command):
     return invocations
 
 
-def push_targets_default_branch(push_args, current_branch):
-    """True when this push touches main/master: explicit refspec destinations
-    are checked by literal equality; without refspecs the current branch is
-    what gets pushed."""
+def resolve_default_branch(repo_root):
+    """Resolve the remote's actual default branch via origin/HEAD (e.g.
+    "trunk" on repos that don't use main/master). Returns None on any
+    failure (no remote, origin/HEAD not set, unexpected format) — callers
+    fall back to the literal main/master set, preserving the fail-open
+    bias."""
+    ref = run_git(["symbolic-ref", "--short", "refs/remotes/origin/HEAD"], repo_root)
+    if not ref:
+        return None
+    prefix = "origin/"
+    if not ref.startswith(prefix):
+        return None
+    return ref[len(prefix):] or None
+
+
+def push_targets_default_branch(push_args, current_branch, default_branch=None):
+    """True when this push touches the default branch: explicit refspec
+    destinations are checked by literal equality; without refspecs the
+    current branch is what gets pushed. When the repo's real default branch
+    was resolved (via origin/HEAD) only that name is checked; otherwise the
+    literal {"main", "master"} set is used (fail-open bias preserved)."""
+    targets = {default_branch} if default_branch else {"main", "master"}
     positionals = [t for t in push_args if not t.startswith("-")]
     refspecs = positionals[1:]  # first positional is the remote
     if not refspecs:
-        return current_branch in ("main", "master")
+        return current_branch in targets
     for spec in refspecs:
         dest = spec.split(":", 1)[1] if ":" in spec else spec
         dest = dest.strip("+")
@@ -92,7 +131,7 @@ def push_targets_default_branch(push_args, current_branch):
             dest = dest[len("refs/heads/"):]
         if dest == "HEAD":
             dest = current_branch
-        if dest in ("main", "master"):
+        if dest in targets:
             return True
     return False
 
@@ -127,18 +166,28 @@ def main():
     # targets the final push. Mid-epic feature-branch pushes stay free
     # (false-deny bias). Branch and refspec checks are literal equality on
     # parsed tokens, never substring scans.
+    default_branch = resolve_default_branch(repo_root)
     branch = run_git(["rev-parse", "--abbrev-ref", "HEAD"], repo_root) or ""
     if not any(
-        push_targets_default_branch(args, branch) for args in push_invocations
+        push_targets_default_branch(args, branch, default_branch)
+        for args in push_invocations
     ):
         sys.exit(0)
 
-    # Base for the outgoing range: upstream of HEAD, else origin/main.
+    # Base for the outgoing range: upstream of HEAD, else the resolved
+    # default branch's origin ref, else origin/main.
     base = run_git(["rev-parse", "--abbrev-ref", "@{u}"], repo_root)
     if not base:
-        if run_git(["rev-parse", "--verify", "origin/main"], repo_root):
-            base = "origin/main"
-        else:
+        candidates = []
+        if default_branch:
+            candidates.append(f"origin/{default_branch}")
+        if "origin/main" not in candidates:
+            candidates.append("origin/main")
+        base = next(
+            (c for c in candidates if run_git(["rev-parse", "--verify", c], repo_root)),
+            None,
+        )
+        if not base:
             sys.exit(0)  # cannot judge the range; allow
 
     changed = run_git(["diff", f"{base}...HEAD", "--name-only"], repo_root)
