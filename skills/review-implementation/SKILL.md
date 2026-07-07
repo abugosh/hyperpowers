@@ -15,7 +15,7 @@ LOW FREEDOM - Follow the process exactly. Never skip the reviewer dispatch or th
 Use for:
 - Re-checking an epic after a gap-fix, outside the executing-plans session that found the gap
 - Auditing an epic that was implemented elsewhere (not via hyperpowers:executing-plans)
-- A mid-epic sanity check before all tasks are closed
+- A mid-epic sanity check before all tasks are closed — note the reviewer agent reviews closed tasks only, so a mid-epic run verifies completed work; open tasks are reported as not-yet-reviewed, not as gaps
 
 **Don't use after normal executing-plans completion** — the reviewer gate already ran there (see `skills/executing-plans/SKILL.md`, Completion section). Re-running this skill in that case duplicates work the mainline loop already did.
 </when_to_use>
@@ -52,6 +52,10 @@ Present the reviewer's gap list to the user as-is — do not summarize away deta
 If a pipeline session (hyperpowers:executing-plans) owns this epic and is still active, hand the gaps to its gap-fix loop (`skills/executing-plans/SKILL.md`, Completion section, GAPS FOUND branch) rather than fixing them here. If no pipeline session owns the epic (this is a standalone re-check), the user decides how to route the fixes — do not auto-dispatch an executor.
 
 **STOP.** Do not proceed to finishing-a-development-branch.
+
+## Plan-Impact Citation (either verdict)
+
+If the review reveals sibling-relevant divergence from an upstream shared plan, emit a plan-impact notice (format: `skills/common-patterns/loop-interfaces.md`) into the epic's bd notes; the user carries it to the planning repo.
 </the_process>
 
 <critical_rules>
