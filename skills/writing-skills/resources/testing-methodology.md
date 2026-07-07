@@ -159,9 +159,32 @@ Run same scenarios WITH skill. Agent should now comply.
 
 Agent found new rationalization? Add explicit counter. Re-test until bulletproof.
 
-**REQUIRED SUB-SKILL:** Use superpowers:testing-skills-with-subagents for the complete testing methodology:
-- How to write pressure scenarios
-- Pressure types (time, sunk cost, authority, exhaustion)
-- Plugging holes systematically
-- Meta-testing techniques
+Pressure types that reliably work: time, sunk cost, authority, exhaustion — combine 2-3 per scenario.
+
+## Re-Baselining and Pruning (A/B Method)
+
+Models improve; counters calibrated to older models must be re-earned, not
+assumed. Method (validated by the 2026-07 RW6b campaign, evidence in that
+epic's bd notes):
+
+- **Variant A (prune probe):** run the pressure scenario with the HARD RULE
+  present but the excuse-table counter ABSENT. A-COMPLIES → the counter is
+  dead weight at that tier: prune-candidate. A-VIOLATES → run **Variant B**
+  (full text incl. counter): B must flip the verdict to COMPLIES, else the
+  counter is dead weight AND the failure is real — write a better one.
+- **Tier-scope every verdict.** A counter probed clean on one model tier is
+  prunable only for that tier's loading surface; lead-tier (stronger-model)
+  guardrails need their own probes. RW6b: 6/6 Sonnet probes complied bare,
+  while the same session's Opus probe violated without its counter and
+  flipped with it.
+- **Verbatim evidence only.** Record the subject's exact words at judgment
+  time; paraphrased evidence invites lenient scoring.
+- **Mechanism beats prose for long-context failures.** Failure modes observed
+  in long, high-inertia sessions (self-review leniency, stale-reference
+  following, gate paraphrasing) tend NOT to reproduce in clean short-context
+  scenarios — the fix that works is mechanism (transcribed gates, hooks,
+  independent review), not more counter prose. Do not add doctrine a clean
+  RED cannot motivate.
+- **Prunes are edits too:** a prune requires its A-COMPLIES baseline the same
+  way an addition requires its failing test.
 
