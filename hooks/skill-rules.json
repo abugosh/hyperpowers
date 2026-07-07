@@ -246,6 +246,107 @@
       ]
     }
   },
+  "consider": {
+    "type": "process",
+    "enforcement": "suggest",
+    "priority": "medium",
+    "promptTriggers": {
+      "keywords": ["thinking about", "exploring an idea", "not sure what to build", "worth building", "kick around"],
+      "intentPatterns": [
+        "(think|thinking|explore|exploring).*?(idea|whether|if we should)",
+        "should (we|i) (build|make|add)",
+        "not sure.*?(what|whether|how).*?(build|approach)"
+      ]
+    }
+  },
+  "preordain": {
+    "type": "workflow",
+    "enforcement": "suggest",
+    "priority": "medium",
+    "promptTriggers": {
+      "keywords": ["large initiative", "decompose", "leaf epics", "break this down", "multiple epics"],
+      "intentPatterns": [
+        "(decompose|break (down|up)).*?(initiative|project|effort)",
+        "(initiative|scope).*?(too (big|large)|huge|massive)",
+        "(plan|split).*?(into|multiple).*?epics"
+      ]
+    }
+  },
+  "portent": {
+    "type": "workflow",
+    "enforcement": "suggest",
+    "priority": "medium",
+    "promptTriggers": {
+      "keywords": ["phase doc", "planning repo", "phase document", "service slice"],
+      "intentPatterns": [
+        "(draft|check|audit).*?phase.*?doc",
+        "planning.*?repo.*?(draft|check|slice|phase)"
+      ]
+    }
+  },
+  "refactoring-diagnosis": {
+    "type": "workflow",
+    "enforcement": "suggest",
+    "priority": "medium",
+    "promptTriggers": {
+      "keywords": ["code smell", "smells", "bad design", "diagnose refactor", "refactor target"],
+      "intentPatterns": [
+        "(diagnose|identify|find).*?(smell|refactor target)",
+        "(what|which|where).*?(should|worth).*?refactor",
+        "(rewrite|refactor).*?(or|vs).*?(refactor|rewrite)"
+      ]
+    }
+  },
+  "refactoring-design": {
+    "type": "workflow",
+    "enforcement": "suggest",
+    "priority": "medium",
+    "promptTriggers": {
+      "keywords": ["refactor design", "design the refactor", "DI seams", "composition seams"],
+      "intentPatterns": [
+        "design.*?(the|a|this).*?refactor",
+        "refactor.*?(plan|design|approach|strategy)"
+      ]
+    }
+  },
+  "intuition": {
+    "type": "process",
+    "enforcement": "suggest",
+    "priority": "medium",
+    "promptTriggers": {
+      "keywords": ["architecture audit", "structural friction", "coupling", "complected", "feels off", "tensions"],
+      "intentPatterns": [
+        "(audit|examine|check).*?architecture",
+        "(structural|architectural).*?(tension|friction|drift|smell)",
+        "something.*?feels.*?(off|wrong).*?(structure|architecture|design)"
+      ]
+    }
+  },
+  "ponder": {
+    "type": "workflow",
+    "enforcement": "suggest",
+    "priority": "medium",
+    "promptTriggers": {
+      "keywords": ["architecture model", "likec4", "c4 model", ".c4 file"],
+      "intentPatterns": [
+        "(update|bootstrap|review|create).*?(architecture|c4|likec4).*?model",
+        "model.*?(out of date|stale|drift)"
+      ]
+    }
+  },
+  "analyzing-test-effectiveness": {
+    "type": "workflow",
+    "enforcement": "suggest",
+    "priority": "medium",
+    "promptTriggers": {
+      "keywords": ["test quality", "tautological", "coverage gaming", "weak assertions", "audit tests"],
+      "intentPatterns": [
+        "(analyze|audit|review).*?test.*?(quality|effectiveness)",
+        "coverage.*?(gaming|fake|meaningless|but.*?bugs)",
+        "tests.*?(pass|green).*?(but|yet).*?(bugs|broken)"
+      ]
+    }
+  },
   "writing-skills": {
     "type": "workflow",
     "enforcement": "suggest",
