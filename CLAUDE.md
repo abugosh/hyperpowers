@@ -198,7 +198,7 @@ Complete workflow from idea to PR:
 4. **Review Implementation** (`/hyperpowers:review-implementation`) - On-demand re-verification against spec (post-gap-fix re-check, auditing an epic implemented elsewhere, mid-epic sanity check) — not the mainline step between executing-plans and finishing
 5. **Finishing Branch** - Creates PR, handles cleanup
 
-writing-plans (`/hyperpowers:write-plan`) is the off-mainline utility that expands or repairs specs for tasks lacking them (reviewer gap-fixes, mid-flight amendments) — not part of the standard flow.
+writing-plans (`/hyperpowers:write-plan`) is the off-mainline utility that expands or repairs specs for tasks lacking them (gap-fixes, mid-flight amendments) — not part of the standard flow.
 
 ### Architecture (Empirical, Brand-based)
 

@@ -945,7 +945,7 @@ Before completing SRE review:
 - hyperpowers:executing-plans (implements tasks)
 
 **Modes:**
-- **Single-task mode** (default): review one task at a time — for specs hyperpowers:writing-plans repaired or expanded, or for gap-fix tasks during execution
+- **Single-task mode** (default): review one task at a time — for specs hyperpowers:writing-plans repaired or expanded
 - **Batch mode**: review full task tree as a unit — required from brainstorming Step 7 after the complete task tree is created; this is the mainline path
 
 **Both modes run in a dispatched fresh subagent** (see "How This Skill Is Invoked") — never inline in the context that authored or repaired the plan.
