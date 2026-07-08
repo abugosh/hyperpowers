@@ -4,7 +4,7 @@ description: Close epic and integrate branch after manual validation complete
 
 Use the hyperpowers:finishing-a-development-branch skill exactly as written.
 
-**When to use:** After automated review passes (`/hyperpowers:review-implementation`) and you've completed your manual validation/testing.
+**When to use:** After the end-of-epic reviewer gate passes (executing-plans completion) and you've completed your manual validation/testing.
 
 **What it does:**
 1. Closes the bd epic
