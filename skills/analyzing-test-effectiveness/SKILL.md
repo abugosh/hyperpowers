@@ -1,48 +1,34 @@
 ---
 name: analyzing-test-effectiveness
-description: Use to audit test quality with Google Fellow SRE scrutiny - identifies tautological tests, coverage gaming, weak assertions, missing corner cases. Creates bd epic with tasks for improvements, then runs SRE task refinement on each.
+description: Use to audit test quality with Google Fellow SRE scrutiny - dispatches the test-effectiveness-analyst agent for the analysis, creates a bd epic with improvement tasks, then runs batch SRE refinement against the full task tree.
 ---
 
 <skill_overview>
-Audit test suites for real effectiveness, not vanity metrics. Identify tests that provide false confidence (tautological, mock-testing, line hitters) and missing corner cases. Create bd epic with tracked tasks for improvements. Run SRE task refinement on each task before execution.
+Orchestrate a test-effectiveness audit end to end: confirm scope, dispatch the test-effectiveness-analyst agent to apply Google Fellow SRE scrutiny, present its findings to the user, create a bd epic with tracked improvement tasks, and run one batch SRE review against the full tree before handing off to execution.
 
-**CRITICAL MINDSET: Assume tests were written by junior engineers optimizing for coverage metrics.** Default to skeptical—a test is RED or YELLOW until proven GREEN. You MUST read production code before categorizing tests. GREEN is the exception, not the rule.
+**CRITICAL MINDSET: Assume tests were written by junior engineers optimizing for coverage metrics.** The analyst agent applies this skeptical default — RED or YELLOW until proven GREEN, GREEN only with evidence — and reads production code before categorizing any test. This skill's job is orchestration and bd tracking, not re-deriving that methodology.
 </skill_overview>
 
 <rigidity_level>
-MEDIUM FREEDOM - Follow the 5-phase analysis process exactly. Categorization criteria (RED/YELLOW/GREEN) are rigid. Corner case discovery adapts to the specific codebase. Output format is flexible but must include all sections.
+MEDIUM FREEDOM - Follow the 5-step orchestration (Scope, Dispatch Analyst, Present Findings, Create bd Epic + Tasks, Batch SRE Review) exactly; this is the rigid spine. The categorization methodology (RED/YELLOW/GREEN criteria, corner-case categories) is rigid too, but it lives in agents/test-effectiveness-analyst.md — this skill never restates it. Task-template wording is flexible but every generated task must carry the two-tier spec sections.
 </rigidity_level>
 
 <quick_reference>
-| Phase | Action | Output |
-|-------|--------|--------|
-| 1. Inventory | List all test files and functions | Test catalog |
-| 2. Read Production Code | Read the actual code each test claims to test | Context for analysis |
-| 3. Trace Call Paths | Verify tests exercise production, not mocks/utilities | Call path verification |
-| 4. Categorize (Skeptical) | Apply RED/YELLOW/GREEN - default to harsher rating | Categorized tests |
-| 5. Self-Review | Challenge every GREEN - would a senior SRE agree? | Validated categories |
-| 6. Corner Cases | Identify missing edge cases per module | Gap analysis |
-| 7. Prioritize | Rank by business criticality | Priority matrix |
-| 8. bd Issues | Create epic + tasks, run SRE refinement | Tracked improvement plan |
+| Step | Action | Output |
+|------|--------|--------|
+| 1. Scope | Confirm target suites/dirs; AskUserQuestion when ambiguous | Confirmed analysis scope |
+| 2. Dispatch Analyst | Blocking dispatch to hyperpowers:test-effectiveness-analyst | Full analysis report (Return Contract) |
+| 3. Present Findings | Relay executive summary + counts; agree what to act on | Action decision (remove/strengthen/add) |
+| 4. Create bd Epic + Tasks | Epic + up to 4 two-tier tasks, linked with dependencies | Tracked improvement plan |
+| 5. Batch SRE Review | Fresh subagent runs sre-task-refinement against the full tree | APPROVE / NEEDS REVISION / REJECT + handoff |
 
-**MANDATORY: Read production code BEFORE categorizing tests. You cannot assess a test without understanding what it claims to test.**
-
-**Core Questions for Each Test:**
-1. What bug would this catch? (If you can't name one → RED)
-2. Does it exercise PRODUCTION code or a mock/test utility? (Mock → RED or YELLOW)
-3. Could code break while test passes? (If yes → YELLOW or RED)
-4. Meaningful assertion on PRODUCTION output? (`!= nil` or testing fixtures → weak)
+**Methodology owner:** `agents/test-effectiveness-analyst.md` holds the RED/YELLOW/GREEN criteria, the corner-case categories, and the full analysis process (including the per-language mutation-testing commands). This skill never restates them — read the agent file directly if you need the criteria.
 
 **bd Integration (MANDATORY):**
 - Create bd epic for test quality improvement
-- Create bd tasks for: remove RED, strengthen YELLOW, add corner cases
-- Run hyperpowers:sre-task-refinement on all tasks
+- Create bd tasks for: remove RED, strengthen YELLOW, add corner cases, validate
+- Run hyperpowers:sre-task-refinement in batch mode against the full task tree (once, not per-task)
 - Link tasks to epic with dependencies
-
-**Mutation Testing Validation:**
-- Java: Pitest (`mvn org.pitest:pitest-maven:mutationCoverage`)
-- JS/TS: Stryker (`npx stryker run`)
-- Python: mutmut (`mutmut run`)
 </quick_reference>
 
 <when_to_use>
@@ -67,464 +53,55 @@ MEDIUM FREEDOM - Follow the 5-phase analysis process exactly. Categorization cri
 
 ---
 
-## Phase 1: Test Inventory
+## Step 1: Scope
 
-**Goal:** Create complete catalog of tests to analyze.
+Confirm what to analyze before dispatching:
+- User named a specific module/directory/suite → use it directly
+- Scope is the whole codebase or otherwise ambiguous → use AskUserQuestion to confirm target suites/dirs. Analyzing an entire monorepo in one dispatch produces a report too large to act on.
 
-```bash
-# Find all test files (adapt pattern to language)
-fd -e test.ts -e spec.ts -e _test.go -e Test.java -e test.py .
-
-# Or use grep to find test functions
-rg "func Test|it\(|test\(|def test_|@Test" --type-add 'test:*test*' -t test
-
-# Count tests per module
-for dir in src/*/; do
-  count=$(rg -c "func Test|it\(" "$dir" 2>/dev/null | wc -l)
-  echo "$dir: $count tests"
-done
-```
-
-**Create inventory in the repo's tracker (bd when the repo uses beads, TodoWrite otherwise):**
-```
-- Analyze tests in src/auth/
-- Analyze tests in src/api/
-- Analyze tests in src/parser/
-[... one per module]
-```
+Record the confirmed scope in one sentence — it becomes the prompt for Step 2.
 
 ---
 
-## Phase 2: Read Production Code First
+## Step 2: Dispatch Analyst
 
-**MANDATORY: Before categorizing ANY test, you MUST:**
+Dispatch the analysis as a fresh blocking subagent — this keeps verbose per-test justification (line-by-line RED/YELLOW breakdowns) out of the lead's context.
 
-1. **Read the production code** the test claims to exercise
-2. **Understand what the production code actually does**
-3. **Trace the test's call path** to verify it reaches production code
+```
+Agent tool:
+  subagent_type: "hyperpowers:test-effectiveness-analyst"
+  prompt: |
+    Analyze test effectiveness for: [confirmed scope from Step 1].
+    Apply the skeptical RED/YELLOW/GREEN methodology and corner-case
+    discovery process you own. Return the complete report per your
+    Output Format (Return Contract) section: executive summary,
+    per-test justifications, missing corner cases, and the
+    improvement plan.
+```
 
-**Why this matters:** Junior engineers commonly:
-- Create test utilities and test THOSE instead of production code
-- Set up mocks that determine the test outcome (mock-testing-mock)
-- Write assertions on values defined IN THE TEST, not from production
-- Copy patterns from examples without understanding the actual code
+No model override — the agent's own frontmatter pin (`model: sonnet`) governs.
 
-**If you haven't read production code, you WILL miscategorize tests as GREEN when they're YELLOW or RED.**
+The agent file owns the methodology. This skill never restates the RED/YELLOW/GREEN criteria, the corner-case categories, or the analysis process — if a finding needs more depth, ask the analyst to elaborate rather than re-deriving categories here.
 
 ---
 
-## Phase 3: Categorize Each Test (Skeptical Default)
+## Step 3: Present Findings
 
-**Assume every test is RED or YELLOW until you have concrete evidence it's GREEN.**
+Relay the analyst's executive summary to the user: total tests analyzed, RED/YELLOW/GREEN counts and percentages, missing corner cases, and overall assessment.
 
-For each test, apply these criteria:
+Agree with the user what to act on:
+- Remove the RED tests?
+- Strengthen the YELLOW tests?
+- Add missing corner cases — which priority tier (P0 only, or further)?
+- Validate with mutation testing once the above land?
 
-### RED FLAGS - Must Remove or Replace
-
-**2.1 Tautological Tests** (pass by definition)
-
-```typescript
-// ❌ RED: Verifies non-optional return is not nil
-test('builder returns value', () => {
-  const result = new Builder().build();
-  expect(result).not.toBeNull(); // Always passes - return type guarantees this
-});
-
-// ❌ RED: Verifies enum has cases (compiler checks this)
-test('status enum has values', () => {
-  expect(Object.values(Status).length).toBeGreaterThan(0);
-});
-
-// ❌ RED: Duplicates implementation
-test('add returns sum', () => {
-  expect(add(2, 3)).toBe(2 + 3); // Tautology: testing 2+3 == 2+3
-});
-```
-
-**Detection patterns:**
-```bash
-# Find != nil / != null on non-optional types
-rg "expect\(.*\)\.not\.toBeNull|assertNotNull|!= nil" tests/
-
-# Find enum existence checks
-rg "Object\.values.*length|cases\.count" tests/
-
-# Find tests with no meaningful assertions
-rg -l "expect\(" tests/ | xargs -I {} sh -c 'grep -c "expect" {} | grep -q "^1$" && echo {}'
-```
-
-**2.2 Mock-Testing Tests** (test the mock, not production)
-
-```typescript
-// ❌ RED: Only verifies mock was called, not actual behavior
-test('service fetches data', () => {
-  const mockApi = { fetch: jest.fn().mockResolvedValue({ data: [] }) };
-  const service = new Service(mockApi);
-  service.getData();
-  expect(mockApi.fetch).toHaveBeenCalled(); // Tests mock, not service logic
-});
-
-// ❌ RED: Mock determines test outcome
-test('processor handles data', () => {
-  const mockParser = { parse: jest.fn().mockReturnValue({ valid: true }) };
-  const result = processor.process(mockParser);
-  expect(result.valid).toBe(true); // Just returns what mock returns
-});
-```
-
-**Detection patterns:**
-```bash
-# Find tests that only verify mock calls
-rg "toHaveBeenCalled|verify\(mock|\.called" tests/
-
-# Find heavy mock setup
-rg -c "mock|Mock|jest\.fn|stub" tests/ | sort -t: -k2 -nr | head -20
-```
-
-**2.3 Line Hitters** (execute without asserting)
-
-```typescript
-// ❌ RED: Calls function, doesn't verify outcome
-test('processor runs', () => {
-  const processor = new Processor();
-  processor.run(); // No assertion - just verifies no crash
-});
-
-// ❌ RED: Assertion is trivial
-test('config loads', () => {
-  const config = loadConfig();
-  expect(config).toBeDefined(); // Too weak - doesn't verify correct values
-});
-```
-
-**Detection patterns:**
-```bash
-# Find tests with 0-1 assertions
-rg -l "test\(|it\(" tests/ | while read f; do
-  assertions=$(rg -c "expect|assert" "$f" 2>/dev/null || echo 0)
-  tests=$(rg -c "test\(|it\(" "$f" 2>/dev/null || echo 1)
-  ratio=$((assertions / tests))
-  [ "$ratio" -lt 2 ] && echo "$f: low assertion ratio ($assertions assertions, $tests tests)"
-done
-```
-
-**2.4 Evergreen/Liar Tests** (always pass)
-
-```typescript
-// ❌ RED: Catches and ignores exceptions
-test('parser handles input', () => {
-  try {
-    parser.parse(input);
-    expect(true).toBe(true); // Always passes
-  } catch (e) {
-    // Swallowed - test passes even on exception
-  }
-});
-
-// ❌ RED: Test setup bypasses code under test
-test('validator validates', () => {
-  const validator = new Validator({ skipValidation: true }); // Oops
-  expect(validator.validate(badInput)).toBe(true);
-});
-```
-
-### YELLOW FLAGS - Must Strengthen
-
-**2.5 Happy Path Only**
-
-```typescript
-// ⚠️ YELLOW: Only tests valid input
-test('parse valid json', () => {
-  const result = parse('{"name": "test"}');
-  expect(result.name).toBe('test');
-});
-// Missing: empty string, malformed JSON, deeply nested, unicode, huge payload
-```
-
-**2.6 Weak Assertions**
-
-```typescript
-// ⚠️ YELLOW: Assertion too weak
-test('fetch returns data', () => {
-  const result = await fetch('/api/users');
-  expect(result).not.toBeNull(); // Should verify actual content
-  expect(result.length).toBeGreaterThan(0); // Should verify exact count or specific items
-});
-```
-
-**2.7 Partial Coverage**
-
-```typescript
-// ⚠️ YELLOW: Tests success, not failure
-test('create user succeeds', () => {
-  const user = createUser({ name: 'test', email: 'test@example.com' });
-  expect(user.id).toBeDefined();
-});
-// Missing: duplicate email, invalid email, missing fields, database error
-```
-
-### GREEN FLAGS - Exceptional Quality Required
-
-**GREEN is the EXCEPTION, not the rule.** A test is GREEN only if ALL of the following are true:
-
-1. **Exercises actual PRODUCTION code** - Not a mock, not a test utility, not a copy of logic
-2. **Has precise assertions** - Exact values, not `!= nil` or `> 0`
-3. **Would fail if production breaks** - You can name the specific bug it catches
-4. **Tests behavior, not implementation** - Won't break on valid refactoring
-
-**Before marking ANY test GREEN, you MUST state:**
-- "This test exercises [specific production code path]"
-- "It would catch [specific bug] because [reason]"
-- "The assertion verifies [exact production behavior], not a test fixture"
-
-**If you cannot fill in those blanks, the test is YELLOW at best.**
-
-**3.1 Behavior Verification (Must exercise PRODUCTION code)**
-
-```typescript
-// ✅ GREEN: Verifies specific behavior with exact values FROM PRODUCTION
-test('calculateTotal applies discount correctly', () => {
-  const cart = new Cart([{ price: 100, quantity: 2 }]); // Real Cart class
-  cart.applyDiscount('SAVE20'); // Real discount logic
-  expect(cart.total).toBe(160); // 200 - 20% = 160
-});
-// GREEN because: Exercises Cart.applyDiscount production code
-// Would catch: Discount calculation bugs, rounding errors
-// Assertion: Verifies exact computed value from production
-```
-
-**3.2 Edge Case Coverage (Must test PRODUCTION paths)**
-
-```typescript
-// ✅ GREEN: Tests boundary conditions IN PRODUCTION CODE
-test('username rejects empty string', () => {
-  expect(() => new User({ username: '' })).toThrow(ValidationError);
-});
-// GREEN because: Exercises User constructor validation (production)
-// Would catch: Missing empty string validation
-// Assertion: Exact error type from production code
-
-test('username handles unicode', () => {
-  const user = new User({ username: '日本語ユーザー' });
-  expect(user.username).toBe('日本語ユーザー');
-});
-// GREEN because: Exercises User constructor and storage (production)
-// Would catch: Unicode corruption, encoding bugs
-// Assertion: Exact value preserved through production code
-```
-
-**3.3 Error Path Testing (Must verify PRODUCTION errors)**
-
-```typescript
-// ✅ GREEN: Verifies error handling IN PRODUCTION CODE
-test('fetch returns specific error on 404', () => {
-  mockServer.get('/api/user/999').reply(404); // External mock OK
-  await expect(fetchUser(999)).rejects.toThrow(UserNotFoundError);
-});
-// GREEN because: Exercises fetchUser error handling (production)
-// Would catch: Wrong error type, swallowed errors
-// Assertion: Exact error type from production code
-```
-
-**CAUTION:** A test that uses mocks for EXTERNAL dependencies (APIs, databases) can still be GREEN if it exercises PRODUCTION logic. A test that mocks the code under test is RED.
+The user's decision determines which of the four task templates in Step 4 actually get created — not every analysis warrants all four.
 
 ---
 
-## Phase 4: Mandatory Self-Review
+## Step 4: Create bd Epic + Tasks
 
-**Before finalizing ANY categorization, complete this checklist:**
-
-### For each GREEN test:
-- [ ] Did I read the PRODUCTION code this test exercises?
-- [ ] Does the test call PRODUCTION code or a test utility/mock?
-- [ ] Can I name the SPECIFIC BUG this test would catch?
-- [ ] If production code broke, would this test DEFINITELY fail?
-- [ ] Am I being too generous because the test "looks reasonable"?
-
-### For each YELLOW test:
-- [ ] Should this actually be RED? Is there ANY bug-catching value here?
-- [ ] Is the weakness fundamental (tests a mock) or fixable (weak assertion)?
-- [ ] If I changed this to RED, would I lose any bug-catching ability?
-
-### Self-Challenge Questions:
-- "If a junior engineer showed me this test, would I accept it as GREEN?"
-- "Am I marking this GREEN because I want to be done, or because it's genuinely good?"
-- "Could I defend this GREEN classification to a Google SRE?"
-
-**If you have ANY doubt about a GREEN, downgrade to YELLOW.**
-**If you have ANY doubt about a YELLOW, consider RED.**
-
-**Common mistakes that cause false GREENs:**
-- Assuming a well-named test tests what its name says (verify the code!)
-- Trusting test comments (comments lie, code doesn't)
-- Not tracing mock/utility usage to see what's actually exercised
-- Giving benefit of the doubt (junior engineers don't deserve it)
-
----
-
-## Phase 4b: Line-by-Line Justification for RED/YELLOW
-
-**MANDATORY: For every RED or YELLOW classification, provide detailed justification.**
-
-This forces you to verify your classification is correct by explaining exactly WHY the test is problematic.
-
-### Required Format for RED/YELLOW Tests:
-
-```markdown
-### [Test Name] - RED/YELLOW
-
-**Test code (file:lines):**
-- Line X: `code` - [what this line does]
-- Line Y: `code` - [what this line does]
-- Line Z: `assertion` - [what this asserts]
-
-**Production code it claims to test (file:lines):**
-- [Brief description of what production code does]
-
-**Why RED/YELLOW:**
-- [Specific reason with line references]
-- [What bug could slip through despite this test passing]
-```
-
-### Example RED Justification:
-
-```markdown
-### testAuthWorks - RED (Tautological)
-
-**Test code (auth_test.ts:45-52):**
-- Line 46: `const auth = new AuthService()` - Creates auth instance
-- Line 47: `const result = auth.login('user', 'pass')` - Calls login
-- Line 48: `expect(result).not.toBeNull()` - Asserts result exists
-
-**Production code (auth.ts:78-95):**
-- login() returns AuthResult object (never null by TypeScript types)
-
-**Why RED:**
-- Line 48 asserts `!= null` but TypeScript guarantees non-null return
-- If login returned {success: false, error: "invalid"}, test still passes
-- Bug example: Wrong password accepted → returns {success: true} → test passes
-```
-
-### Example YELLOW Justification:
-
-```markdown
-### testParseJson - YELLOW (Weak Assertion)
-
-**Test code (parser_test.ts:23-30):**
-- Line 24: `const input = '{"name": "test"}'` - Valid JSON input
-- Line 25: `const result = parse(input)` - Calls production parser
-- Line 26: `expect(result).toBeDefined()` - Asserts result exists
-- Line 27: `expect(result.name).toBe('test')` - Verifies one field
-
-**Production code (parser.ts:12-45):**
-- parse() handles JSON parsing with error handling and validation
-
-**Why YELLOW:**
-- Line 26-27 only test happy path with valid input
-- Missing: malformed JSON, empty string, deeply nested, unicode
-- Bug example: parse('') throws unhandled exception → not caught by test
-- Upgrade path: Add edge case inputs with specific error assertions
-```
-
-### Why This Matters:
-
-Writing the justification FORCES you to:
-1. Actually read the test code line by line
-2. Actually read the production code
-3. Articulate the specific gap
-4. Consider what bugs could slip through
-
-**If you cannot write this justification, you haven't done the analysis properly.**
-
----
-
-## Phase 5: Corner Case Discovery
-
-For each module, identify missing corner case tests:
-
-### Input Validation Corner Cases
-
-| Category | Examples | Tests to Add |
-|----------|----------|--------------|
-| Empty values | `""`, `[]`, `{}`, `null` | test_empty_X_rejected/handled |
-| Boundary values | 0, -1, MAX_INT, MAX_LEN | test_boundary_X_handled |
-| Unicode | RTL, emoji, combining chars, null byte | test_unicode_X_preserved |
-| Injection | SQL: `'; DROP`, XSS: `<script>`, cmd: `; rm` | test_injection_X_escaped |
-| Malformed | truncated JSON, invalid UTF-8, wrong type | test_malformed_X_error |
-
-### State Corner Cases
-
-| Category | Examples | Tests to Add |
-|----------|----------|--------------|
-| Uninitialized | Use before init, double init | test_uninitialized_X_error |
-| Already closed | Use after close, double close | test_closed_X_error |
-| Concurrent | Parallel writes, read during write | test_concurrent_X_safe |
-| Re-entrant | Callback calls same method | test_reentrant_X_safe |
-
-### Integration Corner Cases
-
-| Category | Examples | Tests to Add |
-|----------|----------|--------------|
-| Network | timeout, connection refused, DNS fail | test_network_X_timeout |
-| Partial response | truncated, corrupted, slow | test_partial_response_handled |
-| Rate limiting | 429, quota exceeded | test_rate_limit_handled |
-| Service errors | 500, 503, malformed response | test_service_error_handled |
-
-### Resource Corner Cases
-
-| Category | Examples | Tests to Add |
-|----------|----------|--------------|
-| Exhaustion | OOM, disk full, max connections | test_resource_X_graceful |
-| Contention | file locked, resource busy | test_contention_X_handled |
-| Permissions | access denied, read-only | test_permission_X_error |
-
-**For each module, create corner case checklist:**
-
-```markdown
-### Module: src/auth/
-
-**Covered Corner Cases:**
-- [x] Empty password rejected
-- [x] SQL injection in username escaped
-
-**Missing Corner Cases (MUST ADD):**
-- [ ] Unicode username preserved after roundtrip
-- [ ] Concurrent login attempts don't corrupt session
-- [ ] Password with null byte handled
-- [ ] Very long password (10KB) rejected gracefully
-- [ ] Login rate limiting enforced
-
-**Priority:** HIGH (auth is business-critical)
-```
-
----
-
-## Phase 6: Prioritize by Business Impact
-
-### Priority Matrix
-
-| Priority | Criteria | Action Timeline |
-|----------|----------|-----------------|
-| P0 - Critical | Auth, payments, data integrity | This sprint |
-| P1 - High | Core business logic, user-facing features | Next sprint |
-| P2 - Medium | Internal tools, admin features | Backlog |
-| P3 - Low | Utilities, non-critical paths | As time permits |
-
-**Rank modules:**
-```markdown
-1. P0: src/auth/ - 5 RED tests, 12 missing corner cases
-2. P0: src/payments/ - 2 RED tests, 8 missing corner cases
-3. P1: src/api/ - 8 RED tests, 15 missing corner cases
-4. P2: src/admin/ - 3 RED tests, 6 missing corner cases
-```
-
----
-
-## Phase 7: Create bd Issues and Improvement Plan
-
-**CRITICAL:** All findings MUST be tracked in bd and go through SRE task refinement.
-
-### Step 5.1: Create bd Epic for Test Quality Improvement
+### Epic
 
 ```bash
 bd create "Test Quality Improvement: [Module/Project]" \
@@ -542,7 +119,7 @@ Improve test effectiveness by removing tautological tests, strengthening weak te
 - [ ] Mutation score ≥80% for P0 modules
 
 ## Scope
-[Summary of modules analyzed and findings]
+[Summary of modules analyzed and findings, from the Step 2 report]
 
 ## Anti-patterns
 - ❌ Adding tests that only check `!= nil`
@@ -553,9 +130,11 @@ EOF
 )"
 ```
 
-### Step 5.2: Create bd Tasks for Each Category
+### Task templates
 
-**Task 1: Remove Tautological Tests (Immediate)**
+Every task below follows the two-tier spec format (`skills/common-patterns/spec-templates.md` — cite, don't restate). Only create the tasks the user agreed to act on in Step 3.
+
+**Task: Remove Tautological Tests — classification: simple**
 
 ```bash
 bd create "Remove tautological tests from [module]" \
@@ -564,133 +143,99 @@ bd create "Remove tautological tests from [module]" \
   --description "Delete RED-rated tests that pass regardless of code correctness" \
   --design "$(cat <<'EOF'
 ## Goal
-Remove tests that provide false confidence by passing regardless of code correctness.
+Delete the RED-rated tests the analyst identified — they pass regardless of code correctness and provide false confidence.
 
-## Tests to Remove
-[List each RED test with file:line]
-- tests/auth.test.ts:45 - testUserExists (tautological: verifies non-optional != nil)
-- tests/auth.test.ts:67 - testEnumHasCases (tautological: compiler checks this)
+## Why
+Tautological and mock-testing tests inflate coverage without catching bugs. They must come out before the strengthen task, so effort isn't spent polishing tests that are about to be deleted.
 
-## Success Criteria
-- [ ] All listed tests deleted
-- [ ] No new tautological tests introduced
-- [ ] Test suite still passes
-- [ ] Coverage may decrease (this is expected and good)
+## Changes
+- `[file:line]` - [test name]: delete ([one-line reason from the analyst's RED section])
+[... one line per RED test in the analyst's report]
 
-## Anti-patterns
-- ❌ Keeping tests "just in case"
-- ❌ Replacing with equally meaningless tests
-- ❌ Adding coverage-only tests to compensate
+## Verification
+- Test suite still passes after deletion: [project test command]
+- None of the deleted test names remain in the suite (grep the suite for each name)
 EOF
 )"
 ```
 
-**Task 2: Strengthen Weak Tests (This Sprint)**
+**Task: Strengthen Weak Tests — classification: medium**
 
 ```bash
 bd create "Strengthen weak assertions in [module]" \
   --type task \
   --priority 1 \
-  --description "Replace YELLOW-rated weak assertions with exact value checks" \
+  --description "Replace YELLOW-rated weak assertions with exact-value checks and missing edge cases" \
   --design "$(cat <<'EOF'
 ## Goal
-Replace weak assertions with meaningful ones that catch real bugs.
+Replace each YELLOW test's weak assertion with an exact-value check, and add the edge cases the analyst flagged as missing from happy-path-only tests.
 
-## Tests to Strengthen
-[List each YELLOW test with current vs recommended assertion]
-- tests/parser.test.ts:34 - testParse
-  - Current: `expect(result).not.toBeNull()`
-  - Strengthen: `expect(result).toEqual(expectedAST)`
+## Why
+A weak assertion or happy-path-only test passes even when the production logic is wrong — strengthening these is what turns high coverage into bug-catching coverage. Depends on the removal task landing first, so strengthening isn't wasted on soon-to-be-deleted tests.
 
-- tests/validator.test.ts:56 - testValidate
-  - Current: `expect(isValid).toBe(true)` (happy path only)
-  - Add edge cases: empty input, unicode, max length
+## Context
+Read the analyst's YELLOW section for each test below — it already has the file:line breakdown, the current weak assertion, and the specific bug that slips through.
 
-## Success Criteria
-- [ ] All weak assertions replaced with exact value checks
-- [ ] Edge cases added to happy-path-only tests
-- [ ] Each test documents what bug it catches
+## Implementation
+For each YELLOW test in the analyst's report:
+- `[file:line]` - [test name]: current `[weak assertion]` → strengthen to `[exact-value assertion]`
+[... one line per YELLOW test]
 
-## Anti-patterns
-- ❌ Replacing `!= nil` with `!= undefined` (still weak)
-- ❌ Adding edge cases without meaningful assertions
+## Tests
+Each strengthened test must name the specific bug it now catches (test name or adjacent comment) and assert exact production values — never `!= nil`, `> 0`, or `toBeDefined()`.
+
+## Verification
+- Test suite passes with the strengthened assertions: [project test command]
+- No remaining weak-assertion patterns (`!= nil`, `not.toBeNull()`, etc.) in the listed files
+
+## Boundaries
+Do not add new corner-case tests here — that is the next task. Do not touch tests outside the YELLOW list from the analyst's report.
 EOF
 )"
 ```
 
-**Task 3: Add Missing Corner Cases (Per Module)**
+**Task: Add Missing Corner Cases — classification: medium**
 
 ```bash
 bd create "Add missing corner case tests for [module]" \
   --type task \
   --priority 1 \
-  --description "Cover P0 corner cases that could cause production bugs" \
+  --description "Cover the P0 corner cases the analyst identified as missing" \
   --design "$(cat <<'EOF'
 ## Goal
-Add tests for corner cases that could cause production bugs.
+Add tests for the P0 corner cases the analyst's report flagged as missing, using TDD.
 
-## Corner Cases to Add
-[List each with the bug it prevents]
-- test_empty_password_rejected - prevents auth bypass
-- test_unicode_username_preserved - prevents encoding corruption
-- test_concurrent_login_safe - prevents session corruption
+## Why
+Missing corner cases (empty input, unicode, concurrency, injection) are exactly where production bugs hide despite high coverage — this is the epic's actual coverage gain, not cleanup. Depends on the strengthen task so new tests follow the same exact-assertion bar.
 
-## Implementation Checklist
-- [ ] Write failing test first (RED)
-- [ ] Verify test fails for the right reason
-- [ ] Test catches the specific bug listed
-- [ ] Test has meaningful assertion (not just `!= nil`)
+## Context
+Read the analyst's "Missing Corner Case Tests" table for the module(s) in scope — it lists each corner case, its bug risk, and a recommended test name.
 
-## Success Criteria
-- [ ] All corner case tests written and passing
-- [ ] Each test documents the bug it catches in test name/comment
-- [ ] No tautological tests added
+## Implementation
+For each corner case in the analyst's table:
+1. Write the failing test first (RED)
+2. Run it — confirm it fails for the right reason
+3. Implement the minimal production fix if the corner case reveals a real gap
+4. Run it — confirm it passes (GREEN)
 
-## Anti-patterns
-- ❌ Writing test that passes immediately (didn't test anything)
-- ❌ Testing mock behavior instead of production code
-- ❌ Happy path only (defeats the purpose)
+Corner cases to add (from the analyst's report):
+- [recommended test name] - prevents [bug risk]
+[... one line per P0 corner case]
+
+## Tests
+Each new test must document the specific bug it prevents (test name or comment) and use a meaningful assertion — no line-hitters.
+
+## Verification
+- All new tests pass: [project test command]
+- Spot-check 1-2 new tests by manually removing the corresponding production guard and confirming the test fails
+
+## Boundaries
+Limit to the P0 corner cases from the analyst's report. P1/P2 cases become follow-up tasks only if the user asked for them in Step 3.
 EOF
 )"
 ```
 
-### Step 5.3: Run SRE Task Refinement
-
-**MANDATORY:** After creating bd tasks, dispatch SRE task refinement as a fresh blocking subagent — this session authored the improvement tasks, so the review must come from a context that did not:
-
-```
-Agent tool:
-  subagent_type: "general-purpose"
-  mode: "bypassPermissions"
-  prompt: |
-    Load the skill hyperpowers:sre-task-refinement with the Skill tool and
-    run its BATCH MODE against epic <epic-id> (the test improvement tasks).
-    You may strengthen task specs via bd update (no placeholders); do not
-    create, close, or re-classify tasks. Return the batch verdict,
-    cross-task analysis, and the list of bd updates applied.
-```
-
-Do not pass a model override — the review inherits the session model.
-
-The review applies all 8 categories to each task, especially:
-- **Category 8 (Test Meaningfulness)**: Verify the proposed tests actually catch bugs
-- **Category 6 (Edge Cases)**: Ensure corner cases are comprehensive
-- **Category 3 (Success Criteria)**: Ensure criteria are measurable
-
-### Step 5.4: Link Tasks to Epic
-
-```bash
-# Link all tasks as children of epic
-bd dep add bd-2 bd-1 --type parent-child
-bd dep add bd-3 bd-1 --type parent-child
-bd dep add bd-4 bd-1 --type parent-child
-
-# Set dependencies (remove before strengthen before add)
-bd dep add bd-3 bd-2  # strengthen depends on remove
-bd dep add bd-4 bd-3  # add depends on strengthen
-```
-
-### Step 5.5: Validation Task
+**Task: Validate with Mutation Testing — classification: simple**
 
 ```bash
 bd create "Validate test improvements with mutation testing" \
@@ -699,35 +244,72 @@ bd create "Validate test improvements with mutation testing" \
   --description "Prove the improved suite catches more bugs via mutation score" \
   --design "$(cat <<'EOF'
 ## Goal
-Verify test improvements actually catch more bugs using mutation testing.
+Run mutation testing against the improved suite and confirm the mutation score meets the epic's target.
 
-## Validation Commands
-```bash
-# Java
-mvn org.pitest:pitest-maven:mutationCoverage
+## Why
+Coverage alone is a vanity metric — this epic exists because of it. Mutation score is the evidence that removing RED tests, strengthening YELLOW tests, and adding corner cases actually improved bug-catching ability. Depends on the prior three tasks.
 
-# JavaScript/TypeScript
-npx stryker run
+## Changes
+- Run the mutation-testing tool for the project's language (see `agents/test-effectiveness-analyst.md` Output Format for the per-language command — Pitest/Stryker/mutmut/Stryker.NET)
+- If the score is below target, list surviving mutants and open follow-up tasks to kill them — do not lower the target
 
-# Python
-mutmut run
-
-# .NET
-dotnet stryker
-```
-
-## Success Criteria
-- [ ] P0 modules: ≥80% mutation score
-- [ ] P1 modules: ≥70% mutation score
-- [ ] No surviving mutants in critical paths (auth, payments)
-
-## If Score Below Target
-- Identify surviving mutants
-- Create additional tasks to add tests that kill them
-- Re-run validation
+## Verification
+- P0 modules: mutation score ≥80%
+- P1 modules: mutation score ≥70%
+- No surviving mutants in critical paths (auth, payments)
 EOF
 )"
 ```
+
+### Link Tasks to Epic
+
+```bash
+# Link all tasks as children of epic
+bd dep add bd-2 bd-1 --type parent-child
+bd dep add bd-3 bd-1 --type parent-child
+bd dep add bd-4 bd-1 --type parent-child
+bd dep add bd-5 bd-1 --type parent-child
+
+# Set dependencies (remove before strengthen before add before validate)
+bd dep add bd-3 bd-2  # strengthen depends on remove
+bd dep add bd-4 bd-3  # add depends on strengthen
+bd dep add bd-5 bd-4  # validate depends on add
+```
+
+---
+
+## Step 5: Batch SRE Review
+
+**MANDATORY. Do not skip.**
+
+Dispatch SRE task refinement as a fresh blocking subagent — this session authored the improvement tasks, so the review must come from a context that did not.
+
+```
+Agent tool:
+  subagent_type: "general-purpose"
+  mode: "bypassPermissions"
+  prompt: |
+    Load the skill hyperpowers:sre-task-refinement with the Skill tool and
+    run its BATCH MODE against epic <epic-id> (the test improvement tasks).
+    Inputs: bd show <epic-id>, then bd show each child task.
+    You may strengthen task specs directly via bd update (preserve existing
+    sections; never insert placeholders). Do not create, close, or
+    re-classify tasks — structural suggestions go in your report.
+    Return: the batch verdict (APPROVE / NEEDS REVISION / REJECT), the
+    cross-task analysis including the epic-coverage table, per-task
+    one-liners, and an exact list of bd updates you applied.
+```
+
+Do not pass a model override — the review inherits the session model.
+
+The review applies all 8 categories across the task tree, especially:
+- **Category 8 (Test Meaningfulness)**: Verify the proposed tests actually catch bugs
+- **Category 6 (Edge Cases)**: Ensure corner cases are comprehensive
+- **Category 3 (Success Criteria)**: Ensure criteria are measurable
+
+SRE refinement runs once against the full task tree — not per-task.
+
+On APPROVE (or NEEDS REVISION resolved via the bd updates above), hand off to hyperpowers:executing-plans to implement the tasks.
 
 ---
 
@@ -814,10 +396,11 @@ bd-1 (Epic: Test Quality Improvement)
 
 ## SRE Task Refinement Status
 
-- [ ] All tasks reviewed with hyperpowers:sre-task-refinement
-- [ ] Category 8 (Test Meaningfulness) applied to each task
-- [ ] Success criteria are measurable
-- [ ] Anti-patterns specified
+- [ ] One batch SRE review dispatched against the full task tree (not per-task)
+- [ ] Verdict recorded: APPROVE / NEEDS REVISION / REJECT
+- [ ] Category 8 (Test Meaningfulness) and Category 6 (Edge Cases) covered in the cross-task analysis
+- [ ] Success criteria are measurable across the tree
+- [ ] Anti-patterns specified per task
 
 ## Next Steps
 
