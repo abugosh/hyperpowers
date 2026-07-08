@@ -551,11 +551,7 @@ review-implementation (re-verification)
 - hyperpowers:sre-task-refinement (test specifications in plans)
 - hyperpowers:test-driven-development (what makes a good test)
 
-**Mutation testing tools:**
-- Java: [Pitest](https://pitest.org/) (`mvn org.pitest:pitest-maven:mutationCoverage`)
-- JS/TS: [Stryker](https://stryker-mutator.io/) (`npx stryker run`)
-- Python: mutmut (`mutmut run`)
-- .NET: Stryker.NET (`dotnet stryker`)
+**Mutation testing:** the analyst recommends per-language mutation tooling in its report — see the Mutation Testing Recommendations section of agents/test-effectiveness-analyst.md.
 </integration>
 
 <resources>
@@ -570,7 +566,7 @@ review-implementation (re-verification)
 **Key insight from Google:** "Coverage mainly tells you about code that has no tests: it doesn't tell you about the quality of testing for the code that's 'covered'."
 
 **When stuck:**
-- Test seems borderline RED/YELLOW → Ask: "If I delete this test, what bug could slip through?" If none, it's RED.
-- Unsure if assertion is weak → Ask: "Could the code return wrong value while assertion passes?" If yes, strengthen.
-- Unsure if corner case matters → Ask: "Has this ever caused a production bug, anywhere?" If yes, test it.
+- Analyst's report is thin or a category call looks wrong → don't re-derive the categorization here; ask the analyst to elaborate, or surface the specific call to the user to override with rationale.
+- Scope came back too large to act on → re-scope to a subdirectory/suite and re-dispatch (Step 1).
+- User wants to skip bd tracking → hold; untracked improvements get lost (see Common Excuses).
 </resources>
