@@ -433,52 +433,34 @@ Tests: 245 passing
 </why_it_fails>
 
 <correction>
-**Run test effectiveness analysis:**
+**Orchestrate the audit instead of re-deriving the criteria:**
 
-Phase 1 - Inventory:
-```bash
-fd -e test.ts src/
-# Found: auth.test.ts, user.test.ts, data.test.ts
-```
+Step 1 (Scope): Confirm target — `auth.test.ts`, `user.test.ts`, `data.test.ts` in `src/`.
 
-Phase 2 - Categorize:
+Step 2 (Dispatch Analyst): Blocking dispatch to hyperpowers:test-effectiveness-analyst with the confirmed scope. It returns the full report — per-test justifications, missing corner cases, improvement plan — this skill never re-derives the RED/YELLOW/GREEN criteria that produced it.
+
+Step 3 (Present Findings): Relay the executive summary.
 ```markdown
-### auth.test.ts
-| Test | Category | Problem |
-|------|----------|---------|
-| testAuthWorks | RED | Only checks `!= null` |
-| testLoginFlow | YELLOW | Happy path only, no empty password |
-| testTokenExpiry | GREEN | Verifies exact error |
+| Metric | Count |
+|--------|-------|
+| RED | 2 |
+| YELLOW | 1 |
+| GREEN | 1 |
+| Missing corner cases (P0) | 3 |
+```
+Agree with the user: remove the 2 RED tests, strengthen the 1 YELLOW test, add the 3 P0 corner cases (empty password, unicode username, concurrent login).
 
-### data.test.ts
-| Test | Category | Problem |
-|------|----------|---------|
-| testDataSaves | RED | No assertion, just calls save() |
-| testConcurrentWrites | MISSING | Not tested at all |
+Step 4 (Create bd Epic + Tasks):
+```
+bd-1 (Epic: Test Quality Improvement - auth/data)
+├── bd-2 (Remove 2 RED tests)
+├── bd-3 (Strengthen 1 YELLOW test) ← depends on bd-2
+└── bd-4 (Add 3 P0 corner case tests) ← depends on bd-3
 ```
 
-Phase 3 - Corner cases:
-```markdown
-### auth module (P0)
-Missing:
-- [ ] test_empty_password_rejected
-- [ ] test_unicode_username_preserved
-- [ ] test_concurrent_login_safe
-```
+Step 5 (Batch SRE Review): Fresh subagent runs sre-task-refinement once against bd-1's full tree. APPROVE hands off to executing-plans.
 
-Phase 5 - Plan:
-```markdown
-### Immediate
-- Remove testAuthWorks (tautological)
-- Remove testDataSaves (line hitter)
-
-### This Sprint
-- Add test_empty_password_rejected
-- Add test_concurrent_writes_safe
-- Strengthen testLoginFlow with edge cases
-```
-
-**Result:** Production bugs prevented by meaningful tests.
+**Result:** Production bugs (auth bypass, unicode crash, concurrent corruption) become tracked, reviewed work instead of vanishing behind a 92% coverage number.
 </correction>
 </example>
 
@@ -565,7 +547,7 @@ test('service accepts valid data', () => {
 7. **Self-review before finalizing** → Challenge every GREEN classification
 8. **Mutation testing validates improvements** → Coverage alone is vanity metric
 9. **All findings tracked in bd** → Create epic + tasks for every issue found
-10. **SRE refinement on all tasks** → Run hyperpowers:sre-task-refinement before execution
+10. **Batch SRE review, not per-task** → Run hyperpowers:sre-task-refinement as a batch SRE review against the full task tree (once, as a fresh subagent) before execution
 
 ## Common Analysis Failures
 
@@ -594,6 +576,7 @@ All of these mean: **STOP. The test is probably RED or YELLOW.**
 - "It exercises the function" (Calling != testing; assertions matter)
 - "I'll just fix these without bd" (Untracked work = forgotten work)
 - "SRE refinement is overkill for test fixes" (Test tasks need same rigor as feature tasks)
+- "I'll restate the RED/YELLOW/GREEN criteria here for clarity" (Methodology lives in agents/test-effectiveness-analyst.md — restating it here creates drift between the two)
 </critical_rules>
 
 <verification_checklist>
@@ -626,11 +609,11 @@ Before completing analysis:
 - [ ] Created bd tasks for each category (remove, strengthen, add)
 - [ ] Linked tasks to epic with parent-child relationships
 - [ ] Set task dependencies (remove → strengthen → add → validate)
-- [ ] Ran hyperpowers:sre-task-refinement on ALL tasks
+- [ ] Ran a batch SRE review against the full task tree (once, as a fresh subagent, via hyperpowers:sre-task-refinement)
 - [ ] Created validation task with mutation testing
 
 **SRE Refinement Verification:**
-- [ ] Category 8 (Test Meaningfulness) applied to each task
+- [ ] Category 8 (Test Meaningfulness) covered in the batch review's cross-task analysis
 - [ ] Success criteria are measurable (not "tests work")
 - [ ] Anti-patterns specified for each task
 - [ ] No placeholder text in task designs
@@ -648,9 +631,9 @@ Before completing analysis:
 - Before major refactoring efforts
 
 **This skill calls (MANDATORY):**
-- hyperpowers:sre-task-refinement (for ALL bd tasks created)
+- hyperpowers:sre-task-refinement (batch SRE review against the full task tree, once, as a fresh subagent)
 - hyperpowers:test-runner agent (to run tests during analysis)
-- hyperpowers:test-effectiveness-analyst agent (for detailed analysis)
+- hyperpowers:test-effectiveness-analyst agent (dispatched in Step 2 — owns the analysis methodology)
 
 **This skill creates:**
 - bd epic for test quality improvement
@@ -661,7 +644,7 @@ Before completing analysis:
 ```
 analyzing-test-effectiveness
     ↓ (creates bd issues)
-sre-task-refinement (on each task)
+sre-task-refinement BATCH MODE (full task tree, once)
     ↓ (refines tasks)
 executing-plans (implements tasks + reviewer gate verifies quality)
     ↓ (on-demand re-check available)
