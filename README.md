@@ -17,7 +17,7 @@ Reusable workflows for common development tasks:
 - **brainstorming** - Interactive design refinement — produces the epic and the complete verified task tree, batch-reviewed by SRE
 - **writing-plans** - Expand or repair specs for tasks that lack them (gap-fixes, amendments) — off the standard flow
 - **executing-plans** - Lead reads upfront task list, dispatches fresh executor subagent (Sonnet by default, promotable) per task, runs two-stage review (spec + code quality) after each task
-- **review-implementation** - Verify implementation matches requirements
+- **review-implementation** - On-demand re-verification of an implementation against its bd epic spec (post-gap-fix re-check, auditing an epic implemented elsewhere, mid-epic sanity check) — the mainline gate already runs inside executing-plans' completion step
 - **finishing-a-development-branch** - Complete workflow for PR creation and cleanup
 - **sre-task-refinement** - Ensure all corner cases and requirements are understood; runs in batch against the full task tree during brainstorming
 
@@ -56,7 +56,7 @@ Quick access to key workflows:
 - `/hyperpowers:brainstorm` - Start interactive design refinement
 - `/hyperpowers:write-plan` - Expand or repair specs for tasks that lack them
 - `/hyperpowers:execute-plan` - Orchestrate plan execution via executor subagent
-- `/hyperpowers:review-implementation` - Review completed implementation
+- `/hyperpowers:review-implementation` - On-demand re-verification of a completed implementation against its spec (not the mainline gate — that runs inside executing-plans' completion step)
 - `/hyperpowers:refactor-diagnose` - Diagnose code/design smells and refactor targets
 - `/hyperpowers:refactor-design` - Design refactor with composition, DI, and test strategy
 - `/hyperpowers:refactor-execute` - Execute refactor safely with tests staying green
