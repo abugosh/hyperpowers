@@ -396,7 +396,7 @@ EOF
 )"
 ```
 
-**For a simple task**, the same update only ever touches `## Changes` and `## Verification` — a simple spec has no Context, Implementation, or Boundaries sections to extend. If findings require one of those, the task no longer fits the simple tier: reclassify as medium instead of inventing a section.
+**For a simple task**, the same update only ever touches `## Changes` and `## Verification` — a simple spec has no Context, Implementation, or Boundaries sections to extend. If findings require one of those sections, the task no longer fits the simple tier — do not add the section; recommend reclassification to medium in your report.
 
 **IMPORTANT:** Use `--design` for full detailed description, NOT `--description` (title only).
 
