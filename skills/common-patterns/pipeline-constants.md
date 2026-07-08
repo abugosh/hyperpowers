@@ -46,8 +46,11 @@ Default executor model is Sonnet. A task spec containing the line
 "Executor: opus" is dispatched on Opus instead. The flag is set by:
 1. The planner at spec time, for irreducibly hard tasks
 2. SRE batch review, as a recommendation
-3. The lead automatically on re-dispatch after a BLOCKED or CONCERNS
-   failure — one escalation rung before interrupting the user
+3. The lead automatically on re-dispatch, one escalation rung before
+   interrupting the user — always after a first BLOCKED; after Stage 2
+   CONCERNS only when the lead classifies the concern as capability-class.
+   Cosmetic/convention concerns never promote. executing-plans owns this
+   classification; this entry defers to it.
 
 ## Complete Task Tree (Handoff Contract)
 
