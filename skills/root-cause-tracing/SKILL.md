@@ -538,7 +538,7 @@ Before claiming root cause fixed:
 
 <integration>
 **This skill is called by:**
-- hyperpowers:debugging-with-tools (Phase 2: Trace Backward Through Call Stack)
+- hyperpowers:debugging-with-tools (Phase 2: Form Hypothesis — when the error surfaces deep in execution and the origin is unclear)
 - When errors occur deep in execution
 - When unclear where invalid data originated
 
