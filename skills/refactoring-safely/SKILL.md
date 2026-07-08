@@ -152,11 +152,11 @@ Dispatch hyperpowers:test-runner agent: "Run: cargo test"
 Commit each safe transformation:
 
 ```bash
-Dispatch hyperpowers:test-runner agent: "Run: git add src/user_service.rs && git commit -m 'refactor(bd-456): extract email validation to function
+Dispatch hyperpowers:test-runner agent: "Run: git add src/user_service.rs && git commit -m 'refactor(<refactor-id>): extract email validation to function
 
 No behavior change. All tests pass.
 
-Part of bd-456'"
+Part of <refactor-id>'"
 ```
 
 **Why commit so often:**
@@ -202,7 +202,7 @@ Dispatch hyperpowers:test-runner agent: "Run: cargo clippy"
 
 ```bash
 # See all refactoring commits
-git log --oneline | grep "bd-456"
+git log --oneline | grep "<refactor-id>"
 
 # Review full diff
 git diff main...HEAD
@@ -218,8 +218,14 @@ git diff main...HEAD
 **Close bd task:**
 
 ```bash
-bd update bd-456 --design "
-... (append to existing design)
+# bd update --design REPLACES the whole field — re-emit both artifact
+# sections, then append the completion notes:
+bd update <refactor-id> --design "
+## Diagnosis Report
+[unchanged — re-emit from bd show <refactor-id>]
+
+## Refactor Design Spec
+[unchanged — re-emit from bd show <refactor-id>]
 
 ## Completed
 - Created UserValidator class with email, name, age validation
@@ -229,7 +235,7 @@ bd update bd-456 --design "
 - 8 small transformations, each tested
 "
 
-bd close bd-456
+bd close <refactor-id>
 ```
 </the_process>
 

@@ -18,8 +18,8 @@ MEDIUM FREEDOM - The required outputs and evidence standards are strict; the ana
 | 2 | Gather evidence (code, tests, runtime behavior) | Evidence notes |
 | 3 | Map evidence to smells/traps | Smell table |
 | 4 | Assess risk and impact | Risk matrix |
-| 5 | Decide refactor vs rewrite | Decision + rationale |
-| 6 | Produce diagnosis report | Required report format |
+| 5 | Decide refactor vs rewrite | Decision + rationale; rewrite → hyperpowers:brainstorming |
+| 6 | Produce diagnosis report | Required report format → refactor bd issue (--design) |
 </quick_reference>
 
 <when_to_use>
