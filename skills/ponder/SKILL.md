@@ -24,7 +24,7 @@ RIGID for dispatch pattern — always dispatch as subagent, never inline .c4 wor
 </quick_reference>
 
 <when_to_use>
-- After implementing features that change component interfaces, dependencies, or boundaries (via review-implementation checklist)
+- After implementing features that change component interfaces, dependencies, or boundaries (via the post-build Architecture Impact Check)
 - When Intuition Step 4 resolves a tension and no model exists yet (bootstrap)
 - When the architect suspects model staleness and wants accuracy verification (review)
 - When brainstorming completes an epic that changed architecture (via epic template reference)
@@ -44,7 +44,7 @@ Determine the mode from the invocation context:
 
 ### UPDATE mode
 **Triggered when:** Caller provides a description of what changed in the codebase.
-- Review-implementation's architecture checklist answered "yes" to any question
+- The post-build Architecture Impact Check (executing-plans completion, or review-implementation re-verification) answered yes to any question
 - Brainstorming epic template references model update
 - Architect directly describes a change
 
@@ -153,15 +153,13 @@ fi
 <examples>
 
 <example>
-<scenario>UPDATE mode — review-implementation checklist triggers model update</scenario>
+<scenario>UPDATE mode — post-build Architecture Impact Check triggers model update</scenario>
 
 <code>
-Review-implementation runs the 5-question architecture checklist:
-1. Did this work change a component's public interface? YES — Auth component now exposes refreshToken()
-2. Did this work add or remove a dependency between components? YES — Auth now depends on TokenStore
-3-5: No
+The post-build Architecture Impact Check runs (at executing-plans completion, or via review-implementation re-verification):
+Post-build check: YES on interface change — Auth exposes refreshToken(); YES on new dependency — Auth -> TokenStore; questions 3-5 NO
 
-Reviewer constructs structured input:
+Caller constructs structured input:
 
 Mode: UPDATE
 
@@ -194,7 +192,7 @@ Agent returns:
 ### Validation
 - likec4 validate: PASS
 
-Reviewer reports summary to architect.
+Caller reports summary to architect.
 </code>
 
 <why_it_works>
@@ -333,7 +331,7 @@ Skill dispatches ponder again in UPDATE mode with specific fixes.
 
 3. **Review mode is read-only.** Never combine review and correction in a single dispatch. Review returns findings, architect approves, then update applies corrections.
 
-4. **No auto-inserting model updates.** Ponder proposes changes. The architect (or the skill's caller) approves before changes take effect. For UPDATE mode dispatched by review-implementation or Intuition, the dispatch itself constitutes approval (the caller already decided an update was needed).
+4. **No auto-inserting model updates.** Ponder proposes changes. The architect (or the skill's caller) approves before changes take effect. For UPDATE mode dispatched by the post-build architecture check (executing-plans completion / review-implementation re-verification) or Intuition, the dispatch itself constitutes approval (the caller already decided an update was needed).
 
 5. **Model describes what IS.** No target elements, no aspirational components, no #target tags. If it doesn't exist in code, it doesn't go in the model.
 
@@ -373,7 +371,7 @@ Before considering the ponder dispatch complete:
 - hyperpowers:codebase-investigator (via ponder agent — spot-check and model-vs-code comparison)
 
 **This skill is called by:**
-- review-implementation (5-question architecture checklist — UPDATE mode when any answer is yes)
+- the post-build Architecture Impact Check (executing-plans completion, or review-implementation re-verification — UPDATE mode when any answer is yes)
 - Intuition Step 4 (model bootstrapping on first Resolve — BOOTSTRAP mode)
 - Intuition Step 0 (model freshness check — suggests REVIEW mode when stale)
 - brainstorming (epic template architecture update — references /ponder update)
@@ -384,8 +382,8 @@ Before considering the ponder dispatch complete:
 DIRECT INVOCATION:
   /ponder → mode detection → dispatch ponder agent → summary
 
-FROM REVIEW-IMPLEMENTATION:
-  review-impl → 5-question checklist → any yes → /ponder update → summary
+FROM POST-BUILD ARCHITECTURE CHECK:
+  executing-plans completion (or review-implementation re-verification) → Architecture Impact Check → any yes → /ponder update → summary
 
 FROM INTUITION:
   Step 0: freshness check → suggest /ponder review

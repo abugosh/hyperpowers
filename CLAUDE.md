@@ -194,8 +194,8 @@ Complete workflow from idea to PR:
 
 1. **Preordain** (`/hyperpowers:preordain`) - Entry point for large initiatives. Decomposes initiative into leaf epics with dependencies; each leaf epic is independently brainstormable and executable. Skip for single-epic work.
 2. **Brainstorming** (`/hyperpowers:brainstorm`) - Entry point for leaf epics. Socratic questioning to refine requirements, research codebase/external docs, produce bd epic with immutable requirements and the complete VERIFIED task tree, then run batch SRE review against the full tree (Step 7); escalates to preordain per the thresholds in `skills/common-patterns/pipeline-constants.md`
-3. **Executing Plans** (`/hyperpowers:execute-plan`) - Lead reads upfront task list, dispatches fresh executor subagent (Sonnet by default, promotable) per task, runs two-stage review (spec + code quality) after each task
-4. **Review Implementation** (`/hyperpowers:review-implementation`) - Verifies against spec
+3. **Executing Plans** (`/hyperpowers:execute-plan`) - Lead reads upfront task list, dispatches fresh executor subagent (Sonnet by default, promotable) per task, runs two-stage review (spec + code quality) after each task; on completion runs the reviewer gate plus the post-build Architecture Impact Check, then an explicit STOP for manual validation
+4. **Review Implementation** (`/hyperpowers:review-implementation`) - On-demand re-verification against spec (post-gap-fix re-check, auditing an epic implemented elsewhere, mid-epic sanity check) — not the mainline step between executing-plans and finishing
 5. **Finishing Branch** - Creates PR, handles cleanup
 
 writing-plans (`/hyperpowers:write-plan`) is the off-mainline utility that expands or repairs specs for tasks lacking them (reviewer gap-fixes, mid-flight amendments) — not part of the standard flow.
@@ -207,7 +207,7 @@ Architecture uses Brand's empirical approach — observe actual change rates thr
 1. **Brainstorm** (`/hyperpowers:brainstorm`) - Primary entry point for new work. Includes Architecture Impact Check (5 structural questions) and design-time friction detection that routes to /intuition when structural uncertainty arises
 2. **Build** - Implement the feature (executing-plans)
 3. **Intuition** (`/hyperpowers:intuition`) - Intermittent diagnostic. Runs 9 structured analysis passes to find tensions (complection, coupling, dependency direction, rate-of-change mismatches, workaround cascades, mechanism bypass). Resolution protocol guides per-tension decisions (accept via ADR, resolve via ADR + ticket, brainstorm for complex cases, investigate for deeper evidence)
-4. **Ponder** (`/hyperpowers:ponder`) - Architecture model ownership. Dispatches ponder subagent for all .c4 file operations (update, bootstrap, review). Called by review-implementation (architecture checklist) and Intuition (model bootstrapping)
+4. **Ponder** (`/hyperpowers:ponder`) - Architecture model ownership. Dispatches ponder subagent for all .c4 file operations (update, bootstrap, review). Called by executing-plans completion (architecture checklist), review-implementation re-verification, and Intuition (model bootstrapping)
 
 The architecture model (LikeC4 `.c4` files in `docs/arch/`) represents current codebase reality. ADR trail IS the architectural strategy.
 

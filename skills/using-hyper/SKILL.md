@@ -39,8 +39,9 @@ HIGH FREEDOM - The meta-process (check for skills, use Skill tool, announce usag
 | Task shape | Route |
 |------------|-------|
 | Exploring an idea; goal not yet clear | hyperpowers:consider → routes onward when ready |
-| Build / create / add / implement anything | hyperpowers:brainstorming → hyperpowers:executing-plans → hyperpowers:review-implementation → hyperpowers:finishing-a-development-branch |
+| Build / create / add / implement anything | hyperpowers:brainstorming → hyperpowers:executing-plans → hyperpowers:finishing-a-development-branch |
 | Large initiative (sizing gate in `skills/common-patterns/pipeline-constants.md` fires) | hyperpowers:preordain → hyperpowers:brainstorming per leaf epic |
+| Re-verify a completed epic on demand (post-gap-fix re-check, auditing an epic implemented elsewhere, mid-epic sanity check) | hyperpowers:review-implementation |
 | Phase docs in a planning repo (multiservice) | hyperpowers:portent (draft / check) |
 | Bug report or test failure | hyperpowers:debugging-with-tools → hyperpowers:fixing-bugs |
 | Error deep in execution, unclear origin | hyperpowers:root-cause-tracing |
