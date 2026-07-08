@@ -16,7 +16,7 @@ LOW FREEDOM - Follow the 8-category checklist exactly. Apply all categories to e
 |----------|---------------|----------------|
 | 1. Granularity | Task classified simple or medium per the bands in `skills/common-patterns/pipeline-constants.md`? | Task exceeds the ceiling in `skills/common-patterns/pipeline-constants.md` without breakdown |
 | 2. Implementability | Junior can execute without questions? | Vague language, missing details |
-| 3. Success Criteria | Simple: 1+ measurable outcome plus the hooks line? Medium: 3+ measurable criteria? | Simple task missing a Verification section; medium task criteria can't be verified ("works well") |
+| 3. Verification | Simple: 1+ measurable outcome plus the hooks line? Medium: 3+ measurable criteria? | Simple task missing a Verification section; medium task criteria can't be verified ("works well") |
 | 4. Dependencies | Correct parent-child, blocking relationships? | Circular dependencies |
 | 5. Safety Standards | Epic has an anti-patterns section? Risky tasks have task-level anti-patterns? | Epic missing anti-patterns section, or risky task missing task-level anti-patterns |
 | 6. Edge Cases | Empty input? Unicode? Concurrency? Failures? | No edge case consideration |
@@ -91,7 +91,7 @@ After reviewing each task individually, run these systemic checks:
 **c. Systemic gaps**
 - Does the same missing edge case appear across multiple tasks? (e.g., no error handling for nil inputs in every data-transformation task)
 - Is there a missing task that several tasks implicitly depend on (shared utility, migration, config change)?
-- Are success criteria consistently strong, or does one task have measurable criteria while others use vague language?
+- Are Verification sections consistently strong, or does one task have measurable checks while others use vague language?
 
 **d. Classification consistency** (canonical templates: `skills/common-patterns/spec-templates.md`)
 - Simple task spec: should have Goal, Why, Changes, Verification — nothing more
@@ -180,13 +180,13 @@ After per-task reviews, append a cross-task section:
 
 ---
 
-### 3. Success Criteria Quality
+### 3. Verification Quality
 
 **Tier-aware — see `skills/common-patterns/pipeline-constants.md` for the simple/medium bands.**
 
 **Check:**
 - [ ] **Simple task**: Has a Verification section with at least one specific, measurable outcome, plus the "Pre-commit hooks passing" line?
-- [ ] **Medium task**: Has 3+ specific, measurable success criteria?
+- [ ] **Medium task**: Has 3+ specific, measurable verification criteria?
 - [ ] All criteria testable/verifiable (not subjective)?
 - [ ] Includes automated verification (tests pass, clippy clean) where applicable?
 - [ ] No vague criteria like "works well" or "is implemented"?
@@ -247,7 +247,7 @@ bd dep tree bd-1  # Show full dependency tree
 - [ ] What happens with Unicode, special characters, large inputs?
 - [ ] Are these edge cases addressed in the plan?
 
-**Add to Key Considerations section:**
+**Add to the Context section (medium) or as Verification notes (simple):**
 - Edge case descriptions
 - Mitigation strategies
 - References to similar code handling these cases
@@ -259,12 +259,12 @@ bd dep tree bd-1  # Show full dependency tree
 **Check for these - if found, REJECT plan:**
 - ❌ Any task exceeding the ceiling in `skills/common-patterns/pipeline-constants.md` without subtask breakdown
 - ❌ Vague language: "implement properly", "add support", "make it work"
-- ❌ Success criteria that can't be verified: "code is good", "works well"
+- ❌ Verification criteria that can't be checked: "code is good", "works well"
 - ❌ Missing test specifications
 - ❌ "We'll handle this later" or "TODO" in the plan itself
 - ❌ Epic missing anti-patterns section, or risky task missing task-level anti-patterns
-- ❌ **Medium task** implementation checklist with fewer than 3 items
-- ❌ No simple/medium classification present (the classification itself satisfies the effort-estimate requirement)
+- ❌ **Medium task** Implementation section with fewer than 3 items
+- ❌ No simple/medium classification present (the classification itself carries the time band)
 - ❌ Missing error handling considerations
 - ❌ **CRITICAL: Placeholder text in design field** - "[detailed above]", "[as specified]", "[complete steps here]"
 
@@ -303,7 +303,7 @@ bd dep tree bd-1  # Show full dependency tree
 
 **When reviewing test specifications:**
 ```markdown
-For each test in success criteria, verify:
+For each test in Verification, verify:
 
 Test: "test_vin_validation"
 - What bug does it catch? ⚠️ Unclear - need specific scenarios
@@ -330,7 +330,7 @@ bd show bd-3
 **Step 2: Apply all 8 checklist categories**
 - Task Granularity
 - Implementability
-- Success Criteria Quality
+- Verification Quality
 - Dependency Structure
 - Safety & Quality Standards
 - Edge Cases & Failure Modes
@@ -350,22 +350,18 @@ Take notes:
 
 Use `bd update` to add missing information:
 
+This example strengthens a **medium** task spec — extend its existing sections, never add sections the two-tier format doesn't define (`skills/common-patterns/spec-templates.md`):
+
 ```bash
 bd update bd-3 --design "$(cat <<'EOF'
 ## Goal
 [Original goal, preserved]
 
-## Effort Estimate
-[Updated estimate if needed]
+## Why
+[Original Why, preserved]
 
-## Success Criteria
-- [ ] Existing criteria
-- [ ] NEW: Added missing measurable criteria
-
-## Implementation Checklist
-[Complete checklist with file paths]
-
-## Key Considerations (ADDED BY SRE REVIEW)
+## Context
+[Original Context, preserved]
 
 **Edge Case: Empty Input**
 - What happens when input is empty string?
@@ -383,12 +379,24 @@ bd update bd-3 --design "$(cat <<'EOF'
 **Reference Implementation**
 - Study src/similar/module.rs for pattern to follow
 
-## Anti-patterns
-[Original anti-patterns]
-- ❌ NEW: Specific anti-pattern for this task's risks
+## Implementation
+[Original Implementation, preserved]
+
+## Tests
+[Original Tests, preserved]
+
+## Verification
+- [ ] Existing criteria
+- [ ] NEW: Added missing measurable criteria
+
+## Boundaries
+[Original Boundaries, preserved]
+- NEW: Specific out-of-scope note for this task's risks
 EOF
 )"
 ```
+
+**For a simple task**, the same update only ever touches `## Changes` and `## Verification` — a simple spec has no Context, Implementation, or Boundaries sections to extend. If findings require one of those, the task no longer fits the simple tier: reclassify as medium instead of inventing a section.
 
 **IMPORTANT:** Use `--design` for full detailed description, NOT `--description` (title only).
 
@@ -398,7 +406,7 @@ After updating, read back with `bd show bd-N` and verify:
 - ✅ All sections contain actual content, not meta-references
 - ✅ No placeholder text like "[detailed above]", "[as specified]", "[will be added]"
 - ✅ Implementation steps fully written with actual code examples
-- ✅ Success criteria explicit, not referencing "criteria above"
+- ✅ Verification explicit, not referencing "criteria above"
 - ❌ If ANY placeholder text found: REJECT and rewrite with actual content
 
 ---
@@ -470,9 +478,8 @@ After reviewing all tasks:
 
 #### [Task Name] (bd-N)
 **Type**: [epic/feature/task]
-**Classification**: [simple / medium]
+**Classification**: [simple / medium] ([✅ Within range / ❌ Too large - needs breakdown])
 **Status**: [✅ Ready / ⚠️ Needs Minor Improvements / ❌ Needs Major Revision]
-**Estimated Effort**: [X min] ([✅ Within range / ❌ Too large - needs breakdown])
 
 **Strengths**:
 - [What's done well]
@@ -498,7 +505,7 @@ After reviewing all tasks:
 **Issues Updated**:
 - bd-3 - Added edge case handling for Unicode, regex backtracking risks
 - bd-5 - Broke into 3 subtasks (was 40 min, now 3x10 min)
-- bd-7 - Strengthened success criteria (added test names, verification commands)
+- bd-7 - Strengthened Verification (added test names, verification commands)
 
 ### Critical Gaps Across Plan
 1. [Pattern of missing items across multiple tasks]
@@ -535,7 +542,7 @@ After reviewing all tasks:
 ## Checklist review:
 1. Granularity: ✅ 20 min (medium)
 2. Implementability: ✅ Junior can implement
-3. Success Criteria: ✅ Has 5 test scenarios
+3. Verification: ✅ Has 5 test scenarios
 4. Dependencies: ✅ Correct
 5. Safety Standards: ✅ Anti-patterns present
 6. Edge Cases: [SKIPPED - "looks straightforward"]
@@ -588,7 +595,7 @@ Findings:
 bd update bd-3 --design "$(cat <<'EOF'
 [... original content ...]
 
-## Key Considerations (ADDED BY SRE REVIEW)
+## Context (extended by SRE review)
 
 **VIN Checksum Complexity**:
 - ISO 3779 requires transliteration table (letters → numbers)
@@ -636,25 +643,25 @@ EOF
 
 bd show bd-5:
 
-## Implementation Checklist
+## Implementation
 - [ ] Create scanner module
 - [ ] [Complete implementation steps detailed above]
 - [ ] Add tests
 
-## Success Criteria
-- [ ] [As specified in the implementation checklist]
+## Verification
+- [ ] [As specified in the Implementation section]
 - [ ] Tests pass
 
-## Key Considerations
+## Context
 - [Will be added during implementation]
 
 # Developer's review:
-"Looks comprehensive, has implementation checklist and success criteria ✅"
+"Looks comprehensive, has an Implementation section and Verification ✅"
 
 # During implementation:
 Junior engineer: "What are the 'implementation steps detailed above'?"
-Junior engineer: "What specific success criteria should I verify?"
-Junior engineer: "What key considerations exist?"
+Junior engineer: "What specific verification checks should I run?"
+Junior engineer: "What's supposed to be in Context?"
 
 # No answers in the task - junior engineer blocked
 # Have to research and add missing information
@@ -664,7 +671,7 @@ Junior engineer: "What key considerations exist?"
 <why_it_fails>
 - Missed Red Flag #10: Placeholder text present
 - "[Complete implementation steps detailed above]" is meta-reference, not content
-- "[As specified in the implementation checklist]" is circular reference
+- "[As specified in the Implementation section]" is circular reference
 - "[Will be added during implementation]" is deferral, not specification
 - Junior engineer can't execute - missing critical information
 - Task looks complete but actually incomplete
@@ -683,7 +690,7 @@ Read through bd-5 line by line:
 Line 15: "[Complete implementation steps detailed above]"
 ❌ PLACEHOLDER - "detailed above" is meta-reference, not actual content
 
-Line 22: "[As specified in the implementation checklist]"
+Line 22: "[As specified in the Implementation section]"
 ❌ PLACEHOLDER - Circular reference to another section, not explicit criteria
 
 Line 30: "[Will be added during implementation]"
@@ -696,7 +703,7 @@ Reason: Contains placeholder text - task not ready for implementation
 **Update task with actual content:**
 ```bash
 bd update bd-5 --design "$(cat <<'EOF'
-## Implementation Checklist
+## Implementation
 - [ ] Create src/scan/plugins/scanners/license_plate.rs
 - [ ] Implement LicensePlateScanner struct with ScanPlugin trait
 - [ ] Add regex patterns for US states:
@@ -708,7 +715,7 @@ bd update bd-5 --design "$(cat <<'EOF'
 - [ ] Create test module with 8+ test cases
 - [ ] Register in src/scan/plugins/scanners/mod.rs
 
-## Success Criteria
+## Verification
 - [ ] Valid CA plate "1ABC123" detected in healthcare context
 - [ ] Valid NY plate "ABC1234" detected in healthcare context
 - [ ] Invalid plate "123" NOT detected (too short)
@@ -717,7 +724,7 @@ bd update bd-5 --design "$(cat <<'EOF'
 - [ ] Clippy clean, no warnings
 - [ ] cargo test passes
 
-## Key Considerations
+## Context
 
 **False Positive Risk**:
 - License plates are short and generic (5-8 chars)
@@ -755,28 +762,28 @@ bd show bd-5
 - Junior engineer has complete specification
 - No blocked implementation waiting for details
 - All edge cases documented upfront
-- Success criteria explicit and verifiable
-- Key considerations prevent common mistakes
+- Verification explicit and checkable
+- Context prevents common mistakes
 - No placeholder text - task truly ready
 - Professional SRE review standard maintained
 </correction>
 </example>
 
 <example>
-<scenario>Developer accepts vague success criteria (Category 3)</scenario>
+<scenario>Developer accepts vague verification criteria (Category 3)</scenario>
 
 <code>
 # Review of bd-7: Implement Data Encryption
 
 bd show bd-7:
 
-## Success Criteria
+## Verification
 - [ ] Encryption is implemented correctly
 - [ ] Code is good quality
 - [ ] Tests work properly
 
 # Developer's review:
-"Has 3 success criteria ✅ Meets minimum requirement"
+"Has 3 verification criteria ✅ Meets minimum requirement"
 
 # During implementation:
 Junior engineer: "How do I know if encryption is 'correct'?"
@@ -808,7 +815,7 @@ Junior engineer: "What does 'tests work properly' mean?"
 **Apply Category 3 rigorously:**
 
 ```markdown
-## Success Criteria Analysis for bd-7
+## Verification Analysis for bd-7
 
 Current criteria:
 - [ ] Encryption is implemented correctly
@@ -830,7 +837,7 @@ DECISION: REJECT ❌
 bd update bd-7 --design "$(cat <<'EOF'
 [... original content ...]
 
-## Success Criteria
+## Verification
 
 **Encryption Implementation**:
 - [ ] Uses AES-256-GCM mode (verified in code review)
@@ -915,13 +922,13 @@ All of these mean: **STOP. Apply the full process.**
 Before completing SRE review:
 
 **Per task reviewed:**
-- [ ] Applied all 8 categories (Granularity, Implementability, Criteria, Dependencies, Safety, Edge Cases, Red Flags, Test Meaningfulness)
+- [ ] Applied all 8 categories (Granularity, Implementability, Verification, Dependencies, Safety, Edge Cases, Red Flags, Test Meaningfulness)
 - [ ] Checked for placeholder text in design field
 - [ ] Updated task with missing information via `bd update --design`
 - [ ] Verified updated task with `bd show` (no placeholders remain)
 - [ ] Broke down any task exceeding the ceiling in `skills/common-patterns/pipeline-constants.md` into subtasks
-- [ ] Strengthened vague success criteria to measurable
-- [ ] Added edge case analysis to Key Considerations
+- [ ] Strengthened vague verification criteria to measurable
+- [ ] Added edge case analysis to Context (or Verification notes for a simple task)
 - [ ] Strengthened anti-patterns based on failure modes
 - [ ] Verified test specifications catch real bugs (not tautological)
 
@@ -978,7 +985,7 @@ hyperpowers:writing-plans (repairs/expands a spec) → hyperpowers:sre-task-refi
 **Review patterns:**
 - Task too large (exceeds the ceiling in `skills/common-patterns/pipeline-constants.md`) → Break into simple or medium subtasks per the bands there
 - Vague criteria ("works correctly") → Measurable commands/checks
-- Missing edge cases → Add to Key Considerations with mitigations
+- Missing edge cases → Add to Context (medium) or Verification notes (simple) with mitigations
 - Placeholder text → Rewrite with actual content
 - Tautological tests → Strengthen to catch specific bugs
 
