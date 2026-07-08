@@ -56,7 +56,7 @@ Use this skill for **advanced** bd operations:
 # Already completed: Login form
 # Remaining work gets split:
 
-bd create "Auth API endpoints" --type task --priority P1 \
+bd create "Auth API endpoints" --type task --priority 1 \
   --description "Login/logout endpoints split out of bd-5" --design "
 POST /api/login and POST /api/logout endpoints.
 ## Success Criteria
@@ -66,7 +66,7 @@ POST /api/login and POST /api/logout endpoints.
 "
 # Returns bd-12
 
-bd create "Session management" --type task --priority P1 \
+bd create "Session management" --type task --priority 1 \
   --description "JWT session tracking split out of bd-5" --design "
 JWT token tracking and validation.
 ## Success Criteria
@@ -77,7 +77,7 @@ JWT token tracking and validation.
 "
 # Returns bd-13
 
-bd create "Password hashing" --type task --priority P1 \
+bd create "Password hashing" --type task --priority 1 \
   --description "bcrypt hashing split out of bd-5" --design "
 Secure password hashing with bcrypt.
 ## Success Criteria
