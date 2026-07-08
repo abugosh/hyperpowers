@@ -107,8 +107,8 @@ bd create "Epic: Add OAuth" # with immutable requirements
 bd create "Task 1: Configure OAuth provider"        # paths verified
 bd create "Task 2: Extend auth/passport-config.ts"  # confirmed to exist
 bd create "Task 3: Add OAuth button to login UI"    # component location verified
-bd dep add bd-[t2] bd-[t1] --type blocking
-bd dep add bd-[t3] bd-[t2] --type blocking
+bd dep add bd-[t2] bd-[t1]  # default type gates readiness
+bd dep add bd-[t3] bd-[t2]
 
 # Batch SRE review of the full tree (Step 7), then execution begins
 ```

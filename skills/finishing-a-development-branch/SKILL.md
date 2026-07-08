@@ -1,24 +1,24 @@
 ---
 name: finishing-a-development-branch
-description: Use when implementation complete and tests pass - closes bd epic, presents integration options (merge/MR/keep/discard), executes choice
+description: Use when implementation complete and tests pass - verifies epic tasks and tests, presents integration options (merge/MR/keep/discard), closes the epic on success or records a discard note, executes choice
 ---
 
 <skill_overview>
-Close bd epic, verify tests pass, present 4 integration options, execute choice, cleanup worktree appropriately.
+Verify epic tasks are complete, verify tests pass, present 4 integration options, execute choice — closing the epic inside the successful paths (merge/MR/keep) or recording a discard note that leaves it open — cleanup worktree appropriately.
 </skill_overview>
 
 <rigidity_level>
-LOW FREEDOM - Follow the 6-step process exactly. Present exactly 4 options. Never skip test verification. Must confirm before discarding.
+LOW FREEDOM - Follow the 6-step process exactly. Present exactly 4 options. Never skip test verification. Must confirm before discarding. Never close the epic before the integration choice succeeds.
 </rigidity_level>
 
 <quick_reference>
 | Step | Action | If Blocked |
 |------|--------|------------|
-| 1 | Close bd epic | Tasks still open → STOP |
+| 1 | Verify epic tasks complete | Tasks still open → STOP |
 | 2 | Verify tests pass (test-runner agent) | Tests fail → STOP |
 | 3 | Determine base branch | Ask if needed |
 | 4 | Present exactly 4 options | Wait for choice |
-| 5 | Execute choice | Follow option workflow |
+| 5 | Execute choice (closes epic on Options 1-3; records discard note and leaves epic open on Option 4) | Follow option workflow |
 | 6 | Cleanup worktree (options 1,2,4 only) | Option 3 keeps worktree |
 
 **Options:** 1=Merge locally, 2=MR, 3=Keep as-is, 4=Discard (confirm)
@@ -33,7 +33,7 @@ LOW FREEDOM - Follow the 6-step process exactly. Present exactly 4 options. Neve
 **Prerequisites:**
 - The reviewer gate in executing-plans' completion must have returned APPROVED
 - Complete your manual testing while epic is still open
-- Then run this skill to close epic and integrate
+- Then run this skill to integrate and close the epic (or record a discard note, leaving it open)
 
 **Don't use for:**
 - Work still in progress
@@ -44,7 +44,7 @@ LOW FREEDOM - Follow the 6-step process exactly. Present exactly 4 options. Neve
 </when_to_use>
 
 <the_process>
-## Step 1: Close bd Epic
+## Step 1: Verify Epic Tasks Complete
 
 **Announce:** "I'm using hyperpowers:finishing-a-development-branch to complete this work."
 
@@ -57,7 +57,7 @@ bd list --status open --parent bd-1  # Check for open tasks
 
 **If any tasks still open:**
 ```
-Cannot close epic bd-1: N tasks still open:
+Cannot proceed with bd-1: N tasks still open:
 - bd-3: Task Name (status: in_progress)
 - bd-5: Task Name (status: open)
 
@@ -66,11 +66,9 @@ Complete all tasks before finishing.
 
 **STOP. Do not proceed.**
 
-**If all tasks closed:**
+**If all tasks closed:** Continue to Step 2.
 
-```bash
-bd close bd-1
-```
+**Note:** The epic itself is NOT closed here. Closure happens later, inside Step 5's successful integration paths (Options 1-3). This ordering matters: if tests fail in Step 2, or the user picks Option 4 (discard), the epic must still be open to reflect reality.
 
 ---
 
@@ -92,7 +90,7 @@ Tests failing (N failures). Must fix before completing:
 
 [Show failures]
 
-Cannot proceed until tests pass.
+Cannot proceed until tests pass. Epic bd-1 remains open.
 ```
 
 **STOP. Do not proceed.**
@@ -144,6 +142,7 @@ Dispatch hyperpowers:test-runner: "Run: <test command>"
 
 # If tests pass
 git branch -d <feature-branch>
+bd close bd-1
 ```
 
 Then: Step 6 (cleanup worktree)
@@ -183,13 +182,23 @@ EOF
 )"
 ```
 
+**After MR created:**
+
+```bash
+bd close bd-1
+```
+
 Then: Step 6 (cleanup worktree)
 
 ---
 
 ### Option 3: Keep As-Is
 
-Report: "Keeping branch <name>. Worktree preserved at <path>."
+```bash
+bd close bd-1
+```
+
+Report: "Keeping branch <name>. Worktree preserved at <path>. Epic bd-1 closed."
 
 **Don't cleanup worktree.**
 
@@ -215,7 +224,10 @@ Wait for exact "discard" confirmation.
 ```bash
 git checkout <base-branch>
 git branch -D <feature-branch>
+bd update bd-1 --notes "Implementation discarded <date>: <reason>. Branch <feature-branch> deleted. Epic remains open — re-attempt or close explicitly."
 ```
+
+**Do not close the epic.** It stays open, honestly reflecting that the work was discarded rather than completed.
 
 Then: Step 6 (cleanup worktree)
 
@@ -241,8 +253,10 @@ git worktree remove <worktree-path>
 <scenario>Developer skips test verification before presenting options</scenario>
 
 <code>
-# Step 1: Epic closed ✓
-bd close bd-1
+# Step 1: Verified epic tasks complete ✓
+bd dep tree bd-1
+bd list --status open --parent bd-1
+# No open tasks
 
 # Step 2: SKIPPED test verification
 # Jump directly to presenting options
@@ -257,6 +271,7 @@ User selects Option 1
 git checkout main
 git merge feature-branch
 # Tests fail! Broken code now on main
+# bd close bd-1 already ran inside Option 1 — epic now falsely shows complete
 </code>
 
 <why_it_fails>
@@ -265,14 +280,15 @@ git merge feature-branch
 - Other developers pull broken main
 - CI/CD fails, blocks deployment
 - Must revert, fix, merge again (wasted time)
+- Epic closed on broken work — bd state lies about reality
 </why_it_fails>
 
 <correction>
 **Follow Step 2 strictly:**
 
 ```bash
-# After closing epic
-bd close bd-1 ✓
+# After verifying epic tasks complete
+bd dep tree bd-1  # ✓ no open tasks
 
 # MANDATORY: Verify tests BEFORE presenting options
 Dispatch hyperpowers:test-runner agent: "Run: cargo test"
@@ -284,6 +300,9 @@ Dispatch hyperpowers:test-runner agent: "Run: cargo test"
 "Implementation complete. What would you like to do?
 1. Merge back to main locally
 ..."
+
+# Epic bd-1 is closed only after the chosen path succeeds (Step 5),
+# never before tests are verified
 ```
 
 **What you gain:**
@@ -292,6 +311,7 @@ Dispatch hyperpowers:test-runner agent: "Run: cargo test"
 - CI/CD stays green
 - Other developers unblocked
 - Professional workflow
+- Epic close always reflects reality
 </correction>
 </example>
 
@@ -398,8 +418,9 @@ User types: "discard"
 git checkout main
 git branch -D feature-experimental
 git worktree remove ../feature-experimental-worktree
+# Record the discard on the epic (see Step 5, Option 4) — do NOT close it
 
-"Branch feature-experimental deleted."
+"Branch feature-experimental deleted. Epic bd-1 remains open with a discard note."
 ```
 
 **What you gain:**
@@ -408,6 +429,7 @@ git worktree remove ../feature-experimental-worktree
 - Prevents accidental data loss
 - Time to reconsider or clarify
 - Safe destructive operations
+- bd state stays honest — epic isn't marked closed for work that no longer exists
 </correction>
 </example>
 </examples>
@@ -429,6 +451,8 @@ git worktree remove ../feature-experimental-worktree
 3. **Require confirmation for Option 4** → Type "discard" exactly
 4. **Keep worktree for Options 2 & 3** → MR and keep-as-is need worktree
 5. **Verify tests after merge (Option 1)** → Merged result might break
+6. **Never close the epic before Step 5** → Task verification (Step 1) and test verification (Step 2) must both pass first; closing early leaves the epic marked done on unverified or broken work
+7. **Discard never closes the epic** → Record a discard note on the epic instead (Step 5, Option 4); it stays open until someone re-attempts or closes it explicitly
 
 ## Common Excuses
 
@@ -439,16 +463,19 @@ All of these mean: **STOP. Follow the process.**
 - "Obvious they want to discard" (Require explicit confirmation)
 - "MR done, cleanup worktree" (MR likely needs updates, keep worktree)
 - "Too many options" (Exactly 4, no more, no less)
+- "Close the epic first, it's basically done" (No — close only inside Step 5, after tests are verified and the integration choice succeeds)
+- "Discarding, no need to touch bd" (Wrong — record a discard note on the epic, or bd state lies about what happened)
 </critical_rules>
 
 <verification_checklist>
 Before completing:
 
-- [ ] bd epic closed (all child tasks closed)
-- [ ] Tests verified passing (via test-runner agent)
+- [ ] All child tasks verified closed (Step 1)
+- [ ] Tests verified passing (via test-runner agent, Step 2)
 - [ ] Presented exactly 4 options (no open-ended questions)
 - [ ] Waited for user choice (didn't assume)
-- [ ] If Option 4: Got typed "discard" confirmation
+- [ ] If Option 1, 2, or 3: bd epic closed only after that path succeeded
+- [ ] If Option 4: Got typed "discard" confirmation, then recorded a discard note on the epic and left it open
 - [ ] Worktree cleaned for Options 1, 4 only (not 2, 3)
 - [ ] If Option 1: Verified tests on merged result
 

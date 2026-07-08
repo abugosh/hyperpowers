@@ -191,7 +191,7 @@ EOF
 **After creating all epics, set blocking dependencies:**
 ```bash
 # Epic B cannot start until Epic A is complete
-bd dep add bd-[epic-B] bd-[epic-A] --type blocking
+bd dep add bd-[epic-B] bd-[epic-A]
 ```
 
 ---

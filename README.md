@@ -16,7 +16,7 @@ Reusable workflows for common development tasks:
 - **consider** - Lightweight Socratic thinking partner for exploring ideas before committing to build; routes to brainstorming or intuition when ready
 - **brainstorming** - Interactive design refinement — produces the epic and the complete verified task tree, batch-reviewed by SRE
 - **writing-plans** - Expand or repair specs for tasks that lack them (gap-fixes, amendments) — off the standard flow
-- **executing-plans** - Lead reads upfront task list, dispatches fresh executor subagent (Sonnet by default, promotable) per task, runs two-stage review (spec + code quality) after each task
+- **executing-plans** - Lead reads upfront task list, dispatches fresh executor subagent (Sonnet by default, promotable) per task, runs two-stage review (Stage 1: epic coherence; Stage 2: spec-match + code quality) after each task
 - **review-implementation** - On-demand re-verification of an implementation against its bd epic spec (post-gap-fix re-check, auditing an epic implemented elsewhere, mid-epic sanity check) — the mainline gate already runs inside executing-plans' completion step
 - **finishing-a-development-branch** - Complete workflow for PR creation and cleanup
 - **sre-task-refinement** - Ensure all corner cases and requirements are understood; runs in batch against the full task tree during brainstorming
@@ -153,7 +153,7 @@ Claude: I'm using the executing-plans skill to orchestrate execution.
 
 [Dispatches fresh executor subagent per task — Sonnet by default, promotable]
 [Executor reads self-contained task spec, implements, commits, returns DONE/BLOCKED/NEEDS_HELP]
-[Lead runs two-stage review (spec check + code quality) after each task]
+[Lead runs two-stage review (Stage 1: epic coherence; Stage 2: spec-match + code quality) after each task]
 
 Claude: The executor reports all criteria met. Dispatching the reviewer agent.
 
