@@ -82,13 +82,15 @@ Agent tool:
   prompt: |
     Execute this task:
 
+    Task: <bd-task-id>
+
     <paste full task spec from bd show output here>
 
     Working directory: <pwd>
     Branch: <current branch>
 ```
 
-The prompt contains ONLY the task spec. No epic context, no adjacent task details. The task spec's Why section provides the necessary context.
+The prompt contains ONLY the task ID line and the task spec. No epic context, no adjacent task details. The task spec's Why section provides the necessary context.
 
 The Agent tool blocks until the executor returns. Parse the first word of the return value.
 
@@ -133,7 +135,7 @@ Agent tool:
     Reply PASS or CONCERNS: <list>.
 ```
 
-If reviewer returns PASS: mark task done in bd, proceed to next task.
+If reviewer returns PASS: Task closure is owned by the lead: the lead closes the task only after Stage 2 review passes — the executor never closes tasks. Run `bd close <task-id>`, then proceed to the next task.
 
 If reviewer returns CONCERNS: classify before re-dispatching.
 - **Capability-class** (correctness or quality issue — spec mismatch, wrong logic, missing error handling): if this is the task's first re-dispatch and it is not already promoted, add `Executor: opus` to the task spec and note the promotion in bd (e.g. `bd update <task-id> --notes "Auto-promoted to opus after Stage 2 CONCERNS"`). Re-dispatch with the concern list.
@@ -146,6 +148,8 @@ Re-execute this task. The prior attempt conflicts with the epic.
 Violations found:
 - <violation 1>
 - <violation 2>
+
+Task: <bd-task-id>
 
 Task spec:
 <paste task spec>
@@ -168,6 +172,8 @@ Executor hit an obstacle it could not resolve. Assess the scope:
 Re-execute this task. The prior executor was blocked: <description>.
 Resolution: <clarification or instruction>.
 
+Task: <bd-task-id>
+
 Task spec:
 <paste task spec — include the `Executor: opus` line if auto-promoting>
 
@@ -188,6 +194,8 @@ Executor has a specific question. If the lead can answer:
 Re-dispatch with the answer:
 ```
 Re-execute this task. Answer to your question: <answer>.
+
+Task: <bd-task-id>
 
 Task spec:
 <paste task spec>
@@ -262,7 +270,8 @@ After all tasks return DONE and pass two-stage review:
 <scenario>Normal task dispatch and DONE return with passing review</scenario>
 <code>
 Lead records base SHA (git rev-parse HEAD → a1b2c3d), then verifies bd-42: non-empty spec, no
-blocking dependencies pending. Dispatches executor on Sonnet (spec carries no promotion flag).
+blocking dependencies pending. Dispatches executor on Sonnet (spec carries no promotion flag;
+dispatch prompt includes "Task: bd-42").
 Executor returns:
 "DONE: Added error handling to auth.ts:validate() and committed as 3f9a1b2."
 
@@ -270,7 +279,7 @@ Stage 1: git diff a1b2c3d → no anti-pattern violations, requirements intact, n
 completed tasks. ✓
 Stage 2: code-reviewer returns "PASS" (spec-match and quality both check out). ✓
 
-Lead marks bd-42 done. Proceeds to bd-43.
+Lead closes bd-42 (`bd close bd-42`). Proceeds to bd-43.
 </code>
 </example>
 
@@ -321,7 +330,7 @@ Waits for user response before proceeding.
 
 6. **Executor dispatch is blocking** — No team_name parameter. The Agent tool call blocks until the executor returns.
 
-7. **Task spec only in dispatch prompt** — No epic context, no adjacent task details, no cross-task learnings in the executor prompt. The task spec's Why section is the executor's only context.
+7. **Task ID + task spec only in dispatch prompt** — No epic context, no adjacent task details, no cross-task learnings in the executor prompt. The task spec's Why section is the executor's only context.
 
 8. **Epic requirements are immutable** — Never water down a requirement. If an executor's changes violate an anti-pattern, reject in Stage 1 and re-dispatch.
 
@@ -346,7 +355,7 @@ After each DONE return:
 - [ ] Stage 1: lead read the diff against the recorded base SHA for epic coherence
 - [ ] Stage 2: reviewer dispatched and returned PASS (spec-match and code quality)
 - [ ] Any CONCERNS/BLOCKED classified before re-dispatch; promotion applied only to capability-class failures
-- [ ] Task marked done in bd
+- [ ] Task closed in bd by the lead (Stage 2 PASS)
 
 Before completion:
 - [ ] `bd list --parent <epic-id> --status open` returns 0
@@ -367,7 +376,18 @@ Before completion:
 **bd command reference:** See [bd commands](../common-patterns/bd-commands.md)
 
 **When stuck:**
-- Executor timed out → Re-dispatch same task with prompt: 'Prior executor timed out. Check git log for progress. Continue from where it left off.'
+- Executor timed out → Re-dispatch same task with prompt:
+  ```
+  Prior executor timed out. Check git log for progress. Continue from where it left off.
+
+  Task: <bd-task-id>
+
+  Task spec:
+  <paste task spec>
+
+  Working directory: <pwd>
+  Branch: <current branch>
+  ```
 - Reviewer GAPS FOUND → Create gap-fix tasks, dispatch executors, re-dispatch reviewer
 - Reviewer APPROVED → Persist gate-state, run the post-build Architecture Impact Check, present, then STOP — never auto-call finish-branch
 - Escalation → Summarize, recommend, wait for user

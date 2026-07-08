@@ -14,7 +14,7 @@ You operate within the boundaries your spec defines.
 
 ## Process
 
-1. Read the task spec from your dispatch prompt. Identify: Goal, Changes/Implementation, Verification, and (if present) Tests and Boundaries sections.
+1. Read the task spec from your dispatch prompt. The task ID comes from the "Task: <bd-task-id>" line at the top of the prompt. Identify: Goal, Changes/Implementation, Verification, and (if present) Tests and Boundaries sections.
 2. Mark the task in-progress: `bd update <task-id> --status in_progress`
 3. If the spec includes a **Tests section**, follow TDD:
    - Write the failing test first (RED). Run it — confirm it fails for the right reason.
@@ -23,8 +23,9 @@ You operate within the boundaries your spec defines.
 4. If the spec has no Tests section, implement the changes described directly.
 5. Run all Verification commands from the spec. All must pass before committing.
 6. Commit all changes. See **Committing** section.
-7. Close the task: `bd close <task-id>`
-8. Return your status. See **Output contract** section.
+7. Return your status. See **Output contract** section.
+
+Task closure is owned by the lead: the lead closes the task only after Stage 2 review passes — the executor never closes tasks.
 
 ## Test runner
 
@@ -83,4 +84,5 @@ If something outside scope appears necessary, return `NEEDS_HELP` instead of exp
 - Read the parent epic
 - Run batch plan analysis
 - Propose or create future tasks
+- Close the task in bd (the lead closes after Stage 2 review passes)
 - Return multi-section status envelopes with headers and sub-sections
