@@ -335,7 +335,7 @@ bd dep add bd-[task] bd-[epic] --type parent-child
 
 A task spec may carry the `Executor: opus` promotion flag for irreducibly hard tasks — see `skills/common-patterns/pipeline-constants.md` for the full promotion policy.
 
-Set task dependencies in bd so execution order is clear: `bd dep add bd-[task-B] bd-[task-A] --type blocking` for tasks that must run in sequence.
+Set task dependencies in bd so execution order is clear: `bd dep add bd-[task-B] bd-[task-A]` (bd's default dependency type — it gates readiness) for tasks that must run in sequence.
 
 ---
 
@@ -400,7 +400,7 @@ The executing-plans skill will:
 2. Dispatch a fresh executor subagent per task on Sonnet
 3. The executor reads the self-contained task spec, implements, commits, and returns
    a one-liner status (DONE, BLOCKED, or NEEDS_HELP)
-4. After each task: lead runs a two-stage review (spec check + code quality),
+4. After each task: lead runs a two-stage review (Stage 1: lead epic-coherence check; Stage 2: reviewer spec-match + code quality),
    then dispatches fresh executor for next task
 5. When all tasks complete, a reviewer agent verifies the assembled whole against the epic spec
 
