@@ -1080,9 +1080,9 @@ analyzing-test-effectiveness
     ↓ (creates bd issues)
 sre-task-refinement (on each task)
     ↓ (refines tasks)
-executing-plans (implements tasks)
-    ↓ (runs validation)
-review-implementation (verifies quality)
+executing-plans (implements tasks + reviewer gate verifies quality)
+    ↓ (on-demand re-check available)
+review-implementation (re-verification)
 ```
 
 **This skill informs:**
