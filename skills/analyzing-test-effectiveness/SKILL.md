@@ -463,117 +463,22 @@ Step 5 (Batch SRE Review): Fresh subagent runs sre-task-refinement once against 
 **Result:** Production bugs (auth bypass, unicode crash, concurrent corruption) become tracked, reviewed work instead of vanishing behind a 92% coverage number.
 </correction>
 </example>
-
-<example>
-<scenario>Mock-heavy test suite that breaks on every refactor</scenario>
-
-<code>
-# Every refactor breaks 50+ tests
-# But bugs slip through to production
-
-test('service processes data', () => {
-  const mockDb = jest.fn().mockReturnValue({ data: [] });
-  const mockCache = jest.fn().mockReturnValue(null);
-  const mockLogger = jest.fn();
-  const mockValidator = jest.fn().mockReturnValue(true);
-
-  const service = new Service(mockDb, mockCache, mockLogger, mockValidator);
-  service.process({ id: 1 });
-
-  expect(mockDb).toHaveBeenCalled();
-  expect(mockValidator).toHaveBeenCalled();
-  // Tests mock wiring, not actual behavior
-});
-</code>
-
-<why_it_fails>
-- Tests verify mock setup, not production behavior
-- Changing implementation breaks tests without bugs
-- Real bugs (validation logic, data handling) not caught
-- "Mocks mocking mocks" anti-pattern
-</why_it_fails>
-
-<correction>
-**Categorize as RED - mock-testing:**
-
-```markdown
-### service.test.ts
-| Test | Category | Problem | Action |
-|------|----------|---------|--------|
-| testServiceProcesses | RED | Only verifies mocks called | Replace with integration test |
-| testServiceValidates | RED | Mock determines outcome | Test real validator |
-| testServiceCaches | RED | Tests mock cache | Use real cache with test data |
-```
-
-**Replacement strategy:**
-
-```typescript
-// ❌ Before: Tests mock wiring
-test('service validates', () => {
-  const mockValidator = jest.fn().mockReturnValue(true);
-  const service = new Service(mockValidator);
-  expect(mockValidator).toHaveBeenCalled();
-});
-
-// ✅ After: Tests real behavior
-test('service rejects invalid data', () => {
-  const service = new Service(new RealValidator());
-  const result = service.process({ id: -1 }); // Invalid ID
-  expect(result.error).toBe('INVALID_ID');
-});
-
-test('service accepts valid data', () => {
-  const service = new Service(new RealValidator());
-  const result = service.process({ id: 1, name: 'test' });
-  expect(result.success).toBe(true);
-  expect(result.data.name).toBe('test');
-});
-```
-
-**Result:** Tests verify behavior, not implementation. Refactoring doesn't break tests. Real bugs caught.
-</correction>
-</example>
 </examples>
 
 <critical_rules>
 ## Rules That Have No Exceptions
 
-1. **Assume junior engineer quality** → Tests are LOW QUALITY until proven otherwise
-2. **Read production code BEFORE categorizing** → You cannot assess without context
-3. **GREEN is the exception** → Most tests are RED or YELLOW; GREEN requires proof
-4. **Every test must answer: "What bug does this catch?"** → If no answer, it's RED
-5. **Tautological tests must be removed** → They provide false confidence
-6. **Mock-testing tests must be replaced** → Test production code, not mocks
-7. **Self-review before finalizing** → Challenge every GREEN classification
-8. **Mutation testing validates improvements** → Coverage alone is vanity metric
-9. **All findings tracked in bd** → Create epic + tasks for every issue found
-10. **Batch SRE review, not per-task** → Run hyperpowers:sre-task-refinement as a batch SRE review against the full task tree (once, as a fresh subagent) before execution
-
-## Common Analysis Failures
-
-**You WILL be tempted to:**
-- Mark tests GREEN because they "look reasonable" → VERIFY call paths first
-- Trust test names and comments → CODE doesn't lie, comments DO
-- Give benefit of the doubt → Junior engineers don't deserve it
-- Rush categorization → Read production code FIRST
-- Mark YELLOW when it's actually RED → If mock determines outcome, it's RED
-
-**A false GREEN is worse than a false YELLOW.** When in doubt, be harsher.
+1. **Methodology lives in the agent file** → agents/test-effectiveness-analyst.md owns RED/YELLOW/GREEN criteria and corner-case categories; cite it, never restate or re-derive it here
+2. **Dispatch, don't analyze** → The analyst runs as a blocking subagent; never perform the categorization in the lead's own context
+3. **Confirm scope before dispatching** → Ambiguous or whole-codebase scope gets AskUserQuestion first, not a guess
+4. **Every generated task carries its two-tier spec sections** → Goal, Why, Boundaries (and the rest of `skills/common-patterns/spec-templates.md`) are non-negotiable per task
+5. **All findings tracked in bd** → Create epic + tasks for every issue found
+6. **Batch SRE review, not per-task** → Run hyperpowers:sre-task-refinement as a batch SRE review against the full task tree (once, as a fresh subagent) before execution
 
 ## Common Excuses
 
-All of these mean: **STOP. The test is probably RED or YELLOW.**
+All of these mean: **STOP. You're skipping the orchestration process.**
 
-- "It's just a smoke test" (Smoke tests without assertions are useless)
-- "Coverage requires it" (Coverage gaming = false confidence)
-- "It worked before" (Past success doesn't mean it catches bugs)
-- "Mocks make it faster" (Fast but useless is still useless)
-- "Edge cases are rare" (Rare bugs in auth/payments are critical)
-- "We'll add assertions later" (Tests without assertions aren't tests)
-- "It's testing the happy path" (Happy path only = half a test)
-- "The test looks reasonable" (Junior engineers write plausible-looking garbage)
-- "The test name says it tests X" (Names lie, trace the actual code)
-- "It exercises the function" (Calling != testing; assertions matter)
 - "I'll just fix these without bd" (Untracked work = forgotten work)
 - "SRE refinement is overkill for test fixes" (Test tasks need same rigor as feature tasks)
 - "I'll restate the RED/YELLOW/GREEN criteria here for clarity" (Methodology lives in agents/test-effectiveness-analyst.md — restating it here creates drift between the two)
@@ -582,25 +487,16 @@ All of these mean: **STOP. The test is probably RED or YELLOW.**
 <verification_checklist>
 Before completing analysis:
 
-**Analysis Quality (MANDATORY):**
-- [ ] Read production code for EVERY test before categorizing
-- [ ] Traced call paths to verify tests exercise production, not mocks/utilities
-- [ ] Applied skeptical default (assumed RED/YELLOW, required proof for GREEN)
-- [ ] Completed self-review checklist for ALL GREEN tests
-- [ ] Each GREEN test has explicit justification (what production path, what bug it catches)
-- [ ] Each RED test has line-by-line justification with production code context
-- [ ] Each YELLOW test has line-by-line justification with upgrade path
+**Scope & Dispatch (MANDATORY):**
+- [ ] Scope confirmed before dispatch (named directly, or confirmed via AskUserQuestion when ambiguous)
+- [ ] Analyst dispatched as a blocking subagent; full report received per its Output Format (Return Contract)
+- [ ] Findings presented to the user and action agreed (remove/strengthen/add/validate)
 
 **Per module:**
-- [ ] All tests categorized (RED/YELLOW/GREEN)
-- [ ] RED tests have specific removal/replacement actions
-- [ ] YELLOW tests have specific strengthening actions
-- [ ] Corner cases identified (empty, unicode, concurrent, error)
-- [ ] Priority assigned (P0/P1/P2/P3)
+- [ ] Every generated task conforms to its two-tier spec template
 
 **Overall:**
 - [ ] Executive summary with counts and percentages
-- [ ] GREEN count is MINORITY (if >40% GREEN, re-review with more skepticism)
 - [ ] Detailed findings table for each category
 - [ ] Missing corner cases documented per module
 
