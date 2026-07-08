@@ -36,7 +36,7 @@ Adapt implementation details to actual codebase state. Never use placeholders or
 **Use when bd tasks exist without complete self-contained specs — not as the standard planning step.** The standard flow is brainstorm-owned: Step 6c creates the complete task tree with codebase-verified specs before any execution begins. Reach for this skill when a task bypassed that flow or its spec needs repair.
 
 Symptoms:
-- A reviewer surfaced a gap-fix task without a complete spec
+- Executing-plans startup verification found tasks missing specs (routed here before execution begins)
 - A mid-flight amendment changes a task's scope after brainstorming closed
 - A task was created outside the brainstorm flow (directly by the user, or by another tool) and lacks Why, Changes, or Boundaries sections
 - An existing spec references context not included in the task itself
@@ -475,7 +475,7 @@ Before finishing all tasks:
 - codebase-investigator (broad structure questions during task verification; exact edit sites are read directly per the split-lane rule)
 
 **This skill is called by:**
-- hyperpowers:executing-plans (gap-fix path — a task surfaces mid-execution without a complete spec)
+- hyperpowers:executing-plans (startup routing only — spec-less tasks found during startup verification, before execution begins; mid-flight gap-fixes are authored inline by the lead per executing-plans' GAPS FOUND path, because this skill's per-expansion approval gate must not interrupt the execution loop)
 - hyperpowers:managing-bd-tasks (tasks split, merged, or otherwise mutated outside the brainstorm flow)
 - The user directly (via /hyperpowers:write-plan command) — for tasks created outside the brainstorm flow, or specs needing repair
 

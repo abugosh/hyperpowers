@@ -29,7 +29,7 @@ MEDIUM FREEDOM — Pre-dispatch verification uses judgment. Dispatch, review, an
 <when_to_use>
 **Use after brainstorming produces a complete task tree for an epic** (contract defined in `skills/common-patterns/pipeline-constants.md`, Complete Task Tree).
 
-All tasks must exist in bd with specs before invoking this skill. If tasks are missing specs, route the spec-less tasks through writing-plans (the off-mainline spec repair utility) first.
+All tasks must exist in bd with specs before invoking this skill. If tasks are missing specs, route the spec-less tasks through writing-plans (the off-mainline spec repair utility) first. Writing-plans carries a mandatory per-expansion user-approval gate — routing happens at startup only, never mid-flight.
 
 If invoked mid-epic: `bd list --parent <epic-id>` to find remaining open tasks. Resume from the next unfinished task in dependency order.
 </when_to_use>
@@ -50,7 +50,7 @@ bd list --parent <epic-id>     # List all child tasks
 
 **Read the epic's bd notes for the latest GATE STATE block** — if one exists, resume from the state it records rather than re-deriving it (format: `skills/common-patterns/loop-interfaces.md`).
 
-**Verify:** Every task has a non-empty spec (design field). If any task is missing a spec, do not start execution — route the spec-less tasks through writing-plans (the off-mainline spec repair utility).
+**Verify:** Every task has a non-empty spec (design field). If any task is missing a spec, do not start execution — route the spec-less tasks through writing-plans (the off-mainline spec repair utility). Its per-expansion approval gate runs before execution starts — never route to it mid-flight.
 
 **Determine execution order** from bd dependencies. Tasks blocked by uncompleted dependencies must wait.
 
