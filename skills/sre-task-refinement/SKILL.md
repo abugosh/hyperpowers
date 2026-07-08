@@ -14,7 +14,7 @@ LOW FREEDOM - Follow the 8-category checklist exactly. Apply all categories to e
 <quick_reference>
 | Category | Key Questions | Auto-Reject If |
 |----------|---------------|----------------|
-| 1. Granularity | Task classified simple or medium per the bands in `skills/common-patterns/pipeline-constants.md`? | Task exceeds the ceiling in `skills/common-patterns/pipeline-constants.md` without breakdown |
+| 1. Granularity | Task classified simple or medium per the bands in `skills/common-patterns/pipeline-constants.md`? | Task exceeds the ceiling in `skills/common-patterns/pipeline-constants.md` without a recommended split |
 | 2. Implementability | Junior can execute without questions? | Vague language, missing details |
 | 3. Verification | Simple: 1+ measurable outcome plus the hooks line? Medium: 3+ measurable criteria? | Simple task missing a Verification section; medium task criteria can't be verified ("works well") |
 | 4. Dependencies | Correct parent-child, blocking relationships? | Circular dependencies |
@@ -52,7 +52,9 @@ Don't use when:
 
 This skill is loaded and executed BY a dispatched review subagent — the lead dispatches a fresh subagent (Agent tool, blocking) whose prompt loads this skill and names the epic or task to review. The review never runs in the context that authored or repaired the plan: an author reviewing its own just-written tasks is the weakest possible comparator, and fresh-context review is the point of this skill. Batch mode arrives via brainstorming Step 7's dispatch block; single-task mode arrives via a dispatch after writing-plans repairs a spec.
 
-If you are reading this as the dispatched reviewer: the process below is yours to execute. Apply bd updates directly where the process says to; return your verdict and findings as your final message — it is data for the lead, not prose for a human.
+**Authority (the one rule — stated once here, referenced everywhere else in this skill):** You may strengthen task specs directly via `bd update` (preserve existing sections; never insert placeholders). Do not create, close, or re-classify tasks — structural suggestions (splits, new tasks, reordering) go in your report, not in bd.
+
+If you are reading this as the dispatched reviewer: the process below is yours to execute. Apply bd updates directly where the process says to (strengthening specs); every structural change is a recommendation in your report, never a direct bd action. Return your verdict and findings as your final message — it is data for the lead, not prose for a human.
 
 ## Announcement
 
@@ -135,7 +137,7 @@ After per-task reviews, append a cross-task section:
 [If NEEDS REVISION or REJECT: list recommended additions or splits]
 ```
 
-**Batch mode scope:** SRE can suggest adding a task, splitting a task, strengthening criteria across multiple tasks, or recommending the `Executor: opus` promotion flag (see `skills/common-patterns/pipeline-constants.md`) for irreducibly hard tasks. These are suggestions to the lead — SRE does not directly modify the plan.
+**Batch mode scope:** Governed by the Authority rule above. Strengthening criteria across multiple tasks is applied directly via `bd update`. Adding a task, splitting a task, and recommending the `Executor: opus` promotion flag (see `skills/common-patterns/pipeline-constants.md`) for irreducibly hard tasks are structural suggestions — they go in your report, not in bd.
 
 ---
 
@@ -156,10 +158,8 @@ After per-task reviews, append a cross-task section:
 - **Medium**: Changes requiring judgment or design decisions. Reserved for irreducible complexity.
 
 **If task exceeds the ceiling in `skills/common-patterns/pipeline-constants.md`:**
-- Break into smaller tasks
-- Create subtasks with `bd create`
-- Link with `bd dep add child parent --type parent-child`
-- Update parent to coordinator role
+- Do not create subtasks directly — see Authority above
+- Flag the task and write a split recommendation in your report: proposed subtask titles, scope for each, and dependencies between them (see "Recommending Task Splits" below)
 
 ---
 
@@ -257,7 +257,7 @@ bd dep tree bd-1  # Show full dependency tree
 ### 7. Red Flags (AUTO-REJECT)
 
 **Check for these - if found, REJECT plan:**
-- ❌ Any task exceeding the ceiling in `skills/common-patterns/pipeline-constants.md` without subtask breakdown
+- ❌ Any task exceeding the ceiling in `skills/common-patterns/pipeline-constants.md` without a recommended split in the report
 - ❌ Vague language: "implement properly", "add support", "make it work"
 - ❌ Verification criteria that can't be checked: "code is good", "works well"
 - ❌ Missing test specifications
@@ -411,46 +411,40 @@ After updating, read back with `bd show bd-N` and verify:
 
 ---
 
-## Breaking Down Large Tasks
+## Recommending Task Splits
 
-If task exceeds the ceiling in `skills/common-patterns/pipeline-constants.md`, create subtasks:
+If a task exceeds the ceiling in `skills/common-patterns/pipeline-constants.md`, do not create subtasks directly — see Authority above. Analyze the split and write the recommendation into your report; the lead decides whether to accept it and creates the actual tasks.
 
-```bash
-# Create first subtask
-bd create "Subtask 1: [Specific Component]" \
-  --type task \
-  --priority 1 \
-  --description "[One-line summary for bd list views]" \
-  --design "[Complete subtask design with all 7 categories addressed]"
-# Returns bd-10
+**Where to draw the boundary:**
+- Split along component or file boundaries, not arbitrary line/time counts — each proposed subtask must be independently completable and independently verifiable
+- Identify sequencing: does one subtask's output feed another's input? Note that as a proposed dependency, not a parallel pair
+- Each proposed subtask needs enough detail that a fresh executor could pick it up without asking questions — same bar as any task spec (`skills/common-patterns/spec-templates.md`)
 
-# Create second subtask
-bd create "Subtask 2: [Another Component]" \
-  --type task \
-  --priority 1 \
-  --description "[One-line summary for bd list views]" \
-  --design "[Complete subtask design]"
-# Returns bd-11
+**What to include for each proposed subtask (in your report, not in bd):**
+- A working title
+- Classification (simple or medium, per `skills/common-patterns/pipeline-constants.md`)
+- Scope: what it covers and what it explicitly excludes (so proposed subtasks don't overlap)
+- Proposed dependencies on other proposed subtasks (which must land first)
 
-# Link subtasks to parent with parent-child relationship
-bd dep add bd-10 bd-3 --type parent-child  # bd-10 is child of bd-3
-bd dep add bd-11 bd-3 --type parent-child  # bd-11 is child of bd-3
+**Recommendation format** (in the report's Summary of Changes / Recommendations section):
 
-# Add sequential dependencies if needed (LATER depends on EARLIER)
-bd dep add bd-11 bd-10  # bd-11 depends on bd-10 (do bd-10 first)
+```markdown
+### Recommended Split: bd-3 (was N min, exceeds ceiling)
 
-# Update parent to coordinator
-bd update bd-3 --design "$(cat <<'EOF'
-## Goal
-Coordinate implementation of [feature]. Broken into N subtasks.
+1. **Subtask 1: [Specific Component]** (simple/medium)
+   - Goal: [what this subtask achieves]
+   - Changes/Implementation: [scope — what it covers]
+   - Verification: [how completion is checked]
+   - Depends on: none
 
-## Success Criteria
-- [ ] All N child subtasks closed
-- [ ] Integration tests pass
-- [ ] [High-level verification criteria]
-EOF
-)"
+2. **Subtask 2: [Another Component]** (simple/medium)
+   - Goal: [what this subtask achieves]
+   - Changes/Implementation: [scope — what it covers]
+   - Verification: [how completion is checked]
+   - Depends on: Subtask 1
 ```
+
+The lead reviews this recommendation and, if accepted, creates the actual tasks and links them as parent-child — that step is the lead's, not the SRE reviewer's.
 
 ---
 
@@ -478,7 +472,7 @@ After reviewing all tasks:
 
 #### [Task Name] (bd-N)
 **Type**: [epic/feature/task]
-**Classification**: [simple / medium] ([✅ Within range / ❌ Too large - needs breakdown])
+**Classification**: [simple / medium] ([✅ Within range / ❌ Too large - split recommended])
 **Status**: [✅ Ready / ⚠️ Needs Minor Improvements / ❌ Needs Major Revision]
 
 **Strengths**:
@@ -504,7 +498,7 @@ After reviewing all tasks:
 
 **Issues Updated**:
 - bd-3 - Added edge case handling for Unicode, regex backtracking risks
-- bd-5 - Broke into 3 subtasks (was 40 min, now 3x10 min)
+- bd-5 - Recommended split into 3 subtasks (was 40 min, proposed 3x10 min)
 - bd-7 - Strengthened Verification (added test names, verification commands)
 
 ### Critical Gaps Across Plan
@@ -896,7 +890,7 @@ EOF
 1. **Apply all 8 categories to every task** → No skipping any category for any task
 2. **Reject plans with placeholder text** → "[detailed above]", "[as specified]" = instant reject
 3. **Verify no placeholder after updates** → Read back with `bd show` and confirm actual content
-4. **Break tasks exceeding the ceiling** → Create subtasks; ceiling defined in `skills/common-patterns/pipeline-constants.md`
+4. **Flag tasks exceeding the ceiling** → Recommend a split in the report (see "Recommending Task Splits"); ceiling defined in `skills/common-patterns/pipeline-constants.md`
 5. **Strengthen vague criteria** → "Works correctly" → measurable verification commands
 6. **Add edge cases to every task** → Empty? Unicode? Concurrency? Failures?
 7. **Never skip Category 6** → Edge case analysis prevents production issues
@@ -926,7 +920,7 @@ Before completing SRE review:
 - [ ] Checked for placeholder text in design field
 - [ ] Updated task with missing information via `bd update --design`
 - [ ] Verified updated task with `bd show` (no placeholders remain)
-- [ ] Broke down any task exceeding the ceiling in `skills/common-patterns/pipeline-constants.md` into subtasks
+- [ ] Recommended splits in the report for any task exceeding the ceiling in `skills/common-patterns/pipeline-constants.md`
 - [ ] Strengthened vague verification criteria to measurable
 - [ ] Added edge case analysis to Context (or Verification notes for a simple task)
 - [ ] Strengthened anti-patterns based on failure modes
@@ -968,7 +962,7 @@ hyperpowers:writing-plans (repairs/expands a spec) → hyperpowers:sre-task-refi
 ```
 
 **This skill uses:**
-- bd commands (show, update, create, dep add, dep tree)
+- bd commands (show, update, dep tree)
 - Google Fellow SRE perspective (20+ years distributed systems)
 - 8-category checklist (mandatory for every task, in both modes)
 
@@ -983,7 +977,7 @@ hyperpowers:writing-plans (repairs/expands a spec) → hyperpowers:sre-task-refi
 
 <resources>
 **Review patterns:**
-- Task too large (exceeds the ceiling in `skills/common-patterns/pipeline-constants.md`) → Break into simple or medium subtasks per the bands there
+- Task too large (exceeds the ceiling in `skills/common-patterns/pipeline-constants.md`) → Recommend a split into simple or medium subtasks per the bands there (see "Recommending Task Splits")
 - Vague criteria ("works correctly") → Measurable commands/checks
 - Missing edge cases → Add to Context (medium) or Verification notes (simple) with mitigations
 - Placeholder text → Rewrite with actual content
@@ -996,7 +990,7 @@ hyperpowers:writing-plans (repairs/expands a spec) → hyperpowers:sre-task-refi
 - "Is the assertion meaningful?" → `!= nil` is weaker than `== expectedValue`
 
 **When stuck:**
-- Unsure if task too large → Ask: Does it fit within the ceiling in `skills/common-patterns/pipeline-constants.md`? If not, break it down.
+- Unsure if task too large → Ask: Does it fit within the ceiling in `skills/common-patterns/pipeline-constants.md`? If not, recommend a split in your report.
 - Unsure if criteria measurable → Ask: Can I verify with command/code review?
 - Unsure if edge case matters → Ask: Could this fail in production?
 - Unsure if placeholder → Ask: Does this reference other content instead of providing content?
