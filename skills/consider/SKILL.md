@@ -29,7 +29,6 @@ HIGH FREEDOM — Adapt investigation and questions to context. Transitions are s
 - Clarifying goals or constraints before starting a brainstorm
 - Uncertain whether a problem is worth solving
 - "What should I do about X?" style open questions
-- After /intuition surfaces a tension that needs exploratory thinking before committing to resolution
 
 **Heuristic:** Can the user name a specific deliverable? If yes → /brainstorm. If no → /consider.
 
@@ -103,7 +102,7 @@ Sounds like you're ready to build — want to run /hyperpowers:brainstorm?
 User expresses uncertainty about where responsibility belongs, coupling concerns, or "something feels wrong about the structure":
 
 ```
-Sounds like structural friction — want to run /hyperpowers:intuition?
+Sounds like structural friction — want to run /hyperpowers:intuition? If so, pass prose focus naming the area — e.g., "examine the [A]/[B] boundary for tensions" — so it can target evidence gathering.
 ```
 
 **Structural friction phrases to watch for:**
@@ -170,7 +169,7 @@ Before claiming Consider is complete for a session:
 <integration>
 **Offers (never auto-invokes):** /hyperpowers:brainstorm on commit-to-build, /hyperpowers:intuition on structural friction.
 
-**Reached from:** direct user invocation, or /hyperpowers:intuition Step 4 Resolution Protocol ("Brainstorm" option may route here for exploratory thinking before committing to tension resolution).
+**Reached from:** direct user invocation.
 
 **Handoff pattern:** Consider signals intent and waits for user confirmation. The user runs the next skill; Consider does not dispatch it.
 </integration>
@@ -182,5 +181,5 @@ Before claiming Consider is complete for a session:
 
 **Transition offers — keep short:**
 - "Sounds like you're ready to build — want to run /hyperpowers:brainstorm?"
-- "Sounds like structural friction — want to run /hyperpowers:intuition?"
+- "Sounds like structural friction — want to run /hyperpowers:intuition? If so, pass prose focus naming the area — e.g., 'examine the [A]/[B] boundary for tensions' — so it can target evidence gathering."
 </resources>
