@@ -98,6 +98,13 @@ ls docs/arch/*.c4 2>/dev/null
   ```
 - Record components, relationships, and dynamic views for analysis.
 - If no landscape view exists, soft-warn: "No landscape view found. Consider running /ponder to create one." (audit proceeds regardless)
+- Check model freshness (Model Freshness Heuristic, `skills/ponder/SKILL.md`):
+  ```bash
+  c4_age=$(stat -f %m docs/arch/*.c4 2>/dev/null | sort -rn | head -1)
+  commits_since=$(git log --since="@$c4_age" --oneline -- '*.ts' '*.js' '*.rs' '*.py' '*.go' '*.java' '*.rb' '*.swift' '*.kt' 2>/dev/null | wc -l)
+  echo "Code commits since last model update: $commits_since"
+  ```
+  If commits_since exceeds the heuristic threshold, soft-warn: "Model may be stale: [N] code-touching commits since the last .c4 update. Consider running /ponder review." (audit proceeds regardless)
 
 **If no model exists:** announce: "No architecture model found. Audit will use codebase evidence only." Continue.
 
@@ -202,7 +209,7 @@ Trace data flows at module level:
 Report at module level. [When model is loaded: reference LikeC4 element names where modules map to components.]
 ```
 
-The flow evidence from Step 1b feeds into passes 1, 3, 4, and 9 — it does NOT replace the structural evidence from Step 1a.
+The flow evidence from Step 1b feeds into passes 1, 3, 4, and 8 — it does NOT replace the structural evidence from Step 1a.
 
 ---
 
@@ -869,7 +876,7 @@ HANDOFF (all tensions resolved/accepted):
 
 **Artifacts produced:**
 - Tension report (presented to architect, not persisted)
-- Drift report including dynamic view drift (presented to architect, not persisted)
+- Drift report (presented to architect, not persisted)
 - ADR files (created during Step 4 resolution — Accept or Resolve paths)
 - bd tickets (created during Step 4 Resolve path)
 - Architecture model files (created via ponder agent bootstrap mode — first Resolve on audit without architecture model)

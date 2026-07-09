@@ -24,8 +24,9 @@ implementation, routing to a ponder UPDATE dispatch.
 
 ## Recording
 
-Record YES/NO for each in the epic's Architecture Impact section (brainstorm)
-or the initiative record (preordain).
+Record YES/NO for each in the epic's Architecture Impact section (brainstorm),
+or — for preordain's initiative-level check — in each leaf epic's Context for Brainstorming section
+(identical across the initiative's epics, so it is reconstructable from bd alone).
 
 ## Design-Time Routing
 
