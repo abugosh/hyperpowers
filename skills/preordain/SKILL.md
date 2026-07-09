@@ -4,7 +4,7 @@ description: Decomposes large initiatives into leaf epics with dependencies; han
 ---
 
 <skill_overview>
-Decomposes large initiatives that exceed a single leaf epic's capacity into independently brainstormable leaf epics with explicit dependencies. Architecture analysis happens here — not in per-leaf-epic brainstorming.
+Decomposes large initiatives that exceed a single leaf epic's capacity into independently brainstormable leaf epics with explicit dependencies. Initiative-level architecture analysis happens here; each leaf epic still runs its own Architecture Impact Check during brainstorming.
 </skill_overview>
 
 <rigidity_level>
