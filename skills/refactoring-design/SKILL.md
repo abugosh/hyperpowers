@@ -31,7 +31,7 @@ MEDIUM FREEDOM - Required outputs are strict; pattern selection and sequencing c
 
 <the_process>
 ## 1. Confirm Inputs
-You must have a diagnosis report from `refactoring-diagnosis`.
+Input is the refactor bd issue from `refactoring-diagnosis`: `bd show <refactor-id>` must contain a `## Diagnosis Report` section. Missing → stop, run `refactoring-diagnosis` first.
 
 ## 2. Define the Target Design
 Specify:
@@ -97,6 +97,8 @@ Use this exact structure:
 ## Non-goals
 - 
 ```
+
+**Transport:** `bd update <refactor-id> --design` writing the field with BOTH sections: the existing `## Diagnosis Report` re-emitted, then `## Refactor Design Spec` appended (bd update --design replaces the field; both must be present after the update).
 </the_process>
 
 <common_rationalizations>
@@ -116,6 +118,7 @@ All of these mean: stop and complete the design spec first.
 </red_flags>
 
 <integration>
-- Requires `refactoring-diagnosis`
-- `refactoring-safely` executes the refactor only after this design exists
+- Requires `refactoring-diagnosis` — reads its report from the refactor bd issue's design field
+- Appends the design spec to the same refactor bd issue (`bd update <refactor-id> --design`), preserving the diagnosis section
+- `refactoring-safely` executes the refactor only after this design exists on the issue
 </integration>

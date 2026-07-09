@@ -14,9 +14,9 @@ MEDIUM FREEDOM - Follow the change→test→commit cycle strictly, but adapt the
 <quick_reference>
 | Step | Action | Verify |
 |------|--------|--------|
-| 0 | Confirm diagnosis + design exist | Required inputs present |
+| 0 | Confirm refactor bd issue has both artifacts | `bd show` has both sections |
 | 1 | Run full test suite | ALL pass |
-| 2 | Create bd refactoring task | Track work |
+| 2 | Mark refactor issue in_progress | Status updated |
 | 3 | Make ONE small change | Compiles |
 | 4 | Run tests immediately | ALL still pass |
 | 5 | Commit with descriptive message | History clear |
@@ -43,11 +43,10 @@ MEDIUM FREEDOM - Follow the change→test→commit cycle strictly, but adapt the
 <the_process>
 ## 0. Required Inputs (No Exceptions)
 
-You must have:
-- A diagnosis report from `refactoring-diagnosis`
-- A refactor design spec from `refactoring-design`
+You must have the refactor bd issue: `bd show <refactor-id>` showing both `## Diagnosis Report` and `## Refactor Design Spec`.
 
-If either is missing, stop and complete them first.
+- No issue → run `refactoring-diagnosis`
+- Issue without the design spec → run `refactoring-design`
 
 ## 1. Verify Tests Pass
 
@@ -64,40 +63,12 @@ Dispatch hyperpowers:test-runner agent: "Run: cargo test"
 
 ---
 
-## 2. Create bd Task for Refactoring
+## 2. Start Work on the Refactor Issue
 
-Track the refactoring work:
+The refactor bd issue already carries the goal, rationale, and approach in its `## Diagnosis Report` and `## Refactor Design Spec` sections (confirmed in Step 0) — there's nothing new to write. Mark it in progress and use its id for every commit and status update in the steps below:
 
 ```bash
-bd create "Refactor: Extract user validation logic" \
-  --type task \
-  --priority P2 \
-  --description "Deduplicate validation logic shared by 3 services"
-
-bd update bd-456 --design "
-## Goal
-Extract user validation logic from UserService into separate Validator class.
-
-## Why
-- Validation duplicated across 3 services
-- Makes testing individual validations difficult
-- Violates single responsibility
-
-## Approach
-1. Create UserValidator class
-2. Extract email validation
-3. Extract name validation
-4. Extract age validation
-5. Update UserService to use validator
-6. Remove duplication from other services
-
-## Success Criteria
-- All existing tests still pass
-- No behavior changes
-- Validator has 100% test coverage
-"
-
-bd update bd-456 --status in_progress
+bd update <refactor-id> --status in_progress
 ```
 
 ---
@@ -181,11 +152,11 @@ Dispatch hyperpowers:test-runner agent: "Run: cargo test"
 Commit each safe transformation:
 
 ```bash
-Dispatch hyperpowers:test-runner agent: "Run: git add src/user_service.rs && git commit -m 'refactor(bd-456): extract email validation to function
+Dispatch hyperpowers:test-runner agent: "Run: git add src/user_service.rs && git commit -m 'refactor(<refactor-id>): extract email validation to function
 
 No behavior change. All tests pass.
 
-Part of bd-456'"
+Part of <refactor-id>'"
 ```
 
 **Why commit so often:**
@@ -231,7 +202,7 @@ Dispatch hyperpowers:test-runner agent: "Run: cargo clippy"
 
 ```bash
 # See all refactoring commits
-git log --oneline | grep "bd-456"
+git log --oneline | grep "<refactor-id>"
 
 # Review full diff
 git diff main...HEAD
@@ -247,8 +218,14 @@ git diff main...HEAD
 **Close bd task:**
 
 ```bash
-bd update bd-456 --design "
-... (append to existing design)
+# bd update --design REPLACES the whole field — re-emit both artifact
+# sections, then append the completion notes:
+bd update <refactor-id> --design "
+## Diagnosis Report
+[unchanged — re-emit from bd show <refactor-id>]
+
+## Refactor Design Spec
+[unchanged — re-emit from bd show <refactor-id>]
 
 ## Completed
 - Created UserValidator class with email, name, age validation
@@ -258,7 +235,7 @@ bd update bd-456 --design "
 - 8 small transformations, each tested
 "
 
-bd close bd-456
+bd close <refactor-id>
 ```
 </the_process>
 

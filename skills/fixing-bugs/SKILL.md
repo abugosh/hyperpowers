@@ -66,7 +66,7 @@ After implementing a fix, classify its status:
 **Track from the start:**
 
 ```bash
-bd create "Bug: [Clear description]" --type bug --priority P1 \
+bd create "Bug: [Clear description]" --type bug --priority 1 \
   --description "[Observed impact — what breaks and for whom]"
 # Returns: bd-123
 ```
@@ -130,8 +130,8 @@ def test_rejects_empty_email():
 **Run test, verify it FAILS:**
 ```bash
 pytest tests/test_user.py::test_rejects_empty_email
-# Expected: PASS (bug exists)
-# Should fail AFTER fix
+# Expected: FAIL (bug exists - no validation yet)
+# Will PASS after the fix
 ```
 
 **Why critical:** If test passes before fix, it doesn't test the bug.
@@ -147,20 +147,11 @@ def create_user(email: str):
     # ... rest
 ```
 
-**Run test, verify it now FAILS (test was written backwards by mistake earlier - fix this):**
-
-Actually write the test to FAIL first:
-```python
-def test_rejects_empty_email():
-    with pytest.raises(ValidationError):
-        create_user(email="")
-```
-
-Run:
+**Run test, verify it now PASSES:**
 ```bash
 pytest tests/test_user.py::test_rejects_empty_email
-# Should FAIL before fix (no validation)
-# Should PASS after fix (validation added)
+# FAILED before the fix (no validation)
+# PASSES now (validation added)
 ```
 
 ## 5. Verify Complete Fix
@@ -281,13 +272,8 @@ def test_rejects_whitespace_email():
     with pytest.raises(ValidationError):
         create_user(email="   ")
 
-# Run: Both PASS (bug exists) - WAIT, test should FAIL before fix!
-```
-
-Actually:
-```python
-# Test currently PASSES (bug exists - no validation)
-# We expect test to FAIL after we add validation
+# Run: Both FAIL (bug exists - no validation)
+# They will PASS once the fix adds validation
 
 # 4. Fix
 def create_user(email: str):

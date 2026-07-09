@@ -18,8 +18,8 @@ MEDIUM FREEDOM - The required outputs and evidence standards are strict; the ana
 | 2 | Gather evidence (code, tests, runtime behavior) | Evidence notes |
 | 3 | Map evidence to smells/traps | Smell table |
 | 4 | Assess risk and impact | Risk matrix |
-| 5 | Decide refactor vs rewrite | Decision + rationale |
-| 6 | Produce diagnosis report | Required report format |
+| 5 | Decide refactor vs rewrite | Decision + rationale; rewrite → hyperpowers:brainstorming |
+| 6 | Produce diagnosis report | Required report format → refactor bd issue (--design) |
 </quick_reference>
 
 <when_to_use>
@@ -58,7 +58,7 @@ Classify each smell by:
 ## 5. Refactor vs Rewrite Decision
 Rules of thumb:
 - If tests are absent and behavior is unknown → write characterization tests before refactor
-- If 3+ refactor attempts failed or behavior is unstable → consider rewrite
+- If 3+ refactor attempts failed or behavior is unstable → consider rewrite: route to `hyperpowers:brainstorming` with the diagnosis report as input (a rewrite is new build work, not a refactor); do not proceed to `refactoring-design`.
 - If change risk is high and scope is large → split into smaller refactors
 
 ## 6. Produce Diagnosis Report (Required Format)
@@ -105,6 +105,20 @@ Use this exact structure:
 ## Open Questions
 - 
 ```
+
+**Transport:** create the refactor's single tracking issue with the report in the design field:
+
+```bash
+bd create "Refactor: [target]" --type task --priority 2 \
+  --description "[one-line refactor summary]" \
+  --design "$(cat <<'INNEREOF'
+## Diagnosis Report
+[the report in the required format above]
+INNEREOF
+)"
+```
+
+This issue is the refactor's single tracking issue for the whole trio; its id is the handoff token to `refactoring-design`; design and execution update this same issue.
 </the_process>
 
 <common_rationalizations>
@@ -125,6 +139,7 @@ All of these mean: stop and complete diagnosis first.
 </red_flags>
 
 <integration>
-- Use `refactoring-design` after diagnosis to produce the refactor design
+- Use `refactoring-design` after diagnosis to produce the refactor design — hand off via the refactor bd issue's id (created in Step 6)
+- If the decision was rewrite, route to `hyperpowers:brainstorming` with the diagnosis report as input instead of proceeding to `refactoring-design`
 - Use `refactoring-safely` to execute only after diagnosis + design are complete
 </integration>

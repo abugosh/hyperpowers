@@ -132,6 +132,8 @@ Test: Add validation, verify error doesn't occur with empty email
 - Propose fix without hypothesis
 - Skip to "try this and see"
 
+**Error deep in execution, origin unclear?** Use hyperpowers:root-cause-tracing to trace backward from the error site to the original trigger before forming a hypothesis.
+
 ## Phase 3: Test Hypothesis
 
 **Minimal change to validate theory:**
@@ -465,10 +467,10 @@ Before committing fix:
 - codebase-investigator (understand code structure, find related code)
 - test-driven-development (write test for bug, implement fix)
 - test-runner (run tests without output pollution)
+- root-cause-tracing (trace deep errors back to their origin — Phase 2)
 
 **This skill is called by:**
 - fixing-bugs (complete bug fix workflow)
-- root-cause-tracing (deep debugging for complex issues)
 - Any skill when encountering unexpected behavior
 
 **Agents used:**

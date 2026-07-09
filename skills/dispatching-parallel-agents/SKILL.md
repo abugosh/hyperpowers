@@ -8,7 +8,7 @@ When facing 3+ independent failures, dispatch one agent per problem domain to in
 </skill_overview>
 
 <rigidity_level>
-MEDIUM FREEDOM - Follow the 6-step process (identify, create tasks, dispatch, monitor, review, verify) strictly. Independence verification mandatory. Parallel dispatch in single message required. Adapt agent prompt content to problem domain.
+MEDIUM FREEDOM - Follow the 6-step process (identify, create tasks, dispatch, triage, review, verify) strictly. Independence verification mandatory. Parallel dispatch in single message required. Adapt agent prompt content to problem domain.
 </rigidity_level>
 
 <quick_reference>
@@ -17,7 +17,7 @@ MEDIUM FREEDOM - Follow the 6-step process (identify, create tasks, dispatch, mo
 | 1. Identify Domains | Test independence (fix A doesn't affect B) | 3+ independent domains required |
 | 2. Create Agent Tasks | Write focused prompts (scope, goal, constraints, output) | One prompt per domain |
 | 3. Dispatch Agents | Launch all agents in SINGLE message | Multiple Agent tool calls in parallel |
-| 4. Monitor Progress | Track completions, don't integrate until ALL done | Wait for all agents |
+| 4. Triage Returns | Classify each return (complete/partial/failed), re-dispatch as needed | No mid-flight visibility — dispatch blocks until all return |
 | 5. Review Results | Read summaries, check conflicts | Manual conflict resolution |
 | 6. Verify Integration | Run full test suite | Use verification-before-completion |
 
@@ -55,7 +55,7 @@ Don't use when:
 - Identify independent domains (3+ domains identified)
 - Create agent tasks (one prompt per domain drafted)
 - Dispatch agents in parallel (all agents launched in single message)
-- Monitor agent progress (track completions)
+- Triage returns (classify complete/partial/failed, re-dispatch as needed)
 - Review results (summaries read, conflicts checked)
 - Verify integration (full test suite green)
 ```
@@ -169,24 +169,29 @@ Agent("Fix batch-completion-behavior.test.ts failures", prompt2)
 
 **After dispatch:**
 - Mark "Dispatch agents in parallel" as completed in the tracker
-- Mark "Monitor agent progress" as in_progress
-- Wait for all agents to complete before integration
+- The dispatch blocks until all agents return — triage begins when it does
 
 ---
 
-## Step 4: Monitor Progress
+## Step 4: Triage Returns
 
-As agents work:
-- Note which agents have completed
-- Note which are still running
-- Don't start integration until ALL agents done
+**The dispatch blocks the lead until every agent returns.** There is no mid-flight visibility — no way to check on an agent while it's running, no way to cancel one early. This is exactly why Step 2's prompt quality is load-bearing: a vague or under-constrained prompt can't be corrected mid-flight, only after the agent has already returned.
 
-**If an agent gets stuck (>5 minutes):**
+When all agents return together:
 
-1. Check TaskOutput to see what it's doing
-2. If stuck on wrong path: Cancel and retry with clearer prompt
-3. If needs context from other domain: Wait for other agent, then restart with context
-4. If hit real blocker: Investigate blocker yourself, then retry
+1. **Classify each return:**
+   - Complete: agent solved its problem, summary is specific and verifiable
+   - Partial: agent made progress but the summary is vague, went down the wrong path, or is otherwise not a usable result
+   - Failed: agent hit a blocker it couldn't resolve
+
+2. **For agents that returned without a usable result** (vague summary, wrong path, hit a blocker):
+   - Re-dispatch with a clarified, more constrained prompt
+
+3. **If a cross-domain dependency surfaced** (the domain wasn't actually independent):
+   - Re-dispatch sequentially, passing the sibling's result as context
+
+4. **If a real blocker caused the failure:**
+   - Investigate the blocker yourself, then re-dispatch with that context
 
 ---
 
@@ -499,20 +504,19 @@ npm test
 </examples>
 
 <failure_modes>
-## Agent Gets Stuck
+## Agent Returned Without Completing
 
-**Symptoms:** No progress after 5+ minutes
+**Symptoms:** Summary is vague, agent wandered off-path, or it reports hitting a blocker
 
 **Causes:**
-- Prompt too vague, agent exploring aimlessly
-- Domain not actually independent, needs context from other agents
+- Prompt too vague, agent explored aimlessly
+- Domain not actually independent, needed context from other agents
 - Agent hit a blocker (missing file, unclear error)
 
 **Recovery:**
-1. Use the TaskOutput tool to check what it's doing
-2. If stuck on wrong path: Cancel and retry with clearer prompt
-3. If needs context from other domain: Wait for other agent, then restart with context
-4. If hit real blocker: Investigate blocker yourself, then retry
+1. If it wandered off-path: re-dispatch with a clearer, more constrained prompt
+2. If it needs context from other domain: re-dispatch sequentially with the sibling's result as context
+3. If it hit a real blocker: investigate the blocker yourself, then re-dispatch
 
 ---
 
@@ -615,7 +619,6 @@ Before completing parallel agent work:
 
 **This skill uses:**
 - Agent tool (dispatch parallel agents — blocking subagents, no team_name)
-- TaskOutput tool (monitor stuck agents)
 - The repo's tracker — bd when the repo uses beads, TodoWrite otherwise (track agent progress)
 
 **Workflow integration:**
@@ -628,7 +631,7 @@ Create agent tasks (Step 2)
     ↓
 Dispatch in parallel (Step 3)
     ↓
-Monitor progress (Step 4)
+Triage returns (Step 4)
     ↓
 Review + check conflicts (Step 5)
     ↓
@@ -655,7 +658,7 @@ hyperpowers:verification-before-completion
 - Full verification catches agent mistakes
 
 **When stuck:**
-- Agent not making progress → Check TaskOutput, retry with clearer prompt
+- Agent returned without completing → re-dispatch with a clearer, more constrained prompt
 - Conflicts after dispatch → Domains weren't independent, merge and retry
 - Integration fails tests → Identify which agent caused regression
 - Unclear if independent → Test with 3 questions (affects? same code? same error?)
