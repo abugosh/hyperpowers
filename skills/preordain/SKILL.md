@@ -130,6 +130,8 @@ Continue decomposing until every proposed leaf epic would pass the brainstorming
 
 After decomposition is agreed, run the Architecture Impact Check against the entire initiative (not per leaf epic). The 5 questions, recording rule, and routing live in `skills/common-patterns/architecture-impact-check.md` — do not restate them.
 
+The result (YES/NO for each question, plus the routing decision) is not recorded here in isolation — it is written into each leaf epic's `## Context for Brainstorming` section when the epics are created in Step 5, so it survives the session and is reconstructable from bd.
+
 Suggested phrasing when 1+ YES:
 *"This initiative touches [components] in ways that suggest structural changes. /intuition can examine the architecture for tensions before you commit leaf epics. If you'd like to run it, pass prose focus — e.g., 'examine the [A]/[B] boundary under the [initiative] initiative'. Continue with decomposition, or run /intuition first?"*
 
@@ -184,6 +186,10 @@ means the design is fully settled.]
 constraints, integration points. Fold contracts and release framing in
 here when the epic is single-service; give them their own headings when
 the epic touches cross-service contracts.]
+
+Initiative Architecture Impact (from preordain Step 4 — identical across this initiative's leaf epics):
+- Q1 new component: [YES/NO]  Q2 public interface change: [YES/NO]  Q3 cross-component dependency: [YES/NO]  Q4 new request path: [YES/NO]  Q5 responsibility moved: [YES/NO]
+- Result: [N] YES. /intuition [offered and run / offered and deferred / not offered (0 YES)].
 EOF
 )"
 ```
@@ -232,7 +238,7 @@ The user drives which epic to brainstorm first. Do not auto-invoke /brainstorm.
 4. **Preordain creates epics, not tasks** — brainstorming creates tasks; preordain's only bd artifact is leaf epics
 5. **No leaf epic that re-triggers the sizing gate** — each leaf epic must target the leaf-epic size in `skills/common-patterns/pipeline-constants.md`; if larger, decompose further
 6. **No circular dependencies between leaf epics** — dependencies must be sequential (DAG only)
-7. **Architecture analysis at initiative level, not per-leaf-epic** — offer /intuition once for the full initiative; individual leaf epics run their own Step 4 during brainstorming only if new friction appears
+7. **Architecture analysis happens at BOTH levels** — the initiative-level AIC + /intuition offer runs here (once, for the full initiative); each leaf epic still runs its own AIC during brainstorming Step 4 (always — that step is the fixed point), re-offering /intuition only if new friction appears beyond what was already surfaced here
 8. **Cybernetic: recommend, do not decide** — if the decomposition has ambiguous boundary choices, present options with tradeoffs and let the user decide
 
 ## Common Excuses
@@ -244,7 +250,7 @@ All of these mean: **STOP. Reread the critical rules.**
 - "I'll create tasks for the first epic since we know what it needs" → violates rule 4; preordain creates epics only
 - "This leaf epic is big but brainstorming can handle it" → violates rule 5; decompose further
 - "Epic B can start while Epic A is finishing" → violates rule 6 if it creates a circular dependency; check the DAG
-- "Each brainstorm session will do its own architecture check" → violates rule 7; architecture impact check happens here at initiative level
+- "Each brainstorm session will do its own architecture check, so I can skip the initiative-level one" → violates rule 7; the initiative-level AIC happens here. Leaf epics still run their own AIC during brainstorming Step 4 — that does not replace the initiative-level analysis.
 
 </critical_rules>
 
@@ -254,7 +260,7 @@ Before claiming preordain session is complete:
 - [ ] Used AskUserQuestion for all questions (not printed)
 - [ ] Dispatched research agents before proposing decomposition
 - [ ] Presented decomposition to user and received explicit confirmation
-- [ ] Architecture Impact Check recorded (YES/NO for all 5 questions)
+- [ ] Architecture Impact Check recorded (YES/NO for all 5 questions) in each leaf epic's Context for Brainstorming section, identically across the initiative's epics
 - [ ] /intuition offered if any YES (and routing decision recorded)
 - [ ] All leaf epics created in bd rendering the brainstormable unit (Requirements, Boundaries, Dependencies, Settled Decisions, Open for Design, Context for Brainstorming)
 - [ ] Blocking dependencies set in bd for epics with ordering constraints
@@ -275,7 +281,7 @@ Before claiming preordain session is complete:
 **Produces:**
 - Leaf epics in bd, each conforming to the brainstormable unit's bd transport (`skills/common-patterns/brainstormable-unit.md`) and independently brainstormable
 - Blocking dependencies between epics in bd
-- Architecture Impact Check recorded in session output
+- Architecture Impact Check result recorded in each leaf epic's Context for Brainstorming section (reconstructable from bd)
 
 **Does NOT produce:**
 - bd tasks (brainstorming creates tasks)
