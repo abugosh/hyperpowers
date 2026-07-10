@@ -14,7 +14,7 @@ LOW FREEDOM - Follow the 6-step process exactly. Present exactly 4 options. Neve
 <quick_reference>
 | Step | Action | If Blocked |
 |------|--------|------------|
-| 1 | Verify epic tasks complete | Tasks still open → STOP |
+| 1 | Verify reviewer gate + epic tasks complete | Marker absent or tasks open → STOP |
 | 2 | Verify tests pass (test-runner agent) | Tests fail → STOP |
 | 3 | Determine base branch | Ask if needed |
 | 4 | Present exactly 4 options | Wait for choice |
@@ -31,7 +31,7 @@ LOW FREEDOM - Follow the 6-step process exactly. Present exactly 4 options. Neve
 - Ready to integrate work back to main branch
 
 **Prerequisites:**
-- The reviewer gate in executing-plans' completion must have returned APPROVED
+- The end-of-epic reviewer gate in executing-plans' completion must have returned APPROVED (verified in Step 1 via the persisted `Verdict: APPROVED` marker)
 - Complete your manual testing while epic is still open
 - Then run this skill to integrate and close the epic (or record a discard note, leaving it open)
 
@@ -48,10 +48,25 @@ LOW FREEDOM - Follow the 6-step process exactly. Present exactly 4 options. Neve
 
 **Announce:** "I'm using hyperpowers:finishing-a-development-branch to complete this work."
 
+**Verify the end-of-epic reviewer gate:**
+```bash
+bd show bd-1    # epic notes must contain the completion gate-state marker
+```
+The epic's notes must contain a line beginning `Verdict: APPROVED (end-of-epic reviewer` — persisted by executing-plans' Completion (format: `skills/common-patterns/loop-interfaces.md`).
+
+**If the marker is absent or not APPROVED:**
+```
+Cannot proceed with bd-1: no APPROVED end-of-epic reviewer gate is recorded on
+the epic. Run executing-plans' Completion first — the end-of-epic reviewer must
+return APPROVED and the gate-state block (with its Verdict: APPROVED marker)
+must be persisted to the epic's bd notes.
+```
+**STOP. Do not proceed.**
+
 **Verify all tasks closed:**
 
 ```bash
-bd dep tree bd-1  # Show task tree
+bd list --parent bd-1  # List child tasks
 bd list --status open --parent bd-1  # Check for open tasks
 ```
 
@@ -78,8 +93,8 @@ Complete all tasks before finishing.
 
 Dispatch hyperpowers:test-runner agent:
 ```
-Run: cargo test
-(or: npm test / pytest / go test ./...)
+Run: <project's test command>
+(examples: cargo test / npm test / pytest / go test ./...)
 ```
 
 Agent returns summary + failures only.
@@ -155,7 +170,7 @@ Then: Step 6 (cleanup worktree)
 
 ```bash
 bd show bd-1
-bd dep tree bd-1
+bd list --parent bd-1  # List child tasks
 ```
 
 **Create MR:**
@@ -254,7 +269,7 @@ git worktree remove <worktree-path>
 
 <code>
 # Step 1: Verified epic tasks complete ✓
-bd dep tree bd-1
+bd list --parent bd-1  # List child tasks
 bd list --status open --parent bd-1
 # No open tasks
 
@@ -288,7 +303,7 @@ git merge feature-branch
 
 ```bash
 # After verifying epic tasks complete
-bd dep tree bd-1  # ✓ no open tasks
+bd list --parent bd-1  # ✓ no open tasks
 
 # MANDATORY: Verify tests BEFORE presenting options
 Dispatch hyperpowers:test-runner agent: "Run: cargo test"
@@ -470,6 +485,7 @@ All of these mean: **STOP. Follow the process.**
 <verification_checklist>
 Before completing:
 
+- [ ] End-of-epic reviewer gate marker verified in epic notes (Step 1)
 - [ ] All child tasks verified closed (Step 1)
 - [ ] Tests verified passing (via test-runner agent, Step 2)
 - [ ] Presented exactly 4 options (no open-ended questions)
@@ -502,11 +518,6 @@ hyperpowers:executing-plans (reviewer gate + architecture check + STOP) → user
 </integration>
 
 <resources>
-**Detailed guides:**
-- [Git worktree management](resources/worktree-guide.md)
-- [MR description templates](resources/mr-templates.md)
-- [bd epic reference in MRs](resources/bd-mr-integration.md)
-
 **When stuck:**
 - Tasks won't close → Check bd status, verify all child tasks done
 - Tests fail → Fix before presenting options (can't proceed)
