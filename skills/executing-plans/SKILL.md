@@ -19,7 +19,7 @@ MEDIUM FREEDOM — Pre-dispatch verification uses judgment. Dispatch, review, an
 | **Branch** | Establish working branch; never dispatch on the default | `git branch --show-current` (+ `git checkout -b epic/<epic-id>` when on main) |
 | **Pre-dispatch** | Verify spec exists and dependencies met | `bd show <task-id>` |
 | **Dispatch** | Record base SHA, then fresh blocking executor subagent per task | `git rev-parse HEAD` + Agent tool (no team_name, Sonnet unless promoted) |
-| **Stage 1** | Lead reads diff vs recorded base SHA for epic coherence | `git diff <base-SHA>` |
+| **Stage 1** | Lead reads diff vs recorded base SHA for epic coherence | `git merge-base --is-ancestor <hash> HEAD` + `git diff <base-SHA>..HEAD` |
 | **Stage 2** | Spec-match + code quality review | Agent tool (Sonnet unless promoted) |
 | **Escalation** | Halt, summarize, recommend, wait | AskUserQuestion |
 
@@ -67,18 +67,18 @@ Subagents can and do switch branches. Re-verify `git branch --show-current` equa
 
 **Read the epic's bd notes for the latest GATE STATE block** — if one exists, resume from the state it records rather than re-deriving it (format: `skills/common-patterns/loop-interfaces.md`).
 
-**Verify:** Every task has a non-empty spec (design field). If any task is missing a spec, do not start execution — route the spec-less tasks through writing-plans (the off-mainline spec repair utility). Its per-expansion approval gate runs before execution starts — never route to it mid-flight.
+**Verify:** Every task has a non-empty spec (design field). A spec containing a bracketed elision or placeholder marker — e.g. "[Remaining steps truncated]", "[see parent]", "[TBD]", "[detailed above]" — is a missing spec, not a valid one. If any task is missing a spec (empty or truncated/placeholder), do not start execution — route the spec-less tasks through writing-plans (the off-mainline spec repair utility). Its per-expansion approval gate runs before execution starts — never route to it mid-flight.
 
 **Determine execution order** from bd dependencies. Tasks blocked by uncompleted dependencies must wait.
 
 ## 2. Pre-dispatch Verification
 
 Before dispatching each task, verify:
-1. Task has a non-empty spec (design field).
+1. Task has a non-empty spec (design field), free of truncation/placeholder markers.
 2. Blocking dependencies are met (all tasks that must complete before this one are done).
 3. Current branch equals the working branch (`git branch --show-current`) — restore it if a subagent switched branches.
 
-If either check fails, skip the task and note why.
+If any check fails, skip the task and note why.
 
 ## 3. Executor Dispatch
 
@@ -119,9 +119,22 @@ The Agent tool blocks until the executor returns. Parse the first word of the re
 Executor committed the work. Run two-stage review:
 
 **Stage 1 — Lead epic-coherence check:**
+
+First, verify the DONE-declared commit actually landed — the hash at the fixed position immediately after `DONE: ` (contract: `skills/common-patterns/loop-interfaces.md`, Verdict Contracts):
+
 ```bash
-git diff <base-SHA>    # Diff against the commit recorded before dispatch (Step 3), not just the
-                       # immediately preceding commit — an executor may have made several
+git merge-base --is-ancestor <done-hash> HEAD   # exit 0 = the DONE hash landed
+git status --porcelain                          # must print nothing (clean tree)
+```
+
+Any non-zero exit from the ancestry check counts as not-landed — including a malformed or truncated hash (`fatal: Not a valid object name`); treat it as a contract failure, not a tooling problem. Untracked files count as a dirty tree — `git status --porcelain` prints `??` lines for them. If the hash is not in HEAD's history OR the tree is dirty: do NOT review the diff — re-dispatch using the commit-landed failure template (below).
+
+Only after both checks pass, review the range that was actually committed:
+```bash
+git diff <base-SHA>..HEAD    # Diff against the commit recorded before dispatch (Step 3), not just the
+                              # immediately preceding commit — an executor may have made several.
+                              # The clean-tree check above has already ruled out uncommitted
+                              # leftovers, so this range reads exactly what was committed.
 ```
 Read the diff for what only the lead can see and the reviewer cannot — the reviewer is never given the epic. Check for:
 - Violations of the epic's anti-patterns (FORBIDDEN list)
@@ -166,6 +179,22 @@ Re-execute this task. The prior attempt conflicts with the epic.
 Violations found:
 - <violation 1>
 - <violation 2>
+
+Task: <bd-task-id>
+
+Task spec:
+<paste task spec>
+
+Working directory: <pwd>
+Branch: <working branch>
+```
+
+**Commit-landed failure template** (DONE's hash missing from history, or dirty tree):
+```
+Re-execute this task. The prior run returned DONE but the work did not land:
+<the DONE hash <hash> is not in history / the working tree has uncommitted changes>.
+Check git log and git status, complete any remaining work, commit everything
+for this task, and return DONE: <commit-hash> — <summary> with the real hash.
 
 Task: <bd-task-id>
 
@@ -293,8 +322,8 @@ dispatch prompt includes "Task: bd-42").
 Executor returns:
 "DONE: Added error handling to auth.ts:validate() and committed as 3f9a1b2."
 
-Stage 1: git diff a1b2c3d → no anti-pattern violations, requirements intact, no conflict with other
-completed tasks. ✓
+Stage 1: hash 3f9a1b2 in history ✓, tree clean ✓, git diff a1b2c3d..HEAD → no anti-pattern
+violations, requirements intact, no conflict with other completed tasks. ✓
 Stage 2: code-reviewer returns "PASS" (spec-match and quality both check out). ✓
 
 Lead closes bd-42 (`bd close bd-42`). Proceeds to bd-43.
@@ -342,7 +371,7 @@ Waits for user response before proceeding.
 
 3. **Parse the one-liner** — Executor returns DONE:, BLOCKED:, or NEEDS_HELP: as a one-liner. There are no multi-section status envelopes to parse.
 
-4. **Two-stage review on every DONE** — Stage 1 (lead epic-coherence check against the recorded base SHA) and Stage 2 (reviewer spec-match and code quality check) are both mandatory. Do not skip either stage.
+4. **Two-stage review on every DONE** — Stage 1 (lead epic-coherence check against the recorded base SHA — commit-landed check, then diff `<base-SHA>..HEAD`) and Stage 2 (reviewer spec-match and code quality check) are both mandatory. Do not skip either stage.
 
 5. **Never redesign autonomously** — On plan-level failures, halt and escalate. Present options; the user decides. Never continue without user input after escalation.
 
@@ -365,13 +394,14 @@ Waits for user response before proceeding.
 <verification_checklist>
 
 Before dispatching each task:
-- [ ] Task has a non-empty spec
+- [ ] Task has a non-empty spec with no truncation/placeholder markers
 - [ ] Dependencies are met (blocking tasks completed first)
 - [ ] Base SHA recorded (`git rev-parse HEAD`) before dispatch
 - [ ] Current branch equals the working branch
 
 After each DONE return:
-- [ ] Stage 1: lead read the diff against the recorded base SHA for epic coherence
+- [ ] Commit-landed check passed: DONE hash in history, `git status --porcelain` clean
+- [ ] Stage 1: lead read the diff (`<base-SHA>..HEAD`) against the recorded base SHA for epic coherence
 - [ ] Stage 2: reviewer dispatched and returned PASS (spec-match and code quality)
 - [ ] Any CONCERNS/BLOCKED classified before re-dispatch; promotion applied only to capability-class failures
 - [ ] Task closed in bd by the lead (Stage 2 PASS)
