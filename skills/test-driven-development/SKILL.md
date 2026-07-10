@@ -38,6 +38,7 @@ Violating the letter of the rules is violating the spirit of the rules.
 - Throwaway prototypes (will be deleted)
 - Generated code
 - Configuration files
+- No test framework configured in the repo — this is a blocked path, not an exception you may grant yourself: ask your human partner to configure a framework or to record an explicit exception. (Executors: a spec with a Tests section but no framework in the repo means return NEEDS_HELP — see agents/executor.md.)
 
 Thinking "skip TDD just this once"? Stop. That's rationalization.
 </when_to_use>
@@ -66,6 +67,8 @@ Run the test and confirm:
 
 **If test passes:** You're testing existing behavior. Fix the test.
 **If test errors:** Fix syntax error, re-run until it fails correctly.
+
+**Who runs it:** you run the single failing test directly and read its failure message yourself. A summarizing runner (e.g. the test-runner agent) returning "1 failed" is NOT RED evidence — the required evidence is the failure message showing the feature is missing. Single-test output is bounded; delegate only full-suite runs to test-runner.
 
 ## 3. GREEN - Write Minimal Code
 
