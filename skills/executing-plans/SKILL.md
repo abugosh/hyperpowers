@@ -16,6 +16,7 @@ MEDIUM FREEDOM — Pre-dispatch verification uses judgment. Dispatch, review, an
 | Step | Action | How |
 |------|--------|-----|
 | **Startup** | Load epic, list all tasks, verify specs | `bd show <epic-id>` + `bd list --parent <epic-id>` |
+| **Branch** | Establish working branch; never dispatch on the default | `git branch --show-current` (+ `git checkout -b epic/<epic-id>` when on main) |
 | **Pre-dispatch** | Verify spec exists and dependencies met | `bd show <task-id>` |
 | **Dispatch** | Record base SHA, then fresh blocking executor subagent per task | `git rev-parse HEAD` + Agent tool (no team_name, Sonnet unless promoted) |
 | **Stage 1** | Lead reads diff vs recorded base SHA for epic coherence | `git diff <base-SHA>` |
@@ -36,12 +37,28 @@ If invoked mid-epic: `bd list --parent <epic-id>` to find remaining open tasks. 
 
 <the_process>
 
+**Announce:** "I'm using the executing-plans skill."
+
 ## 1. Startup
 
 ```bash
 bd show <epic-id>              # Load epic details
 bd list --parent <epic-id>     # List all child tasks
 ```
+
+### Branch Establishment
+
+```bash
+git branch --show-current
+```
+
+- On the default branch (main/master) → create the epic branch: `git checkout -b epic/<epic-id>`. If `epic/<epic-id>` already exists (e.g. resuming after a subagent left the repo on main — the exact bd-go7m incident), check it out instead: `git checkout epic/<epic-id>`.
+- On any other branch → accept it as-is (resumes and user-created branches are both valid).
+- Empty output (detached HEAD) → not on any branch; create the epic branch from here (`git checkout -b epic/<epic-id>`), which preserves the current state.
+
+Record the result as the **working branch** for the session. Executors are NEVER dispatched on the default branch.
+
+Subagents can and do switch branches. Re-verify `git branch --show-current` equals the working branch (a) before every executor dispatch and (b) before every lead-side git commit or bd mutation that triggers a sync commit (bd close, bd update, gate-state persist). On mismatch: `git checkout <working-branch>` before proceeding.
 
 **Extract and hold for the entire session:**
 - **Requirements** — IMMUTABLE. Never water down.
@@ -59,6 +76,7 @@ bd list --parent <epic-id>     # List all child tasks
 Before dispatching each task, verify:
 1. Task has a non-empty spec (design field).
 2. Blocking dependencies are met (all tasks that must complete before this one are done).
+3. Current branch equals the working branch (`git branch --show-current`) — restore it if a subagent switched branches.
 
 If either check fails, skip the task and note why.
 
@@ -87,7 +105,7 @@ Agent tool:
     <paste full task spec from bd show output here>
 
     Working directory: <pwd>
-    Branch: <current branch>
+    Branch: <working branch>
 ```
 
 The prompt contains ONLY the task ID line and the task spec. No epic context, no adjacent task details. The task spec's Why section provides the necessary context.
@@ -135,7 +153,7 @@ Agent tool:
     Reply PASS or CONCERNS: <list>.
 ```
 
-If reviewer returns PASS: Task closure is owned by the lead: the lead closes the task only after Stage 2 review passes — the executor never closes tasks. Run `bd close <task-id>`, then proceed to the next task.
+If reviewer returns PASS: Task closure is owned by the lead: the lead closes the task only after Stage 2 review passes — the executor never closes tasks. Verify the working branch (Branch Establishment rule), then run `bd close <task-id>`, then proceed to the next task.
 
 If reviewer returns CONCERNS: classify before re-dispatching.
 - **Capability-class** (correctness or quality issue — spec mismatch, wrong logic, missing error handling): if this is the task's first re-dispatch and it is not already promoted, add `Executor: opus` to the task spec and note the promotion in bd (e.g. `bd update <task-id> --notes "Auto-promoted to opus after Stage 2 CONCERNS"`). Re-dispatch with the concern list.
@@ -155,7 +173,7 @@ Task spec:
 <paste task spec>
 
 Working directory: <pwd>
-Branch: <current branch>
+Branch: <working branch>
 ```
 
 ### BLOCKED
@@ -178,7 +196,7 @@ Task spec:
 <paste task spec — include the `Executor: opus` line if auto-promoting>
 
 Working directory: <pwd>
-Branch: <current branch>
+Branch: <working branch>
 ```
 
 **Plan-level block** (approach fundamentally broken, assumptions in remaining tasks are invalid): Trigger escalation protocol (see section 5).
@@ -201,7 +219,7 @@ Task spec:
 <paste task spec>
 
 Working directory: <pwd>
-Branch: <current branch>
+Branch: <working branch>
 ```
 
 If the lead cannot answer: escalate to user via AskUserQuestion. Wait for answer before re-dispatching.
@@ -252,7 +270,7 @@ After all tasks return DONE and pass two-stage review:
 
    **APPROVED:**
 
-   a. Persist the completion gate-state block to the epic's bd notes (format: `skills/common-patterns/loop-interfaces.md`), including any accumulated plan-impact notices.
+   a. Verify the working branch, then persist the completion gate-state block to the epic's bd notes (format: `skills/common-patterns/loop-interfaces.md`), including any accumulated plan-impact notices.
    b. Run the post-build Architecture Impact Check against the work just completed for this epic, per `skills/common-patterns/architecture-impact-check.md` (Post-Build Routing) — cite that file, do not restate the 5 questions here. Any YES routes per that file: dispatch `/ponder` in UPDATE mode when a model exists, or note-and-suggest in the completion report when no model exists.
    c. Present final status to the user.
    d. **STOP here.** Do not automatically call finishing-a-development-branch. The user needs time to test the implementation manually in their environment, verify edge cases automated tests don't cover, and confirm the feature works as expected in context. Closing the epic removes context the user may need during manual validation — let them explicitly trigger closure when ready.
@@ -350,18 +368,21 @@ Before dispatching each task:
 - [ ] Task has a non-empty spec
 - [ ] Dependencies are met (blocking tasks completed first)
 - [ ] Base SHA recorded (`git rev-parse HEAD`) before dispatch
+- [ ] Current branch equals the working branch
 
 After each DONE return:
 - [ ] Stage 1: lead read the diff against the recorded base SHA for epic coherence
 - [ ] Stage 2: reviewer dispatched and returned PASS (spec-match and code quality)
 - [ ] Any CONCERNS/BLOCKED classified before re-dispatch; promotion applied only to capability-class failures
 - [ ] Task closed in bd by the lead (Stage 2 PASS)
+- [ ] Working branch verified before task closure
 
 Before completion:
 - [ ] `bd list --parent <epic-id> --status open` returns 0
 - [ ] Reviewer dispatched as blocking subagent
 - [ ] APPROVED → gate-state persisted, post-build Architecture Impact Check run (per `architecture-impact-check.md`), final status presented, then STOP — no automatic call to finish-branch
 - [ ] GAPS FOUND → fix tasks created and dispatched, reviewer re-run
+- [ ] Working branch verified before gate-state persist and any final commits
 
 </verification_checklist>
 
@@ -371,7 +392,7 @@ Before completion:
 
 **Called by:** User via /hyperpowers:execute-plan · after brainstorming produces the task tree
 
-**Flow:** Startup → Pre-dispatch verification → Record base SHA → Dispatch executor (blocks) → Parse one-liner → Two-stage review → Next task → ... → Reviewer gate → Architecture check → Present + STOP (manual validation) → user → /hyperpowers:finish-branch
+**Flow:** Startup → Establish branch → Pre-dispatch verification → Record base SHA → Dispatch executor (blocks) → Parse one-liner → Two-stage review → Next task → ... → Reviewer gate → Architecture check → Present + STOP (manual validation) → user → /hyperpowers:finish-branch
 
 **bd command reference:** See [bd commands](../common-patterns/bd-commands.md)
 
@@ -386,7 +407,7 @@ Before completion:
   <paste task spec>
 
   Working directory: <pwd>
-  Branch: <current branch>
+  Branch: <working branch>
   ```
 - Reviewer GAPS FOUND → Create gap-fix tasks, dispatch executors, re-dispatch reviewer
 - Reviewer APPROVED → Persist gate-state, run the post-build Architecture Impact Check, present, then STOP — never auto-call finish-branch
