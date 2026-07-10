@@ -371,7 +371,7 @@ The full task tree review catches systemic gaps (e.g., missing error handling ac
 
 **Handle the batch verdict**
 
-The dispatch above returns one of three verdicts (vocabulary defined in `skills/common-patterns/loop-interfaces.md`, Verdict Contracts — never invent new verdict words):
+The dispatch above returns one of three verdicts (vocabulary: the `### Batch Verdict` template in `skills/sre-task-refinement/SKILL.md` — never invent new verdict words):
 
 - **APPROVE** → proceed to Step 8.
 - **NEEDS REVISION** → run the revision loop below, then re-dispatch a fresh SRE batch review using the same dispatch block above. Cap: after 2 re-review rounds (3 SRE runs total) without APPROVE, stop, persist a gate-state (format: `skills/common-patterns/loop-interfaces.md`) to the epic's bd notes, and escalate to the user via AskUserQuestion with the latest report.
