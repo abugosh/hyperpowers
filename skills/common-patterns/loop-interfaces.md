@@ -22,6 +22,12 @@ Needs you: <the specific decision(s) or confirmation(s) the gate is waiting on;
   or "nothing — informational" for completion states>
 ```
 
+Completion gate-states — emitted when the end-of-epic reviewer returns
+APPROVED — MUST additionally include the fixed marker line
+`Verdict: APPROVED (end-of-epic reviewer, <date>)`. It is
+machine-checkable: finishing-a-development-branch greps the epic's bd
+notes for it before integrating.
+
 Gate questions must be answerable in durable prose — never only via an
 expiring interactive element. The governor may return hours later.
 
@@ -78,8 +84,11 @@ Definition sites cite this section; parse sites must match it exactly.
   commit hashes in prose when partial commits exist.
 - **Stage-2 code-reviewer → lead** (stated in `agents/code-reviewer.md`,
   dispatched by executing-plans): leading verdict line `PASS` or
-  `CONCERNS: <summary>`, followed by the structured review.
-- **Completion reviewer → lead** (defined in `agents/reviewer.md`):
+  `CONCERNS: <one-line summary>`, followed by the concern list only — one
+  line per concern: `<file>:<line> — <what and why>`. Never the full
+  structured review: the lead's context must not accumulate per-task
+  review bodies.
+- **End-of-epic reviewer → lead (completion)** (defined in `agents/reviewer.md`):
   structured verdict `APPROVED` or `GAPS FOUND` with the gap list.
 
 The vocabularies are deliberately stage-distinct — do not merge them; do
