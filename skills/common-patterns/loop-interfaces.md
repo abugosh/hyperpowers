@@ -70,10 +70,12 @@ Single source for the three verdict vocabularies in the execution loop.
 Definition sites cite this section; parse sites must match it exactly.
 
 - **Executor → lead** (defined in `agents/executor.md`, parsed by
-  executing-plans): final message is exactly one of `DONE: <summary>`,
-  `BLOCKED: <what failed, attempted, error>`, `NEEDS_HELP: <question,
-  attempted, needed>`. One line, no envelope; the lead parses the first
-  word only.
+  executing-plans): final message is exactly one of `DONE: <commit-hash> —
+  <summary>`, `BLOCKED: <what failed, attempted, error>`, `NEEDS_HELP:
+  <question, attempted, needed>`. One line, no envelope. The lead parses
+  the first word, then reads the DONE commit hash from its fixed position
+  immediately after `DONE: `. BLOCKED and NEEDS_HELP name any landed
+  commit hashes in prose when partial commits exist.
 - **Stage-2 code-reviewer → lead** (stated in `agents/code-reviewer.md`,
   dispatched by executing-plans): leading verdict line `PASS` or
   `CONCERNS: <summary>`, followed by the structured review.
