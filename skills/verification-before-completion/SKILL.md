@@ -22,6 +22,7 @@ No shortcuts. No "should work". No partial verification. Run it, prove it.
 | **Bug fixed** | Test original symptom, passes | Code changed |
 | **Task complete** | Check all success criteria, run verifications | "Implemented bd-3" |
 | **Epic complete** | `bd list --status open --parent bd-1` shows 0 | "All tasks done" |
+| **Doc change correct** | Grep evidence per the Doc-Only Evidence Taxonomy (old-gone, new-present, refs resolve) | Rereading the diff, "it's just markdown" |
 
 **Iron Law:** NO COMPLETION CLAIMS WITHOUT FRESH VERIFICATION EVIDENCE
 
@@ -76,6 +77,20 @@ Does output confirm the claim?
 Make the claim.
 
 **Skip any step = lying, not verifying**
+
+## Doc-Only Changes: The Evidence Taxonomy
+
+Markdown repos have no compiler or test suite for prose, so greps ARE the test suite — the Iron Law still applies.
+
+| Claim about a doc change | Evidence |
+|---------------------------|----------|
+| Old wording is gone | repo-wide grep for the old phrase returns zero, or only intended survivors — list them |
+| New wording is in place | grep for the new phrase hits every intended site |
+| Cross-references resolve | every cited file path/section/anchor exists (test -f the path; grep the heading) |
+| Forbidden terms eliminated | sweep greps return zero across the stated scope |
+| Executable surface touched (hooks/) | contract tests pass: `./hooks/test/contract-test.sh` |
+
+Rereading the diff is not evidence for any row.
 
 </the_process>
 
@@ -281,6 +296,8 @@ Ready to commit.
    - Not: "Tests pass"
    - Yes: "Tests pass [Ran: cargo test, Output: 34/34 passed]"
 
+5. **Never bypass a failing hook** → Never `git commit --no-verify`. Never edit `.git/hooks` to get past a failing check. Fix the failure, or surface it and stop — a bypassed hook is a verification you chose not to run.
+
 ## Common Excuses
 
 All of these mean: Stop, run verification:
@@ -297,7 +314,8 @@ Bare-claim, confidence, and secondhand-report classes ("should work now", "I'm c
 - All test failures are from your current changes
 - Never check if errors were "pre-existing"
 - Don't run `git checkout <sha> && pytest` to verify
-- Just fix the error directly
+- Fix in-boundary failures directly; if the fix requires edits outside your Boundaries, return NEEDS_HELP.
+- (Contexts without task Boundaries — lead sessions, ad-hoc work — fix the failure directly.)
 
 </critical_rules>
 
@@ -322,8 +340,9 @@ Before closing bd task:
 Before closing bd epic:
 - [ ] Ran `bd list --status open --parent bd-1`
 - [ ] Saw 0 open tasks
-- [ ] Ran `bd dep tree bd-1`
+- [ ] Ran `bd list --parent bd-1`
 - [ ] Confirmed all tasks closed
+- [ ] Epic bd notes contain `Verdict: APPROVED (end-of-epic reviewer, <date>)` (completion gate-state, `skills/common-patterns/loop-interfaces.md` — finishing-a-development-branch greps for it)
 - [ ] THEN closed epic
 
 </verification_checklist>
@@ -356,6 +375,6 @@ Before closing bd epic:
 - Tests: Use test-runner agent, check 0 failures
 - Build: Run build command, check exit 0
 - bd task: Verify each success criterion
-- bd epic: Check all tasks closed with bd list/dep tree
+- bd epic: Check all tasks closed with `bd list --parent`; confirm the `Verdict: APPROVED` marker in epic notes before closing
 
 </resources>

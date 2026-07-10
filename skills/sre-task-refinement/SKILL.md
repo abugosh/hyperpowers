@@ -68,8 +68,8 @@ Use batch mode when reviewing a complete task tree as a unit — this is require
 
 ### Input
 ```bash
-bd dep tree <epic-id>   # Get the full task tree
-bd show <task-id>       # Read each child task
+bd list --parent <epic-id>   # List all child tasks (bd dep tree is childless for epics in bd 0.50.x)
+bd show <task-id>            # Read each child task
 ```
 
 ### Process
@@ -185,7 +185,7 @@ After per-task reviews, append a cross-task section:
 **Tier-aware — see `skills/common-patterns/pipeline-constants.md` for the simple/medium bands.**
 
 **Check:**
-- [ ] **Simple task**: Has a Verification section with at least one specific, measurable outcome, plus the "Pre-commit hooks passing" line?
+- [ ] **Simple task**: Has a Verification section with at least one specific, measurable outcome, plus the standing "Pre-commit hooks passing" line (canonical: `skills/common-patterns/spec-templates.md`, simple tier)?
 - [ ] **Medium task**: Has 3+ specific, measurable verification criteria?
 - [ ] All criteria testable/verifiable (not subjective)?
 - [ ] Includes automated verification (tests pass, clippy clean) where applicable?
@@ -195,7 +195,7 @@ After per-task reviews, append a cross-task section:
 - ✅ Medium: "5+ unit tests pass (valid VIN, invalid checksum, various formats)"
 - ✅ Medium: "Clippy clean with no warnings"
 - ✅ Medium: "Performance: <100ms for 1000 records"
-- ✅ Simple: "`rg 'old_name' src/` returns zero" plus "Pre-commit hooks passing"
+- ✅ Simple: "`rg 'old_name' src/` returns zero" plus "Pre-commit hooks passing" (per `skills/common-patterns/spec-templates.md`)
 
 **Bad criteria examples:**
 - ❌ "Code is good quality"
@@ -214,7 +214,8 @@ After per-task reviews, append a cross-task section:
 
 **Verify with:**
 ```bash
-bd dep tree bd-1  # Show full dependency tree
+bd list --parent bd-1   # All children
+bd show bd-N            # Per-task blocking/blocked-by
 ```
 
 ---
@@ -461,7 +462,7 @@ After reviewing all tasks:
 [APPROVE ✅ / NEEDS REVISION ⚠️ / REJECT ❌]
 
 ### Dependency Structure Review
-[Output of `bd dep tree [epic-id]`]
+[Output of `bd list --parent [epic-id]`]
 
 **Structure Quality**: [✅ Correct / ❌ Issues found]
 - [Comments on parent-child relationships]
@@ -697,17 +698,38 @@ Reason: Contains placeholder text - task not ready for implementation
 **Update task with actual content:**
 ```bash
 bd update bd-5 --design "$(cat <<'EOF'
-## Implementation
-- [ ] Create src/scan/plugins/scanners/license_plate.rs
-- [ ] Implement LicensePlateScanner struct with ScanPlugin trait
-- [ ] Add regex patterns for US states:
+## Goal
+Detect US license plate numbers (CA/NY/TX + generic fallback) in healthcare-context text, using the existing scanner plugin pattern.
+
+## Why
+Extends the PII/PHI scanner suite so license plate numbers are flagged alongside VINs when they appear near healthcare context. Without this scanner, plate numbers in medical records go undetected — a gap in the same coverage VIN scanning already closes.
+
+## Context
+- **Reference implementation**: Study `src/scan/plugins/scanners/vehicle_identifier.rs` — follow the same pattern (regex + context check + tests)
+- **Registration point**: `src/scan/plugins/scanners/mod.rs`
+- **State format regex patterns**:
   - CA: `[0-9][A-Z]{3}[0-9]{3}` (e.g., 1ABC123)
   - NY: `[A-Z]{3}[0-9]{4}` (e.g., ABC1234)
   - TX: `[A-Z]{3}[0-9]{4}|[0-9]{3}[A-Z]{3}` (e.g., ABC1234 or 123ABC)
   - Generic: `[A-Z0-9]{5,8}` (fallback)
-- [ ] Implement has_healthcare_context() check
-- [ ] Create test module with 8+ test cases
-- [ ] Register in src/scan/plugins/scanners/mod.rs
+- **False Positive Risk**: license plates are short and generic (5-8 chars). MUST require healthcare context via `has_healthcare_context()` — without that gate, the scanner will match random alphanumeric sequences like "ABC1234" wherever they appear, not just in medical records.
+- **Performance**: these regex patterns are simple with no backtracking risk; should process <1ms per chunk.
+
+## Implementation
+1. Write failing tests in `src/scan/plugins/scanners/license_plate.rs`'s test module covering the scenarios in Tests below. Run `cargo test license_plate` and confirm RED — tests fail because `LicensePlateScanner` doesn't exist yet.
+2. Implement the minimal `LicensePlateScanner` struct implementing the `ScanPlugin` trait in `src/scan/plugins/scanners/license_plate.rs`:
+   - Add the CA/NY/TX/generic regex patterns from Context
+   - Implement the `has_healthcare_context()` gate — no match is reported without healthcare context present
+   - Run `cargo test license_plate` and confirm GREEN
+3. Register `LicensePlateScanner` in `src/scan/plugins/scanners/mod.rs`
+4. Refactor for clarity (regex compilation reuse, module docstring listing supported formats) while keeping `cargo test license_plate` green
+
+## Tests
+- `test_valid_ca_plate_detected_in_healthcare_context`: "1ABC123" is detected when healthcare context is present
+- `test_valid_ny_plate_detected_in_healthcare_context`: "ABC1234" is detected when healthcare context is present
+- `test_too_short_string_rejected`: "123" is NOT detected (too short to match any pattern)
+- `test_valid_plate_not_detected_outside_healthcare_context`: "ABC1234" is NOT detected without healthcare context present — proves the false-positive gate works
+- 8+ unit tests total, covering all four patterns (CA/NY/TX/generic) plus the edge cases above
 
 ## Verification
 - [ ] Valid CA plate "1ABC123" detected in healthcare context
@@ -718,27 +740,9 @@ bd update bd-5 --design "$(cat <<'EOF'
 - [ ] Clippy clean, no warnings
 - [ ] cargo test passes
 
-## Context
-
-**False Positive Risk**:
-- License plates are short and generic (5-8 chars)
-- MUST require healthcare context via has_healthcare_context()
-- Without context, will match random alphanumeric sequences
-- Test: Random string "ABC1234" should NOT match outside healthcare context
-
-**State Format Variations**:
-- 50 US states have different formats
-- Implement common formats (CA, NY, TX) + generic fallback
-- Document which formats supported in module docstring
-- Consider international plates in future iteration
-
-**Performance**:
-- Regex patterns are simple, no backtracking risk
-- Should process <1ms per chunk
-
-**Reference Implementation**:
-- Study src/scan/plugins/scanners/vehicle_identifier.rs
-- Follow same pattern: regex + context check + tests
+## Boundaries
+- Common US plate formats only (CA/NY/TX + generic fallback) — international plates are out of scope, noted for a future iteration
+- No changes to other scanners (e.g. `vehicle_identifier.rs`) beyond reading it as a reference
 EOF
 )"
 ```
@@ -928,7 +932,7 @@ Before completing SRE review:
 
 **Overall plan:**
 - [ ] Reviewed ALL tasks/phases/subtasks (no exceptions)
-- [ ] Verified dependency structure with `bd dep tree`
+- [ ] Verified dependency structure with `bd list --parent` + per-task `bd show`
 - [ ] Documented findings for each task
 - [ ] Created summary of changes made
 - [ ] Provided clear recommendation (APPROVE/NEEDS REVISION/REJECT)

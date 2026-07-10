@@ -28,7 +28,10 @@ Fields: Goal, Why, Changes, Verification — nothing more.
 
 ## Verification
 [Exact command to confirm the change is correct, e.g. grep, test run, or manual check]
+- Pre-commit hooks passing
 ```
+
+The Verification field's final line is standing: every simple task ends with "Pre-commit hooks passing" — the executor's commit runs the hooks, making them the one universal automated check for mechanical edits. sre-task-refinement Category 3 verifies this line by citing this file.
 
 ## Medium task spec
 
