@@ -20,8 +20,8 @@ HIGH FREEDOM - The 8-step order is fixed, but Socratic questioning within steps 
 | 4 | Architecture Impact Check (5 structural questions) | Impact recorded in epic; /intuition offered if any YES |
 | 5 | Create bd epic with IMMUTABLE requirements | Epic with 8 top-level sections (incl. Provenance) and anti-patterns |
 | 6 | Re-check sizing gate if scope grew; decomposition strategy approval; create complete task tree | All tasks planned upfront with simple/medium classification (spec depth) |
-| 7 | Dispatch fresh subagent for SRE batch review of full task tree | Refined task tree ready for handoff |
-| 8 | Present task summary, then hand off to executing-plans | Human reviews task list; lead orchestrates executor subagents on Sonnet |
+| 7 | Dispatch fresh subagent for SRE batch review of full task tree | Refined task tree ready for handoff; non-APPROVE verdicts loop (cap 2 re-reviews) or escalate |
+| 8 | Present task summary, then hand off to executing-plans | Human reviews task list; lead orchestrates executor subagents on Sonnet (promotable via Executor: opus) |
 </quick_reference>
 
 <when_to_use>
@@ -286,7 +286,7 @@ Before creating any tasks, present a decomposition strategy to the human for app
 - Explicit justification for any medium tasks — what judgment or design decision makes each one irreducibly complex?
 - Ask: "Does this breakdown look right, or would you like to adjust the grouping or classification?"
 
-**Classification determines spec depth.** All executors run on Sonnet regardless of classification. Simple tasks need only Goal, Why, Changes, and Verification — the spec is concise because the work is mechanical. Medium tasks require fuller specs with Context, Implementation steps, Tests, and Boundaries — the spec is detailed because the executor must make judgment calls.
+**Classification determines spec depth.** All executors run on Sonnet regardless of classification. Classification sets spec depth, not model — promotion to Opus happens only via the `Executor: opus` flag (`skills/common-patterns/pipeline-constants.md`). Simple tasks need only Goal, Why, Changes, and Verification — the spec is concise because the work is mechanical. Medium tasks require fuller specs with Context, Implementation steps, Tests, and Boundaries — the spec is detailed because the executor must make judgment calls.
 
 For refactors: define the pattern during planning so each executor task is a mechanical application of that pattern (simple spec). For new features: extract design judgment into the spec (medium spec) so execution becomes deliberate.
 
@@ -369,6 +369,20 @@ SRE refinement can suggest: splitting tasks that are too large, adding tasks tha
 
 The full task tree review catches systemic gaps (e.g., missing error handling across all tasks). Skipping on "feels heavy" grounds is exactly the rationalization the rule guards against.
 
+**Handle the batch verdict**
+
+The dispatch above returns one of three verdicts (vocabulary defined in `skills/common-patterns/loop-interfaces.md`, Verdict Contracts — never invent new verdict words):
+
+- **APPROVE** → proceed to Step 8.
+- **NEEDS REVISION** → run the revision loop below, then re-dispatch a fresh SRE batch review using the same dispatch block above. Cap: after 2 re-review rounds (3 SRE runs total) without APPROVE, stop, persist a gate-state (format: `skills/common-patterns/loop-interfaces.md`) to the epic's bd notes, and escalate to the user via AskUserQuestion with the latest report.
+- **REJECT** → no loop: halt, persist a gate-state, and present the report's critical problems to the user; redesign returns to Step 6b or earlier as the user directs.
+
+**Revision loop (NEEDS REVISION):**
+
+1. Spec strengthening is already applied — the SRE reviewer updates specs directly via `bd update` (its Authority rule, `skills/sre-task-refinement/SKILL.md`). Do not re-apply.
+2. For each structural recommendation in the report (add a task, split a task, reorder dependencies, or promote a task via the `Executor: opus` flag): either apply it with plain bd commands (`bd create` + `bd dep add` for tree changes; `bd update` adding the `Executor: opus` line to the task's spec for promotions — SRE batch review is a named promotion-recommendation source in `skills/common-patterns/pipeline-constants.md`; Step 6c's pre-create verification applies to any new task), or explicitly decline it with a recorded reason in the epic's bd notes (it surfaces in the next gate-state's Decided section).
+3. Re-dispatch the SRE batch review as a fresh subagent. The lead never marks the tree approved itself — only a fresh SRE run can return APPROVE.
+
 ---
 
 ## Step 8 — Task Summary and Handoff to Executing-Plans
@@ -397,7 +411,7 @@ Full task tree has been batch-reviewed by SRE and is ready to execute.
 
 The executing-plans skill will:
 1. Read the full upfront task list from bd
-2. Dispatch a fresh executor subagent per task on Sonnet
+2. Dispatch a fresh executor subagent per task on Sonnet (or Opus where the spec carries Executor: opus)
 3. The executor reads the self-contained task spec, implements, commits, and returns
    a one-liner status (DONE, BLOCKED, or NEEDS_HELP)
 4. After each task: lead runs a two-stage review (Stage 1: lead epic-coherence check; Stage 2: reviewer spec-match + code quality),
@@ -461,7 +475,7 @@ Before handing off to executing-plans:
 - [ ] Anti-patterns include reasoning ("NO X (reason: Y)")
 - [ ] Sizing gate checked; decomposition strategy proposed and approved by human; all tasks classified (simple/medium for spec depth) and linked to epic
 - [ ] Every task spec reference verified against the codebase before creation
-- [ ] Batch SRE review dispatched as fresh subagent against full task tree; refinements applied
+- [ ] Batch SRE review dispatched as fresh subagent against full task tree; refinements applied; verdict handled per Step 7's batch-verdict protocol (looped to APPROVE, or capped and escalated)
 - [ ] Announced handoff to executing-plans
 
 **Can't check all boxes?** Return to the process and complete the missing steps.
