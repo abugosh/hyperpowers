@@ -49,6 +49,7 @@ These rationalizations appear across multiple contexts. When you catch yourself 
 | "Should I continue to the next task?" | YES. You have a tracked plan. Execute it. Don't interrupt your own workflow. |
 | "Let me ask user's preference for remaining tasks" | NO. The user gave you the work. Do it. Only ask at natural completion points. |
 | "Should I stop here or keep going?" | Your tracker tells you. If tasks remain, continue. |
+| "Spec is truncated but the gist is clear" | A truncated spec (e.g. "[Remaining steps truncated]") is a missing spec. Route through writing-plans. |
 
 ## Execution Shortcuts
 
