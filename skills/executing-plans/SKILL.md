@@ -4,7 +4,7 @@ description: Lead reads pre-planned task list, dispatches fresh blocking executo
 ---
 
 <skill_overview>
-Lead orchestrates execution of a pre-planned task list. All tasks exist in bd before execution begins. Lead dispatches a fresh executor subagent per task, runs two-stage review (lead epic-coherence check + reviewer spec-match/code quality check), and escalates to user when the plan proves invalid. Epic requirements are immutable.
+Lead orchestrates execution of a pre-planned task list. All tasks exist in bd before execution begins. Lead dispatches a fresh executor subagent per task, runs two-stage review (lead epic-coherence check + Stage-2 code-reviewer spec-match/code quality check), and escalates to user when the plan proves invalid. Epic requirements are immutable.
 </skill_overview>
 
 <rigidity_level>
@@ -20,7 +20,7 @@ MEDIUM FREEDOM — Pre-dispatch verification uses judgment. Dispatch, review, an
 | **Pre-dispatch** | Verify spec exists and dependencies met | `bd show <task-id>` |
 | **Dispatch** | Record base SHA, then fresh blocking executor subagent per task | `git rev-parse HEAD` + Agent tool (no team_name, Sonnet unless promoted) |
 | **Stage 1** | Lead reads diff vs recorded base SHA for epic coherence | `git merge-base --is-ancestor <hash> HEAD` + `git diff <base-SHA>..HEAD` |
-| **Stage 2** | Spec-match + code quality review | Agent tool (Sonnet unless promoted) |
+| **Stage 2** | Stage-2 code-reviewer: spec-match + code quality review | Agent tool (Sonnet unless promoted) |
 | **Escalation** | Halt, summarize, recommend, wait | AskUserQuestion |
 
 **Critical:** Executor returns a one-liner (DONE:, BLOCKED:, or NEEDS_HELP:) — not a multi-section envelope. Parse the first word only. All three loop verdict vocabularies are single-sourced in `skills/common-patterns/loop-interfaces.md` (Verdict Contracts).
@@ -136,16 +136,16 @@ git diff <base-SHA>..HEAD    # Diff against the commit recorded before dispatch 
                               # The clean-tree check above has already ruled out uncommitted
                               # leftovers, so this range reads exactly what was committed.
 ```
-Read the diff for what only the lead can see and the reviewer cannot — the reviewer is never given the epic. Check for:
+Read the diff for what only the lead can see and the Stage-2 code-reviewer cannot — the Stage-2 code-reviewer is never given the epic. Check for:
 - Violations of the epic's anti-patterns (FORBIDDEN list)
 - Watering-down of any immutable requirement
 - Contradictions with other tasks — already-completed work, or assumptions that remaining tasks depend on
 
 Do not re-check whether the implementation matches the task spec line-by-line — that is Stage 2's job. If any check above fails: note the violation(s), re-dispatch with feedback (see Stage 1 feedback template below).
 
-**Stage 2 — Reviewer spec-match and code quality check:**
+**Stage 2 — Code-reviewer spec-match and code quality check:**
 
-The fresh reviewer owns both spec-match and code quality — the lens Stage 1 does not cover:
+The fresh Stage-2 code-reviewer owns both spec-match and code quality — the lens Stage 1 does not cover:
 
 ```
 Agent tool:
@@ -166,11 +166,11 @@ Agent tool:
     Reply PASS or CONCERNS: <list>.
 ```
 
-If reviewer returns PASS: Task closure is owned by the lead: the lead closes the task only after Stage 2 review passes — the executor never closes tasks. Verify the working branch (Branch Establishment rule), then run `bd close <task-id>`, then proceed to the next task.
+If the Stage-2 code-reviewer returns PASS: Task closure is owned by the lead: the lead closes the task only after Stage 2 review passes — the executor never closes tasks. Verify the working branch (Branch Establishment rule), then run `bd close <task-id>`, then proceed to the next task.
 
-If reviewer returns CONCERNS: classify before re-dispatching.
+If the Stage-2 code-reviewer returns CONCERNS: classify before re-dispatching. A task is NEVER closed with unaddressed CONCERNS — both classes below always re-dispatch with the concern list (Stage-2 CONCERNS re-dispatch template below). The lead's discretion governs only the classification (capability vs cosmetic), which governs promotion (see skills/common-patterns/pipeline-constants.md) — never whether to re-dispatch.
 - **Capability-class** (correctness or quality issue — spec mismatch, wrong logic, missing error handling): if this is the task's first re-dispatch and it is not already promoted, add `Executor: opus` to the task spec and note the promotion in bd (e.g. `bd update <task-id> --notes "Auto-promoted to opus after Stage 2 CONCERNS"`). Re-dispatch with the concern list.
-- **Cosmetic/convention-class** (formatting, citation style, naming): re-dispatch with the concern list at the lead's discretion. Do NOT promote — promotion is reserved for capability-class failures, and spending it on a convention fix wastes the escalation rung.
+- **Cosmetic/convention-class** (formatting, citation style, naming): re-dispatch with the concern list. Do NOT promote — promotion is reserved for capability-class failures, and spending it on a convention fix wastes the escalation rung.
 
 **Stage 1 feedback template** (when the lead's epic-coherence check fails):
 ```
@@ -200,6 +200,23 @@ Task: <bd-task-id>
 
 Task spec:
 <paste task spec>
+
+Working directory: <pwd>
+Branch: <working branch>
+```
+
+**Stage-2 CONCERNS re-dispatch template:**
+```
+Re-execute this task. The Stage-2 code review returned CONCERNS.
+
+Concerns to address:
+- <file:line — concern 1>
+- <file:line — concern 2>
+
+Task: <bd-task-id>
+
+Task spec:
+<paste task spec — include the `Executor: opus` line if promoting>
 
 Working directory: <pwd>
 Branch: <working branch>
@@ -284,7 +301,7 @@ After all tasks return DONE and pass two-stage review:
    ```
    Must return 0 open tasks.
 
-2. Dispatch reviewer as a blocking subagent:
+2. Dispatch the end-of-epic reviewer as a blocking subagent. **This dispatch is MANDATORY — you MUST NOT skip it.** "Every task passed per-task review" is not a review of the assembled whole: per-task review sees one diff at a time; the end-of-epic reviewer caught real gaps on 7 of 7 reworked epics. Skipping it because all tasks passed Stage 2 is the exact rationalization this gate exists to stop.
    ```
    Agent tool:
      subagent_type: "hyperpowers:reviewer"
@@ -299,13 +316,13 @@ After all tasks return DONE and pass two-stage review:
 
    **APPROVED:**
 
-   a. Verify the working branch, then persist the completion gate-state block to the epic's bd notes (format: `skills/common-patterns/loop-interfaces.md`), including any accumulated plan-impact notices.
+   a. Verify the working branch, then persist the completion gate-state block to the epic's bd notes (format: `skills/common-patterns/loop-interfaces.md`), including any accumulated plan-impact notices. The block MUST include the machine-checkable marker line `Verdict: APPROVED (end-of-epic reviewer, <date>)` (format: `skills/common-patterns/loop-interfaces.md`).
    b. Run the post-build Architecture Impact Check against the work just completed for this epic, per `skills/common-patterns/architecture-impact-check.md` (Post-Build Routing) — cite that file, do not restate the 5 questions here. Any YES routes per that file: dispatch `/ponder` in UPDATE mode when a model exists, or note-and-suggest in the completion report when no model exists.
    c. Present final status to the user.
    d. **STOP here.** Do not automatically call finishing-a-development-branch. The user needs time to test the implementation manually in their environment, verify edge cases automated tests don't cover, and confirm the feature works as expected in context. Closing the epic removes context the user may need during manual validation — let them explicitly trigger closure when ready.
    e. The epic remains open. The user runs `/hyperpowers:finish-branch` when ready.
 
-   **GAPS FOUND:** Create fix task(s) inline for each gap — spec body per the tier templates in `skills/common-patterns/spec-templates.md` — and dispatch executors. This is the one exception to "all tasks planned upfront." These gap-fix tasks follow the same dispatch and two-stage review loop. After all gaps resolved, re-dispatch reviewer.
+   **GAPS FOUND:** Create fix task(s) inline for each gap — spec body per the tier templates in `skills/common-patterns/spec-templates.md` — and link each to the epic: `bd dep add bd-<fix-task> bd-<epic-id> --type parent-child` (the completion re-check and re-review enumerate tasks via `bd list --parent`) — and dispatch executors. This is the one exception to "all tasks planned upfront." These gap-fix tasks follow the same dispatch and two-stage review loop. After all gaps resolved, re-dispatch the end-of-epic reviewer.
 
    **If the review reveals sibling-relevant divergence** — the implementation departed from an upstream shared plan in a way other services or epics depend on — emit a plan-impact notice (format: `skills/common-patterns/loop-interfaces.md`) into the epic's bd notes; the user carries it to the planning repo; sessions never write the shared docs.
 
@@ -365,13 +382,13 @@ Waits for user response before proceeding.
 
 <critical_rules>
 
-1. **All tasks pre-planned** — Do not create tasks during execution (exception: gap-fix tasks after reviewer GAPS FOUND verdict).
+1. **All tasks pre-planned** — Do not create tasks during execution (exception: gap-fix tasks after end-of-epic reviewer GAPS FOUND verdict).
 
 2. **No SRE per-task** — SRE batch review runs before execution begins. Never invoke SRE between tasks.
 
 3. **Parse the one-liner** — Executor returns DONE:, BLOCKED:, or NEEDS_HELP: as a one-liner. There are no multi-section status envelopes to parse.
 
-4. **Two-stage review on every DONE** — Stage 1 (lead epic-coherence check against the recorded base SHA — commit-landed check, then diff `<base-SHA>..HEAD`) and Stage 2 (reviewer spec-match and code quality check) are both mandatory. Do not skip either stage.
+4. **Two-stage review on every DONE** — Stage 1 (lead epic-coherence check against the recorded base SHA — commit-landed check, then diff `<base-SHA>..HEAD`) and Stage 2 (code-reviewer spec-match and code quality check) are both mandatory. Do not skip either stage.
 
 5. **Never redesign autonomously** — On plan-level failures, halt and escalate. Present options; the user decides. Never continue without user input after escalation.
 
@@ -385,9 +402,10 @@ Waits for user response before proceeding.
 
 - "I'll skip Stage 2 since Stage 1 looked fine" → Both stages are mandatory. Dispatch the code-reviewer.
 - "I'll just clarify this one thing in the spec and continue" → If it's a plan-level issue, escalate. Don't patch forward.
-- "The reviewer is overkill for gap-fix tasks" → Dispatch reviewer after all gaps are fixed. No exceptions.
+- "The end-of-epic reviewer is overkill for gap-fix tasks" → Dispatch the end-of-epic reviewer after all gaps are fixed. No exceptions.
 - "I can answer this NEEDS_HELP myself and keep going" → Answer it in the re-dispatch prompt. Do not implement it in the lead context.
-- "I'll promote to opus since the reviewer raised a concern" → Not for cosmetic or convention-level concerns (formatting, citation style, naming). Promotion is reserved for capability-class failures — don't spend the rung on a convention fix.
+- "Every task passed two-stage review, the end-of-epic reviewer is redundant" → Per-task review sees one diff at a time. 7/7 epics had gaps only the end-of-epic reviewer caught. Dispatch it.
+- "I'll promote to opus since the Stage-2 code-reviewer raised a concern" → Not for cosmetic or convention-level concerns (formatting, citation style, naming). Promotion is reserved for capability-class failures — don't spend the rung on a convention fix.
 
 </critical_rules>
 
@@ -402,16 +420,17 @@ Before dispatching each task:
 After each DONE return:
 - [ ] Commit-landed check passed: DONE hash in history, `git status --porcelain` clean
 - [ ] Stage 1: lead read the diff (`<base-SHA>..HEAD`) against the recorded base SHA for epic coherence
-- [ ] Stage 2: reviewer dispatched and returned PASS (spec-match and code quality)
-- [ ] Any CONCERNS/BLOCKED classified before re-dispatch; promotion applied only to capability-class failures
+- [ ] Stage 2: code-reviewer dispatched and returned PASS (spec-match and code quality)
+- [ ] Any CONCERNS re-dispatched with the concern list (never closed as-is); promotion applied only to capability-class failures
+- [ ] Any BLOCKED classified before re-dispatch; promotion applied only to capability-class failures
 - [ ] Task closed in bd by the lead (Stage 2 PASS)
 - [ ] Working branch verified before task closure
 
 Before completion:
 - [ ] `bd list --parent <epic-id> --status open` returns 0
-- [ ] Reviewer dispatched as blocking subagent
+- [ ] End-of-epic reviewer dispatched as blocking subagent
 - [ ] APPROVED → gate-state persisted, post-build Architecture Impact Check run (per `architecture-impact-check.md`), final status presented, then STOP — no automatic call to finish-branch
-- [ ] GAPS FOUND → fix tasks created and dispatched, reviewer re-run
+- [ ] GAPS FOUND → fix tasks created and dispatched, end-of-epic reviewer dispatched again to confirm
 - [ ] Working branch verified before gate-state persist and any final commits
 
 </verification_checklist>
@@ -422,7 +441,7 @@ Before completion:
 
 **Called by:** User via /hyperpowers:execute-plan · after brainstorming produces the task tree
 
-**Flow:** Startup → Establish branch → Pre-dispatch verification → Record base SHA → Dispatch executor (blocks) → Parse one-liner → Two-stage review → Next task → ... → Reviewer gate → Architecture check → Present + STOP (manual validation) → user → /hyperpowers:finish-branch
+**Flow:** Startup → Establish branch → Pre-dispatch verification → Record base SHA → Dispatch executor (blocks) → Parse one-liner → Two-stage review → Next task → ... → End-of-epic reviewer gate → Architecture check → Present + STOP (manual validation) → user → /hyperpowers:finish-branch
 
 **bd command reference:** See [bd commands](../common-patterns/bd-commands.md)
 
@@ -439,8 +458,8 @@ Before completion:
   Working directory: <pwd>
   Branch: <working branch>
   ```
-- Reviewer GAPS FOUND → Create gap-fix tasks, dispatch executors, re-dispatch reviewer
-- Reviewer APPROVED → Persist gate-state, run the post-build Architecture Impact Check, present, then STOP — never auto-call finish-branch
+- End-of-epic reviewer GAPS FOUND → Create gap-fix tasks, dispatch executors, re-dispatch the end-of-epic reviewer
+- End-of-epic reviewer APPROVED → Persist gate-state, run the post-build Architecture Impact Check, present, then STOP — never auto-call finish-branch
 - Escalation → Summarize, recommend, wait for user
 
 </integration>
