@@ -375,6 +375,6 @@ Before closing bd epic:
 - Tests: Use test-runner agent, check 0 failures
 - Build: Run build command, check exit 0
 - bd task: Verify each success criterion
-- bd epic: Check all tasks closed with bd list/dep tree
+- bd epic: Check all tasks closed with `bd list --parent`; confirm the `Verdict: APPROVED` marker in epic notes before closing
 
 </resources>
