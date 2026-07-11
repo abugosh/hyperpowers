@@ -9,17 +9,12 @@ This guide covers the key metrics for tracking work in bd.
 ### Cycle Time
 
 - **Definition**: Time from "work started" to "work completed"
-- **Start**: When task moves to "in-progress" status
+- **Start**: When task moves to "in progress" status
 - **End**: When task moves to "closed" status
 - **Measures**: How efficiently work flows through active development
 - **Use**: Identify process inefficiencies, improve development speed
 
-```bash
-# Calculate cycle time for completed task
-bd show bd-5 | grep "status.*in-progress" # Get start time
-bd show bd-5 | grep "status.*closed"      # Get end time
-# Difference = cycle time
-```
+> **bd's JSONL backend does not record status-transition timestamps** (`bd history` requires the Dolt backend), so cycle time (in_progress -> closed) cannot be computed from bd data. `updated_at` is not a valid proxy — it moves on any design or notes edit. Use lead time below as the measurable end-to-end metric.
 
 ### Lead Time
 
@@ -31,16 +26,17 @@ bd show bd-5 | grep "status.*closed"      # Get end time
 
 ```bash
 # Calculate lead time for completed task
-bd show bd-5 | grep "created_at"    # Get creation time
-bd show bd-5 | grep "deployed_at"   # Get deployment time (if tracked)
-# Difference = lead time
+bd show bd-5 --json | jq -r '.[0] | .created_at + " -> " + .closed_at'
 ```
+
+- `closed_at` exists only on closed issues (`bd show --json` omits null fields).
+- Deployment time is not tracked by bd — if you need deploy-inclusive lead time, join against your deploy tooling's records.
 
 ### Key Differences
 
 | Metric | Starts | Ends | Includes Waiting? | Measures |
 |--------|--------|------|-------------------|----------|
-| **Cycle Time** | In-progress | Closed | No | Development efficiency |
+| **Cycle Time** | In progress | Closed | No | Development efficiency |
 | **Lead Time** | Created | Deployed | Yes | Total responsiveness |
 
 ### Example
@@ -48,7 +44,7 @@ bd show bd-5 | grep "deployed_at"   # Get deployment time (if tracked)
 ```
 Task created: Monday 9am (enters backlog)
 ↓ [waits 2 days]
-Task started: Wednesday 9am (moved to in-progress)
+Task started: Wednesday 9am (moved to in progress)
 ↓ [active work]
 Task completed: Wednesday 5pm (moved to closed)
 ↓ [waits for deployment]
@@ -72,8 +68,8 @@ Lead Time: 3 days, 5 hours (Monday 9am → Thursday 2pm)
 ### Tracking Over Time
 
 ```bash
-# Average cycle time (manual calculation)
-# For each closed task: (closed_at - started_at)
+# Average lead time (manual calculation)
+# For each closed task: (closed_at - created_at) — lead time
 # Sum and divide by task count
 
 # Trend analysis
@@ -90,11 +86,11 @@ Lead Time: 3 days, 5 hours (Monday 9am → Thursday 2pm)
 ## Work in Progress (WIP)
 
 ```bash
-# All in-progress tasks
-bd list --status in-progress
+# All in progress tasks
+bd list --status in_progress -n 0
 
 # Count
-bd list --status in-progress | grep "^bd-" | wc -l
+bd list --status in_progress -n 0 --json | jq length
 ```
 
 ### WIP Limits
@@ -102,14 +98,14 @@ bd list --status in-progress | grep "^bd-" | wc -l
 Work in Progress limits prevent overcommitment and identify bottlenecks.
 
 **Setting WIP limits:**
-- **Personal WIP limit**: 1-2 tasks in-progress at a time
+- **Personal WIP limit**: 1-2 tasks in progress at a time
 - **Team WIP limit**: Depends on team size and workflow stages
 - **Rule of thumb**: WIP limit = (Team size ÷ 2) + 1
 
 **Example for individual developer:**
 ```
-✅ Good: 1 task in-progress, 0-1 in code review
-❌ Bad: 5 tasks in-progress simultaneously
+✅ Good: 1 task in progress, 0-1 in code review
+❌ Bad: 5 tasks in progress simultaneously
 ```
 
 **Example for team of 6:**
@@ -134,10 +130,12 @@ Workflow stages and limits:
 
 ```bash
 # Check personal WIP
-bd list --status in-progress | grep "assignee:me" | wc -l
+bd list --status in_progress -a <assignee> -n 0 --json | jq length
 
 # If > 2: Focus on finishing before starting new work
 ```
+
+Assignee is set explicitly via `bd update <id> --assignee <name>` and is distinct from owner; it is unset by default, so this returns 0 until your team assigns issues.
 
 ### Red Flags
 
@@ -155,12 +153,9 @@ bd list --status in-progress | grep "assignee:me" | wc -l
 ## Bottleneck Identification
 
 ```bash
-# Find tasks that are blocking others
-# (Tasks that many other tasks depend on)
-for task in $(bd list --status open | grep "^bd-" | cut -d: -f1); do
-  echo -n "$task: "
-  bd list --status open | xargs -I {} sh -c "bd show {} | grep -q \"depends on $task\" && echo {}" | wc -l
-done | sort -t: -k2 -n -r
-
-# Shows tasks with most dependencies (top bottlenecks)
+# Find tasks that block the most other tasks (top bottlenecks)
+# -t blocks excludes parent-child edges so epics do not dominate the list
+bd list --status open -n 0 --json | jq -r '.[].id' | while read t; do
+  echo "$t $(bd dep list "$t" --direction=up -t blocks --json | jq length)"
+done | sort -k2 -nr | head
 ```
