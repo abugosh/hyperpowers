@@ -323,7 +323,7 @@ bd list --parent bd-1 --status closed -n 0 --json | jq length
 
 ```bash
 # Ready to work on
-bd ready --json | jq length
+bd ready -n 0 --json | jq length   # bd ready defaults to -n 10 — counting needs -n 0
 
 # Blocked
 bd blocked --json | jq length

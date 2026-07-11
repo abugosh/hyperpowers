@@ -156,6 +156,7 @@ Assignee is set explicitly via `bd update <id> --assignee <name>` and is distinc
 # Find tasks that block the most other tasks (top bottlenecks)
 # -t blocks excludes parent-child edges so epics do not dominate the list
 bd list --status open -n 0 --json | jq -r '.[].id' | while read t; do
-  echo "$t $(bd dep list "$t" --direction=up -t blocks --json | jq length)"
+  n=$(bd dep list "$t" --direction=up -t blocks --json | jq length)  # bd dep list has no -n flag (like bd blocked) — full list always
+  echo "$t $n"
 done | sort -k2 -nr | head
 ```
