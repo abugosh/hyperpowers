@@ -14,7 +14,7 @@ HIGH FREEDOM - These are operational patterns, not rigid workflows. Adapt operat
 <quick_reference>
 | Operation | When | Key Command |
 |-----------|------|-------------|
-| Split task | Task too large mid-flight | Create subtasks, add deps, close parent |
+| Split task | Task too large mid-flight | Create subtasks (two-tier specs), add deps, SRE-review, close parent |
 | Merge duplicates | Found duplicate tasks | Combine designs, move deps, close with reference |
 | Change dependencies | Dependencies wrong/changed | `bd dep remove` then `bd dep add` |
 | Archive epic | Epic complete, hide from views | `bd close bd-X --reason "Archived"` |
@@ -45,11 +45,13 @@ Use this skill for **advanced** bd operations:
 
 **When:** Task in-progress but turns out too large.
 
-**Example:** Started "Implement authentication" - realize it's 8+ hours of work across multiple areas.
+**Example:** Started "Implement authentication" - realize the remaining work is clearly beyond the 30-minute hard ceiling (`skills/common-patterns/pipeline-constants.md`) and spans multiple areas.
 
 **Process:**
 
 ### Step 1: Create subtasks for remaining work
+
+Each subtask gets a self-contained, under-ceiling spec (two-tier format: `skills/common-patterns/spec-templates.md`). These are simple-tier — bounded, mechanical slices of the original work.
 
 ```bash
 # Original task bd-5 is in-progress
@@ -58,32 +60,55 @@ Use this skill for **advanced** bd operations:
 
 bd create "Auth API endpoints" --type task --priority 1 \
   --description "Login/logout endpoints split out of bd-5" --design "
-POST /api/login and POST /api/logout endpoints.
-## Success Criteria
-- [ ] POST /api/login validates credentials, returns JWT
-- [ ] POST /api/logout invalidates token
-- [ ] Tests pass
+## Goal
+Add POST /api/login and POST /api/logout endpoints.
+
+## Why
+Split out of bd-5 — login form (frontend) is done; these endpoints are the next bounded slice, and depend on password hashing (bd-14) existing first.
+
+## Changes
+- \`src/api/auth.ts\`: add POST /api/login handler that validates credentials and returns a JWT
+- \`src/api/auth.ts\`: add POST /api/logout handler that invalidates the token
+
+## Verification
+- Manual: POST valid credentials to /api/login returns 200 with a JWT; POST to /api/logout invalidates it
+- Pre-commit hooks passing
 "
 # Returns bd-12
 
 bd create "Session management" --type task --priority 1 \
   --description "JWT session tracking split out of bd-5" --design "
-JWT token tracking and validation.
-## Success Criteria
-- [ ] JWT generated on login
-- [ ] Tokens validated on protected routes
-- [ ] Token expiration handled
-- [ ] Tests pass
+## Goal
+Validate JWT sessions on protected routes and handle expiration.
+
+## Why
+Split out of bd-5 — depends on the login endpoint (bd-12) issuing the token this task validates.
+
+## Changes
+- \`src/middleware/session.ts\`: validate JWT on protected routes
+- \`src/middleware/session.ts\`: reject expired tokens with 401
+
+## Verification
+- Manual: request with a valid token succeeds; request with an expired token returns 401
+- Pre-commit hooks passing
 "
 # Returns bd-13
 
 bd create "Password hashing" --type task --priority 1 \
   --description "bcrypt hashing split out of bd-5" --design "
-Secure password hashing with bcrypt.
-## Success Criteria
-- [ ] Passwords hashed before storage
-- [ ] Hash verification on login
-- [ ] Tests pass
+## Goal
+Hash passwords with bcrypt before storage and verify hashes on login.
+
+## Why
+Split out of bd-5 — the login endpoint (bd-12) depends on this hashing/verification logic existing first.
+
+## Changes
+- \`src/auth/password.ts\`: hash passwords with bcrypt before storage
+- \`src/auth/password.ts\`: verify a submitted password against the stored hash on login
+
+## Verification
+- Manual: a new user's stored password is a bcrypt hash; login with the correct password succeeds, incorrect fails
+- Pre-commit hooks passing
 "
 # Returns bd-14
 ```
@@ -98,11 +123,39 @@ bd dep add bd-12 bd-14  # bd-12 depends on bd-14
 # Session management depends on API endpoints
 bd dep add bd-13 bd-12  # bd-13 depends on bd-12
 
-# View tree
-bd dep tree bd-5
+# Link each subtask to the original task's parent epic
+bd show bd-5 | grep -A1 PARENT  # find the epic id, e.g. bd-1
+bd dep add bd-12 bd-1 --type parent-child
+bd dep add bd-13 bd-1 --type parent-child
+bd dep add bd-14 bd-1 --type parent-child
+
+# Enumerate the epic's children
+bd list --parent bd-1 --all -n 0
 ```
 
-### Step 3: Update original task and close
+### Step 3: SRE review of the new specs (REQUIRED — split-created specs are never unreviewed)
+
+Dispatch one fresh blocking subagent covering ALL new subtasks:
+
+```
+Agent tool:
+  subagent_type: "general-purpose"
+  mode: "bypassPermissions"
+  prompt: |
+    Load the skill hyperpowers:sre-task-refinement with the Skill tool and
+    run its SINGLE-TASK MODE against bd-12, bd-13, bd-14.
+    Inputs: bd show bd-12, bd show bd-13, bd show bd-14; bd show bd-1 for
+    epic requirements context.
+    You may strengthen the specs directly via bd update (preserve existing
+    sections; never insert placeholders). Do not create, close, or
+    re-classify tasks.
+    Return: per-task verdict (APPROVE / NEEDS REVISION) with one-line
+    reasons and an exact list of bd updates applied.
+```
+
+Do not pass a model override. Apply NEEDS REVISION fixes before starting any subtask. This step is not optional — an unreviewed split spec is the anti-pattern this operation exists to prevent.
+
+### Step 4: Update original task and close
 
 ```bash
 bd update bd-5 --design "
@@ -114,16 +167,12 @@ Implement user authentication.
   - bd-14: Password hashing (do first)
   - bd-12: Auth API endpoints (depends on bd-14)
   - bd-13: Session management (depends on bd-12)
-
-## Success Criteria
-- [x] Login form renders
-- [ ] See subtasks for remaining criteria
 "
 
 bd close bd-5 --reason "Split into bd-12, bd-13, bd-14"
 ```
 
-### Step 4: Work on subtasks in order
+### Step 5: Work on subtasks in order
 
 ```bash
 bd ready  # Shows bd-14 (no dependencies)
@@ -468,15 +517,16 @@ bd close bd-9
 <code>
 bd-15: "Implement payment processing" (started)
 
-# 3 hours in, developer realizes:
-# - Need Stripe API integration (4 hours)
-# - Need payment validation (2 hours)
-# - Need retry logic (3 hours)
-# - Need receipt generation (2 hours)
-# Total: 11 more hours!
+# Partway in, developer realizes the remaining work is clearly beyond
+# the 30-minute hard ceiling (skills/common-patterns/pipeline-constants.md)
+# and spans multiple areas:
+# - Stripe API integration
+# - Payment validation
+# - Retry logic
+# - Receipt generation
 
 # Developer thinks: "Too late to split, I'll power through"
-# Works 14 hours straight
+# Works one long marathon session straight through
 # Gets exhausted, makes mistakes
 # Ships buggy code
 # Has to fix in production
@@ -495,13 +545,50 @@ bd-15: "Implement payment processing" (started)
 **Correct approach (split mid-flight):**
 
 ```bash
-# 3 hours in, stop and split
+# Stop and split — remaining work is clearly beyond the 30-minute ceiling
+
+# Create subtasks with dependencies (simple-tier specs)
+bd create "Stripe API integration" --type task --priority 1 \
+  --description "Stripe integration split out of bd-15" --design "
+## Goal
+Integrate the Stripe charge API for one-time payments.
+
+## Why
+Split out of bd-15 — payment form UI is done; this is the next bounded slice, and validation/retry/receipts build on it.
+
+## Changes
+- \`src/payments/stripe.ts\`: add createCharge() wrapping the Stripe charges API
+- \`src/payments/stripe.ts\`: map Stripe errors to internal error types
+
+## Verification
+- Manual: a test-mode charge succeeds and returns a charge ID; a simulated decline returns a mapped error
+- Pre-commit hooks passing
+"
+# Returns bd-20
+
+bd create "Payment validation" ...      # bd-21
+bd create "Retry logic" ...             # bd-22
+bd create "Receipt generation" ...      # bd-23
+
+bd dep add bd-21 bd-20  # Validation needs API
+bd dep add bd-22 bd-20  # Retry needs API
+bd dep add bd-23 bd-22  # Receipts after retry works
+
+# Link each subtask to the original task's parent epic
+bd dep add bd-20 bd-2 --type parent-child
+bd dep add bd-21 bd-2 --type parent-child
+bd dep add bd-22 bd-2 --type parent-child
+bd dep add bd-23 bd-2 --type parent-child
+
+# SRE review of the new specs (REQUIRED — full dispatch block in Operation 1)
+# Dispatch a fresh blocking subagent to run sre-task-refinement SINGLE-TASK MODE
+# against bd-20, bd-21, bd-22, bd-23; apply any NEEDS REVISION fixes first.
 
 bd update bd-15 --design "
 Implement payment processing.
 
 ## Status
-✓ Completed: Payment form UI (3 hours)
+✓ Completed: Payment form UI
 ✗ Split remaining work into subtasks:
   - bd-20: Stripe API integration
   - bd-21: Payment validation
@@ -511,31 +598,21 @@ Implement payment processing.
 
 bd close bd-15 --reason "Split into bd-20, bd-21, bd-22, bd-23"
 
-# Create subtasks with dependencies
-bd create "Stripe API integration" ...  # bd-20
-bd create "Payment validation" ...      # bd-21
-bd create "Retry logic" ...             # bd-22
-bd create "Receipt generation" ...      # bd-23
-
-bd dep add bd-21 bd-20  # Validation needs API
-bd dep add bd-22 bd-20  # Retry needs API
-bd dep add bd-23 bd-22  # Receipts after retry works
-
 # Work on one at a time
 bd update bd-20 --status in_progress
-# Complete bd-20 (4 hours)
+# Complete bd-20
 bd close bd-20
 
-# Take break
-# Next day: bd-21
+# Take a break, resume cleanly
+# Next: bd-21
 ```
 
 **What you gain:**
-- Clear stopping points (can pause between tasks)
-- Track progress granularly
-- No exhaustion (spread over days)
+- Bounded, reviewable tasks (each under the 30-minute ceiling)
+- Clean resume points between subtasks
+- No marathon sessions
 - Better quality (not rushed)
-- If interrupted, easy to resume
+- Each subtask reviewed by SRE before work starts
 - Each subtask gets proper focus
 </correction>
 </example>
