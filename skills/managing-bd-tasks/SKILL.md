@@ -45,7 +45,7 @@ Use this skill for **advanced** bd operations:
 
 **When:** Task in-progress but turns out too large.
 
-**Example:** Started "Implement authentication" - realize the remaining work is clearly beyond the 30-minute hard ceiling (`skills/common-patterns/pipeline-constants.md`) and spans multiple areas.
+**Example:** Started "Implement authentication" - realize the remaining work is clearly beyond the hard ceiling (`skills/common-patterns/pipeline-constants.md`) and spans multiple areas.
 
 **Process:**
 
@@ -518,7 +518,7 @@ bd close bd-9
 bd-15: "Implement payment processing" (started)
 
 # Partway in, developer realizes the remaining work is clearly beyond
-# the 30-minute hard ceiling (skills/common-patterns/pipeline-constants.md)
+# the hard ceiling (skills/common-patterns/pipeline-constants.md)
 # and spans multiple areas:
 # - Stripe API integration
 # - Payment validation
@@ -545,7 +545,7 @@ bd-15: "Implement payment processing" (started)
 **Correct approach (split mid-flight):**
 
 ```bash
-# Stop and split — remaining work is clearly beyond the 30-minute ceiling
+# Stop and split — remaining work is clearly beyond the hard ceiling
 
 # Create subtasks with dependencies (simple-tier specs)
 bd create "Stripe API integration" --type task --priority 1 \
@@ -575,6 +575,7 @@ bd dep add bd-22 bd-20  # Retry needs API
 bd dep add bd-23 bd-22  # Receipts after retry works
 
 # Link each subtask to the original task's parent epic
+bd dep list bd-15 -t parent-child   # shows the parent epic, e.g. bd-2
 bd dep add bd-20 bd-2 --type parent-child
 bd dep add bd-21 bd-2 --type parent-child
 bd dep add bd-22 bd-2 --type parent-child
@@ -608,7 +609,7 @@ bd close bd-20
 ```
 
 **What you gain:**
-- Bounded, reviewable tasks (each under the 30-minute ceiling)
+- Bounded, reviewable tasks (each under the hard ceiling — skills/common-patterns/pipeline-constants.md)
 - Clean resume points between subtasks
 - No marathon sessions
 - Better quality (not rushed)
