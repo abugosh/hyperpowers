@@ -124,7 +124,7 @@ bd dep add bd-12 bd-14  # bd-12 depends on bd-14
 bd dep add bd-13 bd-12  # bd-13 depends on bd-12
 
 # Link each subtask to the original task's parent epic
-bd show bd-5 | grep -A1 PARENT  # find the epic id, e.g. bd-1
+bd dep list bd-5 -t parent-child   # shows the parent epic, e.g. bd-1
 bd dep add bd-12 bd-1 --type parent-child
 bd dep add bd-13 bd-1 --type parent-child
 bd dep add bd-14 bd-1 --type parent-child
