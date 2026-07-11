@@ -397,8 +397,9 @@ bd list --parent bd-1 --status open -n 0 --json | jq -r '.[] | select(.title | s
 # Review before acting
 cat /tmp/test-task-ids
 
-# bd close accepts multiple IDs
-bd close $(cat /tmp/test-task-ids)
+# bd close accepts multiple IDs; guard against an empty file —
+# bare `bd close` silently closes the last-touched issue
+[ -s /tmp/test-task-ids ] && bd close $(cat /tmp/test-task-ids)
 
 # Verify
 bd list --parent bd-1 --status open -n 0 --json | jq -r '.[] | select(.title | startswith("test:")) | .id'
