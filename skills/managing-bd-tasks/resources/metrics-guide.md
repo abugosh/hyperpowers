@@ -73,9 +73,9 @@ Lead Time: 3 days, 5 hours (Monday 9am → Thursday 2pm)
 # Sum and divide by task count
 
 # Trend analysis
-# Week 1: Avg cycle time = 3 days
-# Week 2: Avg cycle time = 2 days  ✅ Improving
-# Week 3: Avg cycle time = 4 days  ❌ Getting worse
+# Week 1: Avg lead time = 3 days
+# Week 2: Avg lead time = 2 days  ✅ Improving
+# Week 3: Avg lead time = 4 days  ❌ Getting worse
 ```
 
 ### Improvement Targets
