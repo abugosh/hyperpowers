@@ -126,142 +126,68 @@ Use bd's priority system consistently:
 
 ## Granularity Guidelines
 
-**Good task size:**
-- 2-4 hours of focused work
-- Can complete in one sitting
-- Clear deliverable
+Task size bands are defined once, in
+`skills/common-patterns/pipeline-constants.md` (Task Classification) — that
+file is the source of truth; this section is a brief pointer, not a restatement:
 
-**Too large:**
-- Takes multiple days
-- Multiple independent pieces
-- Should be split
+- **Simple (2-5 min):** mechanical changes with exact known edits, no
+  judgment required. Uses the simple task spec.
+- **Medium (5-30 min):** changes requiring judgment or design decisions.
+  Uses the medium task spec.
+- **Hard ceiling: 30 minutes.** Any task estimated above the ceiling must be
+  split before execution, not accepted as-is — see pipeline-constants.md for
+  the exact rule.
 
 **Too small:**
-- Takes 15 minutes
-- Too granular to track
-- Combine with related tasks
+- Estimated well under 2 minutes on its own
+- Too granular to track as an independent task
+- Fold it into a related task instead of creating a standalone one
 
-## Success Criteria: Acceptance Criteria vs. Definition of Done
+## Defining done in task specs
 
-**Two distinct types of completion criteria:**
+Under the two-tier spec model (`skills/common-patterns/spec-templates.md`),
+task completion is not a per-task checklist plus a separately-referenced
+universal quality checklist. The two questions that framework used to split
+across two sections are now answered by parts of the spec itself:
 
-### Acceptance Criteria (Per-Task, Functional)
+- **"Does it work?"** → the spec's own **Verification** section: exact
+  commands with expected outcomes, checked by actually running them. This is
+  what a per-task acceptance-style checklist used to capture — instead of
+  prose bullets asserting behavior, the executor runs a command and reads
+  real output.
+- **"Is it done?"** → the simple tier's Verification section ends with the
+  standing line "Pre-commit hooks passing"; the medium tier adds a Tests
+  section (RED/GREEN/refactor) ahead of Verification. This is what a
+  universal done-checklist used to capture — code review, tests passing,
+  lint clean. Task specs never carry their own checkbox-criteria section for
+  this; broader release-readiness criteria (the old done-checklist's role)
+  live at the epic level, in the epic's own design — owned by
+  brainstorming — not duplicated into every task.
 
-**Definition:** Specific, measurable requirements unique to each task that define functional completeness from user/business perspective.
+Both tiers' full field lists and template bodies are defined once in
+`skills/common-patterns/spec-templates.md` — don't reproduce them here.
 
-**Scope:** Unique to each backlog item (bug, task, story)
-
-**Purpose:** "Does this feature work correctly?"
-
-**Owner:** Product owner/stakeholder defines, team validates
-
-**Format:** Checklist or scenarios
-
-```markdown
-## Acceptance Criteria
-- [ ] User can upload CSV files up to 10MB
-- [ ] System validates CSV format before processing
-- [ ] User sees progress bar during upload
-- [ ] User receives success message with row count
-- [ ] Invalid files show specific error messages
-```
-
-**Scenario format (Given/When/Then):**
-```markdown
-## Acceptance Criteria
-
-Scenario 1: Valid file upload
-Given a user is on the upload page
-When they select a valid CSV file
-Then the file uploads successfully
-And they see confirmation with row count
-
-Scenario 2: Invalid file format
-Given a user selects a non-CSV file
-When they try to upload
-Then they see error: "Only CSV files supported"
-```
-
-### Definition of Done (Universal, Quality)
-
-**Definition:** Universal checklist that applies to ALL work items to ensure consistent quality and release-readiness.
-
-**Scope:** Applies to every single task (bugs, features, stories)
-
-**Purpose:** "Is this work complete to our quality standards?"
-
-**Owner:** Team defines and maintains (reviewed in retrospectives)
-
-**Example DoD:**
-```markdown
-## Definition of Done (applies to all tasks)
-- [ ] Code written and peer-reviewed
-- [ ] Unit tests written and passing (>80% coverage)
-- [ ] Integration tests passing
-- [ ] No linter warnings
-- [ ] Documentation updated (if public API)
-- [ ] Manual testing completed (if UI)
-- [ ] Deployed to staging environment
-- [ ] Product owner accepted
-- [ ] Commit references bd task ID
-```
-
-### Key Differences
-
-| Aspect | Acceptance Criteria | Definition of Done |
-|--------|--------------------|--------------------|
-| **Scope** | Per-task (unique) | All tasks (universal) |
-| **Focus** | Functional requirements | Quality standards |
-| **Question** | "Does it work?" | "Is it done?" |
-| **Owner** | Product owner | Team |
-| **Changes** | Per task | Rarely (retrospectives) |
-| **Examples** | "User can export data" | "Tests pass, code reviewed" |
-
-### How to Use Both
-
-**When creating a task:**
-
-1. **Define Acceptance Criteria** (task-specific functional requirements)
-2. **Reference Definition of Done** (don't duplicate it in task)
+**Worked example (simple tier — a rename):**
 
 ```markdown
-bd create "Implement CSV file upload" \
-  --description "CSV import for bulk user onboarding" --design "
-## Acceptance Criteria
-- [ ] User can upload CSV files up to 10MB
-- [ ] System validates CSV format
-- [ ] Progress bar shows during upload
-- [ ] Success message displays row count
+## Goal
+Rename `getUserData()` to `fetchUserProfile()` in `src/api/users.ts` to
+match the naming convention used by the other fetch* functions in this file.
 
-## Notes
-Must also meet team's Definition of Done (see project wiki)
-"
-```
+## Why
+Callers currently have to guess between `get*` and `fetch*` naming for this
+one function; fixing the holdout keeps the file internally consistent before
+the next task adds `fetchUserSettings()` beside it.
 
-**Before closing a task:**
+## Changes
+- `src/api/users.ts` line 42: rename `getUserData` to `fetchUserProfile`
+- `src/api/users.ts`: update the 3 in-file call sites to the new name
+- `src/components/Profile.tsx` line 18: update the one external call site
 
-1. ✅ Verify all Acceptance Criteria met (functional)
-2. ✅ Verify Definition of Done met (quality)
-3. Only then close task
-
-**Bad practice:**
-```markdown
-## Success Criteria
-- [ ] CSV upload works
-- [ ] Tests pass          ← This is DoD, not acceptance criteria
-- [ ] Code reviewed       ← This is DoD, not acceptance criteria
-- [ ] No linter warnings  ← This is DoD, not acceptance criteria
-```
-
-**Good practice:**
-```markdown
-## Acceptance Criteria (functional, task-specific)
-- [ ] CSV upload handles files up to 10MB
-- [ ] Validation rejects non-CSV formats
-- [ ] Progress bar updates during upload
-
-## Definition of Done (quality, universal - referenced, not duplicated)
-See team DoD checklist (applies to all tasks)
+## Verification
+- `grep -rn "getUserData" src/` → 0 hits
+- `npm test -- users.test.ts` → all passing
+- Pre-commit hooks passing
 ```
 
 ## Dependency Management
