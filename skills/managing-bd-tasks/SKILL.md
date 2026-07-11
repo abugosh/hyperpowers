@@ -214,20 +214,20 @@ bd show bd-9
 
 # Combine into bd-7
 bd update bd-7 --design "
-Add email validation to user creation and update.
+## Goal
+Validate user email addresses on both creation and update.
 
-## Background
-Originally tracked as bd-7 and bd-9 (now merged).
+## Why
+Merged from bd-9, which added the update-path requirement — bd-7 only covered creation. Both paths must reject invalid formats and empty strings before this ships.
 
-## Success Criteria
-- [ ] Email validated on creation
-- [ ] Email validated on update
-- [ ] Rejects invalid formats
-- [ ] Rejects empty strings
-- [ ] Tests cover all cases
+## Changes
+- \`src/users/validation.ts\`: add validateEmail() rejecting invalid formats and empty strings
+- \`src/users/create.ts\`: call validateEmail() before creating a user
+- \`src/users/update.ts\`: call validateEmail() before applying an update
 
-## Notes from bd-9
-Need validation on update, not just creation.
+## Verification
+- Manual: creating or updating a user with an invalid or empty email is rejected; a valid email succeeds on both paths
+- Pre-commit hooks passing
 "
 ```
 
@@ -486,15 +486,20 @@ bd show bd-9  # Mentions validation on update too
 
 # Merge information
 bd update bd-7 --design "
-Email validation for user creation and update.
+## Goal
+Validate user email addresses on both creation and update.
 
-## Background
-Merged from bd-9.
+## Why
+Merged from bd-9, which added the update-path requirement — bd-7 only covered creation.
 
-## Success Criteria
-- [ ] Validate on creation (from bd-7)
-- [ ] Validate on update (from bd-9)  ← Preserved!
-- [ ] Tests for both cases
+## Changes
+- \`src/users/validation.ts\`: add validateEmail() rejecting invalid formats and empty strings
+- \`src/users/create.ts\`: call validateEmail() before creating a user (from bd-7)
+- \`src/users/update.ts\`: call validateEmail() before applying an update (from bd-9)  ← Preserved!
+
+## Verification
+- Manual: creating or updating a user with an invalid or empty email is rejected
+- Pre-commit hooks passing
 "
 
 # Then close duplicate with reference
@@ -667,16 +672,19 @@ bd dep add bd-15 bd-20
 
 # UPDATE bd-15 to document new requirement
 bd update bd-15 --design "
-Add analytics to dashboard.
+## Goal
+Add analytics charts to the dashboard.
 
-## Dependencies
-- bd-10: User dashboard (completed)
-- bd-20: Analytics API endpoints (NEW - discovered during bd-10)
+## Why
+Blocked on bd-20 (analytics API endpoints) — discovered during bd-10. The dashboard can't display real analytics until bd-20 exists, so bd-15 isn't truly ready even after bd-10 closes.
 
-## Success Criteria
-- [ ] Integrate with analytics API (bd-20)
-- [ ] Display charts on dashboard
-- [ ] Tests pass
+## Changes
+- \`src/dashboard/analytics.tsx\`: integrate with the analytics API (bd-20)
+- \`src/dashboard/analytics.tsx\`: render charts from the returned data
+
+## Verification
+- Manual: dashboard displays analytics charts sourced from the bd-20 API
+- Pre-commit hooks passing
 "
 
 # Close bd-10
