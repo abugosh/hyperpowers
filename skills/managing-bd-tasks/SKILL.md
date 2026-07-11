@@ -18,7 +18,7 @@ HIGH FREEDOM - These are operational patterns, not rigid workflows. Adapt operat
 | Merge duplicates | Found duplicate tasks | Combine designs, move deps, close with reference |
 | Change dependencies | Dependencies wrong/changed | `bd dep remove` then `bd dep add` |
 | Archive epic | Epic complete, hide from views | `bd close bd-X --reason "Archived"` |
-| Query metrics | Need status/velocity data | `bd list` + filters + `wc -l` |
+| Query metrics | Need status/velocity data | `bd list --json -n 0` + `jq` |
 | Cross-epic deps | Task depends on other epic | `bd dep add` works across epics |
 | Bulk updates | Multiple tasks need same change | Loop with careful review first |
 | Recover mistakes | Accidentally closed/wrong dep | `bd update --status` or `bd dep remove` |
@@ -268,8 +268,9 @@ bd dep remove bd-10 bd-9
 bd dep add bd-10 bd-11
 
 # Verify
-bd dep tree bd-1  # If bd-10 in epic bd-1
-bd show bd-10 | grep "Blocking"
+bd list --parent bd-1 --all -n 0   # epic bd-1's children (all statuses)
+bd dep list bd-10                  # what bd-10 depends on
+bd dep list bd-10 --direction=up   # what depends on bd-10
 ```
 
 **Common scenarios:**
@@ -285,14 +286,14 @@ bd show bd-10 | grep "Blocking"
 
 ```bash
 # Verify all tasks closed
-bd list --parent bd-1 --status open
+bd list --parent bd-1 --status open -n 0
 # Output: [empty] = all closed
 
 # Archive epic
 bd close bd-1 --reason "Archived - completed Oct 2025"
 
 # Won't show in open listings
-bd list --status open  # bd-1 won't appear
+bd list --status open -n 0  # bd-1 won't appear
 
 # Still accessible
 bd show bd-1  # Still shows full epic
@@ -309,37 +310,39 @@ bd show bd-1  # Still shows full epic
 ### Velocity
 
 ```bash
-# Tasks closed this week
-bd list --status closed | grep "closed_at" | grep "2025-10-" | wc -l
+# Closed since a date
+bd list --status closed --closed-after 2025-10-01 -n 0 --json | jq length
 
-# Tasks closed by epic
-bd list --parent bd-1 --status closed | wc -l
+# Closed within an epic
+bd list --parent bd-1 --status closed -n 0 --json | jq length
 ```
+
+**Note:** `bd list` defaults to 50 results and silently truncates — every counting recipe needs `-n 0`.
 
 ### Blocked vs Ready
 
 ```bash
 # Ready to work on
-bd ready
-bd ready | grep "^bd-" | wc -l
+bd ready --json | jq length
+
+# Blocked
+bd blocked --json | jq length
 
 # All open tasks
-bd list --status open | wc -l
-
-# Blocked = open - ready
+bd list --status open -n 0 --json | jq length
 ```
 
 ### Epic Progress
 
 ```bash
-# Show tree
-bd dep tree bd-1
+# Show epic's children (all statuses)
+bd list --parent bd-1 --all -n 0
 
 # Total tasks in epic
-bd list --parent bd-1 | grep "^bd-" | wc -l
+bd list --parent bd-1 --all -n 0 --json | jq length
 
 # Completed tasks
-bd list --parent bd-1 --status closed | grep "^bd-" | wc -l
+bd list --parent bd-1 --status closed -n 0 --json | jq length
 
 # Percentage = (completed / total) * 100
 ```
@@ -367,7 +370,7 @@ bd dep add bd-20 bd-10
 # bd-20 (in bd-2) depends on bd-10 (in bd-1)
 
 # Check dependencies
-bd show bd-20 | grep "Blocking"
+bd dep list bd-20   # shows the bd-10 dependency
 
 # Check ready tasks
 bd ready
@@ -389,18 +392,16 @@ bd ready
 
 ```bash
 # Get tasks
-bd list --parent bd-1 --status open | grep "test:" > test-tasks.txt
+bd list --parent bd-1 --status open -n 0 --json | jq -r '.[] | select(.title | startswith("test:")) | .id' > /tmp/test-task-ids
 
-# Review list
-cat test-tasks.txt
+# Review before acting
+cat /tmp/test-task-ids
 
-# Update each
-while read task_id; do
-  bd close "$task_id"
-done < test-tasks.txt
+# bd close accepts multiple IDs
+bd close $(cat /tmp/test-task-ids)
 
 # Verify
-bd list --parent bd-1 --status open | grep "test:"
+bd list --parent bd-1 --status open -n 0 --json | jq -r '.[] | select(.title | startswith("test:")) | .id'
 ```
 
 **Use bulk for:**
@@ -786,7 +787,6 @@ After advanced bd operations:
 **Detailed guides:**
 - [Metrics guide (cycle time, WIP limits)](resources/metrics-guide.md)
 - [Task naming conventions](resources/task-naming-guide.md)
-- [Dependency patterns](resources/dependency-patterns.md)
 
 **When stuck:**
 - Task seems unsplittable → Ask user how to break it down
