@@ -545,7 +545,7 @@ bd-15: "Implement payment processing" (started)
 **Correct approach (split mid-flight):**
 
 ```bash
-# Stop and split — remaining work is clearly beyond the hard ceiling
+# Stop and split — remaining work is clearly beyond the hard ceiling (skills/common-patterns/pipeline-constants.md)
 
 # Create subtasks with dependencies (simple-tier specs)
 bd create "Stripe API integration" --type task --priority 1 \
