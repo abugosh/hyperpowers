@@ -2,7 +2,7 @@
 
 Common bd commands used across multiple skills. Reference this instead of duplicating.
 
-Never Read/Grep `.beads/issues.jsonl` directly — the bd CLI is the only interface (a PreToolUse hook enforces this; direct access bypasses validation and usually fails on file size).
+Never Read/Grep `.beads/issues.jsonl` directly — the bd CLI is the only interface (direct access bypasses validation and usually fails on file size).
 
 ## Reading Issues
 
@@ -11,20 +11,25 @@ Never Read/Grep `.beads/issues.jsonl` directly — the bd CLI is the only interf
 bd show bd-3
 
 # List all open issues
-bd list --status open
+bd list --status open -n 0
 
 # List closed issues
-bd list --status closed
+bd list --status closed -n 0
 
-# Show dependency tree for an epic
-bd dep tree bd-1
+# List ALL child tasks of an epic (full tree: include closed, no limit)
+# (bd dep tree does not enumerate an epic's children in bd 0.50.x)
+bd list --parent bd-1 --all -n 0
 
-# Find tasks ready to work on (no blocking dependencies)
+# Find issues ready to work on — no blocking dependencies. Surfaces epics as well as tasks (no type filter); defaults to -n 10
 bd ready
 
-# List tasks in a specific epic
+# Open tasks only (default status filter)
 bd list --parent bd-1
+
+# bd children bd-1 is an alias for bd list --parent bd-1 — it inherits the open-only default and the list limit; prefer the explicit form with --all -n 0
 ```
+
+**bd list defaults to -n 50 and silently truncates.** Use -n 0 on every enumeration or counting command. bd ready defaults to -n 10.
 
 ## Creating Issues
 
@@ -89,18 +94,20 @@ bd status bd-3 --status in_progress
 # ✅ CORRECT - use bd update to change status
 bd update bd-3 --status in_progress
 
-# ❌ WRONG - using hyphens in status values
+# ❌ WRONG - using hyphens in status values (bd rejects this outright)
 bd update bd-3 --status in-progress
+# Error updating bd-3: validate field update: invalid status: in-progress
 
-# ✅ CORRECT - use underscores in status values
-bd update bd-3 --status in_progress
-
-# ❌ WRONG - 'done' is not a valid status
+# ❌ WRONG - 'done' is not a valid status (also rejected)
 bd update bd-3 --status done
+# Error updating bd-3: validate field update: invalid status: done
 
-# ✅ CORRECT - use bd close to complete
+# ✅ CORRECT - use underscores and a valid value, or bd close to complete
+bd update bd-3 --status in_progress
 bd close bd-3
 ```
+
+**bd 0.50.3 validates status on write and rejects invalid values with a CLI error — it does NOT silently store them.** A failed `bd update --status` call leaves the issue's status unchanged; recover with `bd update bd-3 --status <valid value>` (or `bd close bd-3` to complete).
 
 **Valid status values:** `open`, `in_progress`, `blocked`, `closed`
 
@@ -115,8 +122,9 @@ bd dep add bd-3 bd-2  # bd-3 depends on bd-2 (do bd-2 first)
 # Syntax: bd dep add <child> <parent> --type parent-child
 bd dep add bd-3 bd-1 --type parent-child  # bd-3 is child of bd-1
 
-# View dependency tree
-bd dep tree bd-1
+# List an epic's children
+# (bd dep tree does not enumerate an epic's children in bd 0.50.x)
+bd list --parent bd-1 --all -n 0
 ```
 
 ## Commit Message Format
@@ -135,12 +143,14 @@ Implements step 1 of bd-3: Task Name
 
 ```bash
 # Check if all tasks in epic are closed
-bd list --status open --parent bd-1
+bd list --status open --parent bd-1 -n 0
 # Output: [empty] = all closed
 
 # See what's blocking current work
 bd ready  # Shows only unblocked tasks
 
 # Find all in-progress work
-bd list --status in_progress
+bd list --status in_progress -n 0
 ```
+
+Native date filters exist for time-windowed queries: --created-after, --closed-after, --closed-before (see the managing-bd-tasks metrics guide).
