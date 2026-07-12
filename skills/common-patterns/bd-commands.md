@@ -107,7 +107,7 @@ bd update bd-3 --status in_progress
 bd close bd-3
 ```
 
-**bd 0.50.3 validates status on write and rejects invalid values with a CLI error — it does NOT silently store them.** A failed `bd update --status` call leaves the issue's status unchanged; recover with `bd update bd-3 --status <valid value>` (or `bd close bd-3` to complete).
+**bd 0.50.3 validates status on write and rejects invalid values with a CLI error — it does NOT silently store them.** A failed `bd update --status` call leaves the issue's status unchanged; recover with `bd update bd-3 --status <valid value>` (or `bd close bd-3` to complete). The error is printed but the command still exits 0 — check output, not exit codes.
 
 **Valid status values:** `open`, `in_progress`, `blocked`, `closed`
 
