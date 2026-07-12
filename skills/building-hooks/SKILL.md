@@ -431,5 +431,3 @@ HOOKS.md wins; update it when you add or change a hook.
 
 **Official documentation:** https://code.claude.com/docs/en/hooks
 </resources>
-</content>
-</invoke>
