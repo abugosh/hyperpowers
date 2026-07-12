@@ -1,615 +1,435 @@
 ---
 name: building-hooks
-description: Use when creating Claude Code hooks - covers hook patterns, composition, testing, progressive enhancement from simple to advanced
+description: Use when creating Claude Code hooks - covers the keep-criterion for whether a hook should exist, real hook events and schemas, the two hook jobs (context injection, PreToolUse enforcement), and mandatory contract testing
 ---
 
 <skill_overview>
-Hooks encode business rules at application level; start with observation, add automation, enforce only when patterns clear.
+Claude Code hooks do exactly two jobs:
+
+1. **Context injection** — `SessionStart` / `UserPromptSubmit` return
+   `additionalContext` that reaches the model. They inform; they cannot deny.
+2. **Enforcement** — `PreToolUse` returns a `permissionDecision` of `deny`
+   and stops a tool call before it runs. This is the *only* place in the
+   plugin where a hook actually blocks an action.
+
+Before either job matters, the **keep-criterion** decides whether a hook
+should exist at all. Most "make Claude stop doing X" requests are not hook
+material — they belong in a skill or `CLAUDE.md`. Reach for a hook only when
+the failure is mechanically checkable at a tool boundary, recurs despite
+prompt-level instruction, and is cheap to verify against Claude Code's real
+I/O contract.
 </skill_overview>
 
 <rigidity_level>
-MEDIUM FREEDOM - Follow progressive enhancement (observe → automate → enforce) strictly. Hook patterns are adaptable, but always start non-blocking and test thoroughly.
+MEDIUM FREEDOM — two things are non-negotiable: (1) run the keep-criterion
+before building any hook, and (2) ship contract-test fixtures written against
+Claude Code's real schema, with a green `./hooks/test/contract-test.sh` run,
+before wiring the hook. Implementation patterns (language, structure, log
+format) adapt to the job.
 </rigidity_level>
 
 <quick_reference>
-| Phase | Approach | Example |
-|-------|----------|---------|
-| 1. Observe | Non-blocking, report only | Log edits, display reminders |
-| 2. Automate | Background tasks, non-blocking | Auto-format, run builds |
-| 3. Enforce | Blocking only when necessary | Block dangerous ops, require fixes |
+**Keep-criterion (all three legs, or it's not a hook):**
+- (a) mechanically checkable at a tool boundary
+- (b) recurrent despite prompt-level instruction
+- (c) cheap to verify against Claude Code's real I/O contract
 
-**Most used events:** UserPromptSubmit (before processing), Stop (after completion)
+**The two jobs:** context injection (`SessionStart` / `UserPromptSubmit`
+`additionalContext`) · enforcement (`PreToolUse` `permissionDecision: deny`).
 
-**Critical:** Start Phase 1, observe for a week, then Phase 2. Only add Phase 3 if absolutely necessary.
+**Canon examples — the only two hooks this plugin ships:**
+- `hooks/session-start.sh` — context injection (see HOOKS.md).
+- `hooks/pre-tool-use/02-version-bump-guard.py` — the one enforcement hook.
+
+**MUST:** no new hook ships without contract-test fixtures against the real
+schema and a green `./hooks/test/contract-test.sh` run.
 </quick_reference>
 
 <when_to_use>
-Use hooks for:
-- Automatic quality checks (build, lint, format)
-- Workflow automation (skill activation, context injection)
-- Error prevention (catching issues early)
-- Consistent behavior (formatting, conventions)
+Use a hook for:
+- **Context injection** — deliver text into the model's context at session
+  start or prompt submit (skill routing, project state, reminders).
+- **Tool-call enforcement** — deny a specific, mechanically detectable tool
+  call that keeps slipping past prompt-level rules (the version-bump guard).
 
 **Never use hooks for:**
-- Complex business logic (use tools/scripts)
-- Slow operations that block workflow (use background jobs)
-- Anything requiring LLM reasoning (hooks are deterministic)
+- **Behavior problems that fail the keep-criterion** — "Claude keeps doing X"
+  where X isn't checkable at a tool boundary, or where a MUST rule in a skill
+  or `CLAUDE.md` would work. That's a prompt-level fix, not a hook.
+- **Anything needing LLM reasoning** — hooks are deterministic scripts.
+- **Slow operations that stall the workflow** — hooks run on the critical path.
+- **"Enforcement" on events that can't enforce** — a `PostToolUse` or `Stop`
+  hook emitting `permissionDecision` blocks nothing (see Blocking facts).
 </when_to_use>
 
-<hook_lifecycle_events>
-| Event | When Fires | Use Cases |
-|-------|------------|-----------|
-| UserPromptSubmit | Before Claude processes prompt | Validation, context injection, skill activation |
-| Stop | After Claude finishes | Build checks, formatting, quality reminders |
-| PostToolUse | After each tool execution | Logging, tracking, validation |
-| PreToolUse | Before tool execution | Permission checks, validation |
-| ToolError | When tool fails | Error handling, fallbacks |
-| SessionStart | New session begins | Environment setup, context loading |
-| SessionEnd | Session closes | Cleanup, logging |
-| Error | Unhandled error | Error recovery, notifications |
-</hook_lifecycle_events>
+<keep_criterion>
+A hook earns its place only when the failure is (quoted from HOOKS.md, the
+source of truth, lines 71-88):
 
-<progressive_enhancement>
-## Phase 1: Observation (Non-Blocking)
+> (a) mechanically checkable at a tool boundary, (b) recurrent despite
+> prompt-level instruction, and (c) cheap to verify against Claude Code's
+> real I/O contract.
 
-**Goal:** Understand patterns before acting
+**Passing example — `version-bump-guard`.** Forgetting the `plugin.json`
+version bump before the final push is (a) checkable purely from
+`tool_input.command` plus git state, (b) a documented, repeated failure, and
+(c) verified end-to-end by the contract tests. All three legs pass, so the
+hook is justified.
 
-**Examples:**
-- Log file edits (PostToolUse)
-- Display reminders (Stop, non-blocking)
-- Track metrics
+**Failing example — the torn-out edit-log → Stop-reminder pipeline.** Per
+HOOKS.md History (lines 109-123), the 2026-07-07 teardown deleted seven of
+nine hooks. The edit-logging + Stop-reminder chain failed the keep-criterion
+because it read fields Claude Code does not send and emitted
+`permissionDecision` from event types where that field has no effect — so it
+never blocked anything despite being labeled "(blocking)". It was deleted,
+not repaired. Do not reproduce its design; treat it as the archetype of a
+hook that fails legs (a) and (c).
 
-**Duration:** Observe for 1 week minimum
+When a behavior problem arrives, run all three legs first. Most fail leg (a)
+or (b) and belong in a skill or `CLAUDE.md`, not in a hook.
+</keep_criterion>
 
----
+<two_jobs>
+**Job 1 — Context injection.** `SessionStart` and `UserPromptSubmit` return
+`hookSpecificOutput.additionalContext`, a string that is appended to the
+model's context. These hooks *inform*: they cannot deny, block, or veto.
+`session-start.sh` is this job's canon example.
 
-## Phase 2: Automation (Background)
+**Job 2 — Enforcement.** `PreToolUse` returns
+`hookSpecificOutput.permissionDecision` — `allow`, `deny`, or `ask`. `deny`
+stops the tool call before it runs. This is the only enforcement surface the
+plugin's keep-criterion has ever justified, and `version-bump-guard` is its
+only instance.
 
-**Goal:** Automate tedious tasks
+<blocking_facts>
+Four facts govern what can and cannot block. All four are load-bearing:
 
-**Examples:**
-- Auto-format edited files (Stop)
-- Run builds after changes (Stop)
-- Inject helpful context (UserPromptSubmit)
+(a) **`PreToolUse` `permissionDecision: deny` is the only way to block a tool
+    call before it runs** — and the only enforcement mechanism this plugin's
+    keep-criterion has ever justified.
 
-**Requirement:** Fast (<2 seconds), non-blocking
+(b) **The platform does offer blocking on other events** — exit code 2, or a
+    top-level `decision: "block"`. A `Stop` hook can prevent Claude from
+    stopping; a `UserPromptSubmit` hook can block a prompt. This skill
+    *deliberately teaches none of those as patterns* — one-line capability
+    acknowledgments only, because none has passed the keep-criterion here.
 
----
+(c) **Exit code 1 NEVER blocks anything.** Only exit code 2 is a blocking
+    error. Exit 1 is a non-blocking error: the message is surfaced and
+    execution proceeds. A hook that does `... || exit 1` to "enforce" a rule
+    enforces nothing.
 
-## Phase 3: Enforcement (Blocking)
+(d) **`permissionDecision` has no effect outside `PreToolUse`.** Emitting it
+    from `PostToolUse`, `Stop`, or anywhere else is inert — the tool already
+    ran (or the field is simply ignored). This is the exact failure class the
+    2026-07-07 teardown removed.
+</blocking_facts>
+</two_jobs>
 
-**Goal:** Prevent errors, enforce standards
+<hook_events>
+The events below are the ones worth knowing. Capability facts are what the
+event can and cannot do — verified against Claude Code's contract.
 
-**Examples:**
-- Block dangerous operations (PreToolUse)
-- Require fixes before continuing (Stop, blocking)
-- Validate inputs (UserPromptSubmit, blocking)
+| Event | Fires | Capability |
+|-------|-------|------------|
+| SessionStart | session begins/resumes (source: startup / resume / clear / compact) | cannot block; stdout / `additionalContext` reaches context |
+| UserPromptSubmit | before Claude processes a prompt | can block (`decision: "block"` erases the prompt) — this plugin does not use it; stdout becomes context; 30s default timeout |
+| PreToolUse | before a tool call | THE tool-call gate: `hookSpecificOutput.permissionDecision` allow/deny/ask; matcher = tool name |
+| PermissionRequest | when a permission dialog would appear | can allow/deny via `hookSpecificOutput.decision` |
+| PostToolUse | after a tool call succeeds | cannot block (tool already ran); `decision: "block"` only feeds a reason back to Claude |
+| PostToolUseFailure | after a tool call fails | the real failure event; the "tool-error" event some old hooks assumed does not exist; cannot block |
+| Stop | when Claude finishes responding | can prevent stopping (exit 2 / `decision: "block"`; `stop_hook_active` guard, hard cutoff after 8 consecutive blocks) — this plugin does not use it |
+| SubagentStop | subagent finishes | as Stop, for subagents |
+| PreCompact | before context compaction | can block compaction; rarely needed |
+| SessionEnd | session terminates | cannot block; 1.5s default timeout |
 
-**Requirement:** Only add when patterns clear from Phase 1-2
-</progressive_enhancement>
+This is **not** the full contract — roughly 30 events exist. Full reference:
+https://code.claude.com/docs/en/hooks (the older documentation URLs now
+redirect here). Verify any event you use against that page before writing a
+fixture for it.
+</hook_events>
 
-<common_hook_patterns>
-## Pattern 1: Build Checker (Stop Hook)
+<schemas>
+Hooks receive JSON on **stdin** and (for the two jobs above) return JSON on
+**stdout**. Fields below are the real ones — write fixtures against these,
+never against what a hook assumes.
 
-**Problem:** TypeScript errors left behind
+**Common stdin fields (every event):**
+- `session_id` — the session's id
+- `cwd` — working directory when the hook fires
+- `hook_event_name` — e.g. `"PreToolUse"`
 
-**Solution:**
-```bash
-#!/bin/bash
-# Stop hook - runs after Claude finishes
+**Per-event stdin additions:**
+- `PreToolUse` — `tool_name`, `tool_input`, `tool_use_id`
+- `PostToolUse` — the `PreToolUse` fields plus `tool_response`
+- `UserPromptSubmit` — `prompt`
+- `SessionStart` — `source` (`startup` / `resume` / `clear` / `compact`)
 
-# Check modified repos
-modified_repos=$(grep -h "edited" ~/.claude/hooks/changed-files.log | cut -d: -f1 | sort -u)
+**Output wrapper.** Both jobs return their result under `hookSpecificOutput`:
+- Context: `{"hookSpecificOutput": {"hookEventName": "...", "additionalContext": "..."}}`
+- Enforcement: `{"hookSpecificOutput": {"hookEventName": "PreToolUse", "permissionDecision": "deny", "permissionDecisionReason": "..."}}`
 
-for repo in $modified_repos; do
-  echo "Building $repo..."
-  cd "$repo" && npm run build 2>&1 | tee /tmp/build-output.txt
+**Fail-open convention.** Every error path exits 0 with no output — which
+Claude Code reads as "allow". `version-bump-guard` follows this rigorously:
+unparseable stdin, git failures, missing manifest, unexpected state all exit
+0 and allow. A bug in a hook must never block work; false-allows are
+acceptable, false-denies are not.
+</schemas>
 
-  error_count=$(grep -c "error TS" /tmp/build-output.txt || echo "0")
+<worked_example_session_start>
+`hooks/session-start.sh` — **context injection.**
 
-  if [ "$error_count" -gt 0 ]; then
-    if [ "$error_count" -ge 5 ]; then
-      echo "⚠️  Found $error_count errors - consider error-resolver agent"
-    else
-      echo "🔴 Found $error_count TypeScript errors:"
-      grep "error TS" /tmp/build-output.txt
-    fi
-  else
-    echo "✅ Build passed"
-  fi
-done
-```
+- **Event:** `SessionStart`, matcher `startup|resume|clear|compact`.
+- **Reads:** `skills/using-hyper/SKILL.md` from the plugin root, plus a
+  one-time legacy-directory warning.
+- **Emits:** one JSON object with
+  `hookSpecificOutput.additionalContext` containing the escaped skill text.
+- **Always exits 0. There is no decision field** — `SessionStart` has nothing
+  to deny, so the hook's entire job is to deliver text into context. It is not
+  a deny hook and is not evaluated against the keep-criterion (HOOKS.md).
 
-**Configuration** (in `hooks.json`, matching Claude Code's real schema):
+The shape it emits is the canonical context-injection output; any new
+`SessionStart` or `UserPromptSubmit` hook copies this wrapper exactly.
+</worked_example_session_start>
+
+<worked_example_version_guard>
+`hooks/pre-tool-use/02-version-bump-guard.py` — **enforcement.**
+
+**What it guards:** a `git push` of the repo's default branch (resolved via
+`origin/HEAD`, falling back to literal `main`/`master`), in a repo with
+`.claude-plugin/plugin.json` at its root, where the outgoing range touches a
+watched path (`skills/`, `agents/`, `commands/`, `hooks/`, `CLAUDE.md`,
+`README.md`) but the manifest's `version` field did not change in that same
+range. On that exact condition it denies with a reminder to bump the version.
+
+**Deny output shape:**
 ```json
 {
-  "hooks": {
-    "Stop": [
-      {
-        "matcher": "*",
-        "hooks": [
-          { "type": "command", "command": "~/.claude/hooks/build-checker.sh" }
-        ]
-      }
-    ]
+  "hookSpecificOutput": {
+    "hookEventName": "PreToolUse",
+    "permissionDecision": "deny",
+    "permissionDecisionReason": "🚫 PUSH BLOCKED: plugin.json version not bumped\n..."
   }
 }
 ```
 
-**Result:** Zero errors left behind
+**Fail-open contract.** Every error path — unparseable stdin, git command
+failure, no resolvable upstream, no plugin manifest, non-default-branch push,
+`--dry-run` — exits 0 and allows the push. False-allows are acceptable;
+false-denies are not. A `try/except` around `main()` catches any unhandled
+exception and exits 0.
 
----
+**Robustness.** It recognizes the push regardless of shell line-continuations
+(`git push \` + newline is collapsed first) and regardless of
+`time`/`command`/`env`/`nice`/`nohup` wrapper prefixes, by shlex-tokenizing
+each shell segment and requiring `push` to be git's subcommand token — never
+substring-matching on the word "push" (so an echoed or grep'd "push" never
+trips it).
 
-## Pattern 2: Auto-Formatter (Stop Hook)
+**Contract tests.** `hooks/test/contract-test.sh` exercises it with 9
+fixtures against throwaway git repos: single-line unbumped push (deny),
+multi-line continuation push (deny), three wrapper-prefixed pushes —
+time/command/env (deny), feature-branch push (allow), bumped push (allow),
+malformed stdin (fail-open allow), and a non-main default branch resolved via
+`origin/HEAD` (deny). A 10th fixture covers `session-start.sh`. Fixtures use
+the real `PreToolUse` schema — `{tool_name, tool_input:{command}, cwd}` — not
+the hook's own assumptions.
+</worked_example_version_guard>
 
-**Problem:** Inconsistent formatting
+<building_a_new_hook>
+1. **Run the keep-criterion.** Check all three legs (HOOKS.md, lines 71-88).
+   Most behavior problems fail leg (a) or (b) and belong in a skill or
+   `CLAUDE.md`. If any leg fails, stop — do not build a hook.
+2. **Design fail-open.** Decide the allow default; make every error path exit
+   0 with no output. A hook bug must never block work.
+3. **Write `contract-test.sh` fixtures FIRST**, against the official schema
+   (see `<schemas>` and https://code.claude.com/docs/en/hooks) — never against
+   the hook's own assumptions about its input.
+4. **Implement** the hook to satisfy those fixtures.
+5. **Wire it** into `hooks/hooks.json` (matcher + `hooks` array).
+6. **Document it** in HOOKS.md (event, input, output, what it guards,
+   fail-open contract).
+7. **Run `./hooks/test/contract-test.sh`** and confirm it is green.
 
-**Solution:**
+**MUST:** no new hook ships without fixtures against the real schema and a
+green contract-test run. A hook that "works when I try it manually" but has no
+fixture is not done.
+</building_a_new_hook>
+
+<testing>
+**The harness.** `./hooks/test/contract-test.sh` is the source of truth for
+hook correctness. It builds throwaway git repos under `mktemp -d`, pipes
+fixture JSON in Claude Code's real schema through the live hook scripts, and
+asserts on their real output. Run it before trusting any hook change — this is
+a MUST, not a suggestion.
+
+**Manual isolation.** Pipe a fixture into the script directly and inspect
+stdout and exit code:
 ```bash
-#!/bin/bash
-# Stop hook - format all edited files
-
-edited_files=$(tail -20 ~/.claude/hooks/changed-files.log | grep "^/" | sort -u)
-
-for file in $edited_files; do
-  repo_dir=$(dirname "$file")
-  while [ "$repo_dir" != "/" ]; do
-    if [ -f "$repo_dir/.prettierrc" ]; then
-      echo "Formatting $file..."
-      cd "$repo_dir" && npx prettier --write "$file"
-      break
-    fi
-    repo_dir=$(dirname "$repo_dir")
-  done
-done
-
-echo "✅ Formatting complete"
+printf '%s' '{"tool_name":"Bash","tool_input":{"command":"git push"},"cwd":"/path/to/repo"}' \
+  | python3 hooks/pre-tool-use/02-version-bump-guard.py; echo "exit=$?"
 ```
 
-**Result:** All code consistently formatted
-
----
-
-## Pattern 3: Error Handling Reminder (Stop Hook)
-
-**Problem:** Claude forgets error handling
-
-**Solution:**
-```bash
-#!/bin/bash
-# Stop hook - gentle reminder
-
-edited_files=$(tail -20 ~/.claude/hooks/changed-files.log | grep "^/")
-
-risky_patterns=0
-for file in $edited_files; do
-  if grep -q "try\|catch\|async\|await\|prisma\|router\." "$file"; then
-    ((risky_patterns++))
-  fi
-done
-
-if [ "$risky_patterns" -gt 0 ]; then
-  cat <<EOF
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📋 ERROR HANDLING SELF-CHECK
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-⚠️  Risky Patterns Detected
-   $risky_patterns file(s) with async/try-catch/database operations
-
-   ❓ Did you add proper error handling?
-   ❓ Are errors logged appropriately?
-
-   💡 Consider: Sentry.captureException(), proper logging
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-EOF
-fi
-```
-
-**Result:** Claude self-checks without blocking
-
----
-
-## Pattern 4: Contextual Reminder Injection
-
-**See:** [resources/hook-examples.md](resources/hook-examples.md) Example 4 for a complete implementation
-
-**Summary:** Analyzes prompt keywords, injects a reminder into context before Claude processes the prompt.
-</common_hook_patterns>
-
-<hook_composition>
-## Naming for Order Control
-
-Multiple hooks for same event run in **alphabetical order** by filename.
-
-**Use numeric prefixes:**
-
-```
-hooks/
-├── 00-log-prompt.sh       # First (logging)
-├── 10-inject-context.sh   # Second (context)
-├── 20-activate-skills.sh  # Third (skills)
-└── 99-notify.sh           # Last (notifications)
-```
-
-## Hook Dependencies
-
-If Hook B depends on Hook A's output:
-
-1. **Option 1:** Numeric prefixes (A before B)
-2. **Option 2:** Combine into single hook
-3. **Option 3:** File-based communication
-
-**Example:**
-```bash
-# 10-log-edits.sh writes to file-edits.log
-# 20-check-builds.sh reads from file-edits.log
-```
-</hook_composition>
-
-<testing_hooks>
-## Test in Isolation
-
-```bash
-# Manually trigger
-bash ~/.claude/hooks/build-checker.sh
-
-# Check exit code
-echo $?  # 0 = success
-```
-
-## Test with Mock Data
-
-```bash
-# Create mock log
-echo "/path/to/test/file.ts" > /tmp/test-changed-files.log
-
-# Run with test data
-CHANGED_FILES_LOG=/tmp/test-changed-files.log bash ~/.claude/hooks/build-checker.sh
-```
-
-## Test Non-Blocking Behavior
-
-- Hook exits quickly (<2 seconds)
-- Doesn't block Claude
-- Provides clear output
-
-## Test Blocking Behavior
-
-- Blocking decision correct
-- Reason message helpful
-- Escape hatch exists
-
-## Debugging
-
-**Enable logging:**
-```bash
-set -x  # Debug output
-exec 2>~/.claude/hooks/debug.log
-```
-
-**Check execution:**
-```bash
-tail -f ~/.claude/logs/hooks.log
-```
-
-**Common issues:**
-- Timeout (>10 second default)
-- Wrong working directory
-- Missing environment variables
-- File permissions
-</testing_hooks>
-
-<examples>
-<example>
-<scenario>Developer adds blocking hook immediately without observation</scenario>
-
-<code>
-# Developer frustrated by TypeScript errors
-# Creates blocking Stop hook immediately:
-
-#!/bin/bash
-npm run build
-
-if [ $? -ne 0 ]; then
-  echo "BUILD FAILED - BLOCKING"
-  exit 1  # Blocks Claude
-fi
-</code>
-
-<why_it_fails>
-- No observation period to understand patterns
-- Blocks even for minor errors
-- No escape hatch if hook misbehaves
-- Might block during experimentation
-- Frustrates workflow when building is slow
-- Haven't identified when blocking is actually needed
-</why_it_fails>
-
-<correction>
-**Phase 1: Observe (1 week)**
-
-```bash
-#!/bin/bash
-# Non-blocking observation
-npm run build 2>&1 | tee /tmp/build.log
-
-if grep -q "error TS" /tmp/build.log; then
-  echo "🔴 Build errors found (not blocking)"
-fi
-```
-
-**After 1 week, review:**
-- How often do errors appear?
-- Are they usually fixed quickly?
-- Do they cause real problems or just noise?
-
-**Phase 2: If errors are frequent, automate**
-
-```bash
-#!/bin/bash
-# Still non-blocking, but more helpful
-npm run build 2>&1 | tee /tmp/build.log
-
-error_count=$(grep -c "error TS" /tmp/build.log || echo "0")
-
-if [ "$error_count" -ge 5 ]; then
-  echo "⚠️  $error_count errors - consider using error-resolver agent"
-elif [ "$error_count" -gt 0 ]; then
-  echo "🔴 $error_count errors (not blocking):"
-  grep "error TS" /tmp/build.log | head -5
-fi
-```
-
-**Phase 3: Only if observation shows blocking is necessary**
-
-Never reached - non-blocking works fine!
-
-**What you gain:**
-- Understood patterns before acting
-- Non-blocking keeps workflow smooth
-- Helpful messages without friction
-- Can experiment without frustration
-</correction>
-</example>
-
-<example>
-<scenario>Hook is slow, blocks workflow</scenario>
-
-<code>
-#!/bin/bash
-# Stop hook that's too slow
-
-# Run full test suite (takes 45 seconds!)
-npm test
-
-# Run linter (takes 10 seconds)
-npm run lint
-
-# Run build (takes 30 seconds)
-npm run build
-
-# Total: 85 seconds of blocking!
-</code>
-
-<why_it_fails>
-- Hook takes 85 seconds to complete
-- Blocks Claude for entire duration
-- User can't continue working
-- Frustrating, likely to be disabled
-- Defeats purpose of automation
-</why_it_fails>
-
-<correction>
-**Make hook fast (<2 seconds):**
-
-```bash
-#!/bin/bash
-# Stop hook - fast checks only
-
-# Quick syntax check (< 1 second)
-npm run check-syntax
-
-if [ $? -ne 0 ]; then
-  echo "🔴 Syntax errors found"
-  echo "💡 Run 'npm test' manually for full test suite"
-fi
-
-echo "✅ Quick checks passed (run 'npm test' for full suite)"
-```
-
-**Or run slow checks in background:**
-
-```bash
-#!/bin/bash
-# Stop hook - trigger background job
-
-# Start tests in background
-(
-  npm test > /tmp/test-results.txt 2>&1
-  if [ $? -ne 0 ]; then
-    echo "🔴 Tests failed (see /tmp/test-results.txt)"
-  fi
-) &
-
-echo "⏳ Tests running in background (check /tmp/test-results.txt)"
-```
-
-**What you gain:**
-- Hook completes instantly
-- Workflow not blocked
-- Still get quality checks
-- User can continue working
-</correction>
-</example>
-
-<example>
-<scenario>Hook has no error handling, fails silently</scenario>
-
-<code>
-#!/bin/bash
-# Hook with no error handling
-
-file=$(tail -1 ~/.claude/hooks/changed-files.log)
-prettier --write "$file"
-</code>
-
-<why_it_fails>
-- If changed-files.log missing → hook fails silently
-- If file path invalid → prettier errors not caught
-- If prettier not installed → silent failure
-- No logging, can't debug
-- User has no idea hook ran or failed
-</why_it_fails>
-
-<correction>
-**Add error handling:**
-
-```bash
-#!/bin/bash
-set -euo pipefail  # Exit on error, undefined vars
-
-# Log execution
-echo "[$(date)] Hook started" >> ~/.claude/hooks/formatter.log
-
-# Validate input
-if [ ! -f ~/.claude/hooks/changed-files.log ]; then
-  echo "[$(date)] ERROR: changed-files.log not found" >> ~/.claude/hooks/formatter.log
-  exit 1
-fi
-
-file=$(tail -1 ~/.claude/hooks/changed-files.log | grep "^/.*\.ts$")
-
-if [ -z "$file" ]; then
-  echo "[$(date)] No TypeScript file to format" >> ~/.claude/hooks/formatter.log
-  exit 0
-fi
-
-if [ ! -f "$file" ]; then
-  echo "[$(date)] ERROR: File not found: $file" >> ~/.claude/hooks/formatter.log
-  exit 1
-fi
-
-# Check prettier exists
-if ! command -v prettier &> /dev/null; then
-  echo "[$(date)] ERROR: prettier not installed" >> ~/.claude/hooks/formatter.log
-  exit 1
-fi
-
-# Format
-echo "[$(date)] Formatting: $file" >> ~/.claude/hooks/formatter.log
-if prettier --write "$file" 2>&1 | tee -a ~/.claude/hooks/formatter.log; then
-  echo "✅ Formatted $file"
-else
-  echo "🔴 Formatting failed (see ~/.claude/hooks/formatter.log)"
-fi
-```
-
-**What you gain:**
-- Errors logged and visible
-- Graceful handling of missing files
-- Can debug when issues occur
-- Clear feedback to user
-- Hook doesn't fail silently
-</correction>
-</example>
-</examples>
+**Execution facts (verified against the contract, not folklore):**
+- The default hook timeout is **600 seconds** (`UserPromptSubmit` is 30s,
+  `SessionEnd` 1.5s) — not the ten-second value older docs claimed.
+- **All matching hooks run in parallel.** There is no filename-order execution
+  and no numeric-prefix ordering — a `10-`/`20-` filename prefix does not
+  sequence hooks. If one hook depends on another's output, combine them or
+  share state through a file; do not rely on ordering.
+
+Deep dive: `resources/testing-hooks.md` (4-level strategy: unit, integration
+with mock events, manual, regression) — its integration section points back
+at `contract-test.sh` as the worked, executable model.
+</testing>
 
 <security>
 **Hooks run with your credentials and have full system access.**
 
 ## Best Practices
-
-1. **Review code carefully** - Hooks execute any command
-2. **Use absolute paths** - Don't rely on PATH
-3. **Validate inputs** - Don't trust file paths blindly
-4. **Limit scope** - Only access what's needed
-5. **Log actions** - Track what hooks do
-6. **Test thoroughly** - Especially blocking hooks
+1. **Review code carefully** — hooks execute any command.
+2. **Use absolute paths** — don't rely on `PATH`.
+3. **Validate inputs** — don't trust stdin fields blindly.
+4. **Limit scope** — only touch what the hook needs (the version guard is
+   inert outside plugin repos — it checks for `.claude-plugin/plugin.json`).
+5. **Log actions** — track what hooks do, without leaking secrets.
+6. **Test thoroughly** — especially enforcement hooks, via contract fixtures.
 
 ## Dangerous Patterns
+The model's tool input is untrusted data. Inspect it — never execute it.
 
-❌ **Don't:**
+❌ **Don't** — `eval` a field from stdin:
 ```bash
-# DANGEROUS - executes arbitrary code
-cmd=$(tail -1 ~/.claude/hooks/changed-files.log)
-eval "$cmd"
+stdin=$(cat)
+cmd=$(printf '%s' "$stdin" | jq -r '.tool_input.command')
+eval "$cmd"   # DANGEROUS: runs whatever the model produced
 ```
 
-✅ **Do:**
+✅ **Do** — read the field as data and decide:
 ```bash
-# SAFE - validates and sanitizes
-file=$(tail -1 ~/.claude/hooks/changed-files.log | grep "^/.*\.ts$")
-if [ -f "$file" ]; then
-  prettier --write "$file"
-fi
+stdin=$(cat)
+cmd=$(printf '%s' "$stdin" | jq -r '.tool_input.command')
+case "$cmd" in
+  *"rm -rf /"*)
+    jq -n '{hookSpecificOutput: {hookEventName: "PreToolUse",
+      permissionDecision: "deny",
+      permissionDecisionReason: "refuses to run a destructive command"}}'
+    ;;
+  *) exit 0 ;;  # allow: no output
+esac
 ```
 </security>
 
+<examples>
+<example>
+<scenario>Developer "enforces" a coding standard with a PostToolUse hook that emits permissionDecision, plus a Stop hook that uses exit 1 to "block" until the standard is met.</scenario>
+
+<code>
+# PostToolUse hook — author believes this denies the edit
+jq -n '{hookSpecificOutput: {hookEventName: "PostToolUse", permissionDecision: "deny", permissionDecisionReason: "fix the standard first"}}'
+
+# Stop hook — author believes exit 1 stops Claude
+run_standard_check || exit 1
+</code>
+
+<why_it_fails>
+- `permissionDecision` has no effect outside `PreToolUse` — the `PostToolUse`
+  hook fires *after* the tool already ran, and the field is inert there. It
+  denies nothing.
+- `exit 1` NEVER blocks anything. Only `exit 2` is a blocking error; exit 1 is
+  a non-blocking error and execution proceeds. The Stop hook stops nothing.
+- Neither hook ever worked — this is the exact 2026-07-07 teardown failure
+  class (HOOKS.md History): fields read/emitted where they have no effect.
+</why_it_fails>
+
+<correction>
+Run the keep-criterion first. Is the standard violation (a) checkable at a
+tool boundary, (b) recurrent despite prompt-level instruction, and (c) cheap
+to verify against the real contract?
+
+- **If all three legs pass:** implement it as a `PreToolUse` hook returning
+  `permissionDecision: deny` — the *only* surface that blocks a tool call
+  before it runs — and write contract-test fixtures against the real
+  `PreToolUse` schema before wiring it.
+- **If any leg fails** (most standards fail (a) — they need judgment, not a
+  mechanical check): write the rule into the governing skill or `CLAUDE.md` as
+  a MUST. That is not a downgrade; it is where behavior rules belong.
+
+Explicitly: `permissionDecision` outside `PreToolUse` does nothing, and
+`exit 1` does not block — the two claims the original design rested on are
+both false.
+</correction>
+</example>
+</examples>
+
 <critical_rules>
 ## Rules That Have No Exceptions
-
-1. **Start with Phase 1 (observe)** → Understand patterns before acting
-2. **Keep hooks fast (<2 seconds)** → Don't block workflow
-3. **Test thoroughly** → Hooks have full system access
-4. **Add error handling and logging** → Silent failures are debugging nightmares
-5. **Use progressive enhancement** → Observe → Automate → Enforce (only if needed)
+1. **Run the keep-criterion before any hook** — all three legs, or it's a
+   prompt-level fix, not a hook.
+2. **Write fixtures against the real schema** — never against the hook's own
+   assumptions; a self-confirming test lets the hook rot invisibly.
+3. **Design enforcement hooks fail-open** — every error path exits 0 (allow);
+   false-allows acceptable, false-denies not.
+4. **Never claim a blocking capability the contract does not grant** —
+   `permissionDecision` only works in `PreToolUse`; `exit 1` never blocks.
+5. **Keep hooks fast** — they run on the critical path (default timeout 600
+   seconds, but a slow hook stalls the workflow long before that).
 
 ## Common Excuses
-
-All of these mean: **STOP. Follow progressive enhancement.**
-
-- "Hook is simple, don't need testing" (Untested hooks fail in production)
-- "Blocking is fine, need to enforce" (Start non-blocking, observe first)
-- "I'll add error handling later" (Hook errors silent, add now)
-- "Hook is slow but thorough" (Slow hooks block workflow, optimize)
-- "Need access to everything" (Minimal permissions only)
+Each of these means: **STOP and check the real contract.**
+- "This behavior problem needs a hook" → Check the keep-criterion first; most
+  fail leg (a) or (b) and belong in a skill or `CLAUDE.md`.
+- "The hook is simple, skip the fixtures" → No fixture, no ship.
+- "I'll make it block with exit 1" → Exit 1 never blocks; only exit 2 does.
+- "I'll deny from PostToolUse" → `permissionDecision` is inert outside
+  `PreToolUse`; the tool already ran.
+- "I'll order hooks by filename prefix" → Matching hooks run in parallel;
+  prefixes don't sequence anything.
 </critical_rules>
 
 <verification_checklist>
-Before deploying hook:
+Before wiring a hook:
+- [ ] Keep-criterion legs (a), (b), (c) documented — the hook passes all three
+- [ ] Contract-test fixtures added against the real schema
+- [ ] `./hooks/test/contract-test.sh` green
+- [ ] Wired in `hooks/hooks.json` (matcher + `hooks` array)
+- [ ] Entry written in HOOKS.md (event, I/O, what it guards, fail-open)
+- [ ] Fail-open verified — every error path exits 0 and allows
 
-- [ ] Tested in isolation (manual execution)
-- [ ] Tested with mock data
-- [ ] Completes quickly (<2 seconds for non-blocking)
-- [ ] Has error handling (set -euo pipefail)
-- [ ] Has logging (can debug failures)
-- [ ] Validates inputs (doesn't trust blindly)
-- [ ] Uses absolute paths
-- [ ] Started with Phase 1 (observation)
-- [ ] If blocking: has escape hatch
-
-**Can't check all boxes?** Return to development and fix.
+**Can't check all boxes?** It's not ready. Return to `<building_a_new_hook>`.
 </verification_checklist>
 
 <integration>
-**This skill covers:** Hook creation and patterns
+**This skill covers:** whether a hook should exist, the real event/schema
+contract, and how to build and test one.
+
+**Source of truth:** HOOKS.md — the two-hook inventory, the keep-criterion,
+and the 2026-07-07 teardown History. When this skill and HOOKS.md disagree,
+HOOKS.md wins; update it when you add or change a hook.
 
 **Related skills:**
-- hyperpowers:using-hyper (the routing skill injected into context by `hooks/session-start.sh` — see HOOKS.md)
-- hyperpowers:verification-before-completion (quality hooks automate this)
-- hyperpowers:testing-anti-patterns (avoid in hooks)
-
-**Hook patterns support:**
-- Automatic skill activation
-- Build verification
-- Code formatting
-- Error prevention
-- Workflow automation
+- hyperpowers:using-hyper — the routing skill injected into context by
+  `hooks/session-start.sh` (see HOOKS.md).
+- hyperpowers:verification-before-completion — a hook is not done until its
+  contract tests are green; this is that principle applied to hooks.
+- hyperpowers:testing-anti-patterns — the self-confirming fixture (testing the
+  hook's assumptions instead of the real schema) is the anti-pattern to avoid.
 </integration>
 
 <resources>
 **Detailed guides:**
-- [Complete hook examples](resources/hook-examples.md)
-- [Hook pattern library](resources/hook-patterns.md)
-- [Testing strategies](resources/testing-hooks.md)
+- [resources/hook-examples.md](resources/hook-examples.md) — 6 complete worked
+  examples across events (Example 6 is the only enforcement one, a `PreToolUse`
+  `permissionDecision` deny).
+- [resources/hook-patterns.md](resources/hook-patterns.md) — 14 reusable
+  technique patterns (path validation, project-root detection, caching,
+  parallel execution, etc.; the only blocking one is "Conditional Blocking",
+  a `PreToolUse` deny).
+- [resources/testing-hooks.md](resources/testing-hooks.md) — 4-level testing
+  strategy (unit, integration with mock events, manual, regression), pointing
+  back at `contract-test.sh`.
 
-**Official documentation:**
-- [Anthropic Hooks Guide](https://docs.claude.com/en/docs/claude-code/hooks-guide)
-
-**When stuck:**
-- Hook failing silently → Add logging, check ~/.claude/hooks/debug.log
-- Hook too slow → Profile execution, move slow parts to background
-- Hook blocking incorrectly → Return to Phase 1, observe patterns
-- Testing unclear → Start with manual execution, then mock data
+**Official documentation:** https://code.claude.com/docs/en/hooks
 </resources>
+</content>
+</invoke>
