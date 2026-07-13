@@ -10,15 +10,18 @@ Hyperpowers is a Claude Code plugin that provides structured workflows, best pra
 
 Reusable workflows for common development tasks:
 
+**Meta:**
+- **using-hyper** - Session-start meta-skill: the routing table that sends every task through the right skill chain
+
 **Feature Development:**
 - **portent** - Draft or check multiservice phase planning docs in a planning repo; slices conform to the brainstormable-unit schema (`skills/common-patterns/brainstormable-unit.md`)
 - **preordain** - Decompose large initiatives into leaf epics with dependencies; escalation target when brainstorming scope exceeds the sizing gate (see `skills/common-patterns/pipeline-constants.md`)
 - **consider** - Lightweight Socratic thinking partner for exploring ideas before committing to build; routes to brainstorming or intuition when ready
 - **brainstorming** - Interactive design refinement — produces the epic and the complete verified task tree, batch-reviewed by SRE
 - **writing-plans** - Expand or repair specs for tasks that lack them (gap-fixes, amendments) — off the standard flow
-- **executing-plans** - Lead reads upfront task list, dispatches fresh executor subagent (Sonnet by default, promotable) per task, runs two-stage review (Stage 1: epic coherence; Stage 2: spec-match + code quality) after each task
+- **executing-plans** - Lead establishes an epic/<epic-id> working branch (never the default), dispatches fresh executor subagent (Sonnet by default, promotable) per task from the upfront task list, runs two-stage review after each task, and persists gate-state (incl. the end-of-epic reviewer's APPROVED marker) to the epic's bd notes
 - **review-implementation** - On-demand re-verification of an implementation against its bd epic spec (post-gap-fix re-check, auditing an epic implemented elsewhere, mid-epic sanity check) — the mainline gate already runs inside executing-plans' completion step
-- **finishing-a-development-branch** - Complete workflow for PR creation and cleanup
+- **finishing-a-development-branch** - Verifies the end-of-epic reviewer's APPROVED marker in the epic's bd notes, then presents integration options (merge/PR/keep/discard) and closes the epic
 - **sre-task-refinement** - Ensure all corner cases and requirements are understood; runs in batch against the full task tree during brainstorming
 
 **Bug Fixing & Debugging:**
@@ -31,10 +34,15 @@ Reusable workflows for common development tasks:
 - **refactoring-design** - Create refactor design with composition, DI, and test strategy
 - **refactoring-safely** - Test-preserving transformations in small steps with tests staying green
 
+**Architecture:**
+- **intuition** - Brand-informed empirical audit of architecture — finds complection, coupling, shearing-layer mismatches, workaround cascades, and drift through structured observation
+- **ponder** - Architecture model ownership — dispatches the ponder subagent for all LikeC4 .c4 file operations (update, bootstrap, review)
+
 **Quality & Testing:**
 - **test-driven-development** - Write tests first, ensure they fail, then implement
 - **testing-anti-patterns** - Prevent common testing mistakes
 - **verification-before-completion** - Always verify before claiming success
+- **analyzing-test-effectiveness** - Audit test quality with SRE scrutiny — finds tautological tests, coverage gaming, and missing corner cases
 
 **Task & Project Management:**
 - **managing-bd-tasks** - Advanced bd operations: splitting tasks, merging duplicates, dependencies, metrics
@@ -56,10 +64,14 @@ Quick access to key workflows:
 - `/hyperpowers:brainstorm` - Start interactive design refinement
 - `/hyperpowers:write-plan` - Expand or repair specs for tasks that lack them
 - `/hyperpowers:execute-plan` - Orchestrate plan execution via executor subagent
+- `/hyperpowers:finish-branch` - Close epic and integrate branch after manual validation complete
 - `/hyperpowers:review-implementation` - On-demand re-verification of a completed implementation against its spec (not the mainline gate — that runs inside executing-plans' completion step)
 - `/hyperpowers:refactor-diagnose` - Diagnose code/design smells and refactor targets
 - `/hyperpowers:refactor-design` - Design refactor with composition, DI, and test strategy
 - `/hyperpowers:refactor-execute` - Execute refactor safely with tests staying green
+- `/hyperpowers:intuition` - Brand-informed empirical audit of architecture — finds complection, coupling, shearing layer mismatches, and drift through structured observation
+- `/hyperpowers:ponder` - Architecture model ownership — update, bootstrap, or review LikeC4 models via ponder subagent
+- `/hyperpowers:analyze-tests` - Audit test quality - identify tautological tests, coverage gaming, missing corner cases
 
 ### Specialized Agents
 
@@ -71,6 +83,8 @@ Domain-specific agents for complex tasks:
 - **codebase-investigator** - Understand current codebase state and patterns
 - **internet-researcher** - Research APIs, libraries, and current best practices
 - **test-runner** - Run tests/validations/commits without context pollution (uses Haiku)
+- **ponder** (subagent) - Single owner of all LikeC4 .c4 architecture-model operations (update, bootstrap, review); dispatched by the ponder skill
+- **test-effectiveness-analyst** - Audits test effectiveness with SRE scrutiny (tautological tests, coverage gaming, weak assertions); returns a prioritized improvement plan
 
 ### Hooks System
 
@@ -151,6 +165,7 @@ Claude: I'm using the brainstorming skill to refine your authentication requirem
 
 Claude: I'm using the executing-plans skill to orchestrate execution.
 
+[Establishes working branch epic/bd-N — never dispatches on the default branch]
 [Dispatches fresh executor subagent per task — Sonnet by default, promotable]
 [Executor reads self-contained task spec, implements, commits, returns DONE/BLOCKED/NEEDS_HELP]
 [Lead runs two-stage review (Stage 1: epic coherence; Stage 2: spec-match + code quality) after each task]
@@ -158,10 +173,11 @@ Claude: I'm using the executing-plans skill to orchestrate execution.
 Claude: The executor reports all criteria met. Dispatching the reviewer agent.
 
 [Reviewer verifies implementation, returns APPROVED]
+[Persists completion gate-state with Verdict: APPROVED marker to the epic's bd notes]
 
 Claude: I'm using the finishing-a-development-branch skill to wrap up.
 
-[Creates PR, cleans up]
+[Verifies the APPROVED marker in bd notes, creates PR, cleans up]
 ```
 
 ## Philosophy
