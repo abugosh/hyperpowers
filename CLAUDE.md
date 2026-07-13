@@ -96,7 +96,7 @@ The repository is organized as follows:
 
 - **skills/** - Reusable workflow definitions (each in its own directory with SKILL.md)
 - **commands/** - Slash command definitions that invoke skills
-- **agents/** - Specialized agent prompts (executor, reviewer, code-reviewer, codebase-investigator, internet-researcher, test-runner, ponder)
+- **agents/** - Specialized agent prompts (executor, reviewer, code-reviewer, codebase-investigator, internet-researcher, test-runner, ponder, test-effectiveness-analyst)
 - **hooks/** - Automatic behaviors triggered by events
 - **.claude-plugin/** - Plugin metadata (plugin.json)
 
@@ -141,7 +141,7 @@ Common bd commands:
 bd list --type epic --status open       # Find open epics
 bd ready                                 # Show ready tasks
 bd show bd-1                            # Show task details
-bd dep tree bd-1                        # Show task tree
+bd list --parent bd-1 --all -n 0        # List an epic's children (dep-tree doesn't)
 bd status bd-3 --status in-progress     # Update task status
 ```
 
@@ -156,10 +156,11 @@ Specialized agents run in separate contexts to handle specific tasks:
 5. **codebase-investigator** - Explores codebase state and patterns when planning/designing
 6. **internet-researcher** - Researches APIs, libraries, docs when planning/designing
 7. **ponder** (subagent) - Creates, updates, and reviews LikeC4 architecture models. Single owner of all .c4 file operations. Dispatched by the ponder skill in update, bootstrap, or review mode.
+8. **test-effectiveness-analyst** - Audits test effectiveness with Google Fellow SRE scrutiny (tautological tests, coverage gaming, weak assertions, missing corner cases); returns a prioritized improvement plan. Dispatched by the analyzing-test-effectiveness skill.
 
 **Critical pattern:** Agents keep verbose output (test results, formatting diffs) in their own context, returning only essential info to the main conversation.
 
-**Delegation pattern:** The executing-plans skill uses blocking subagent dispatch — the lead (main context) dispatches a fresh executor subagent (Sonnet by default, promotable) per task via the Agent tool (without team_name), which blocks the lead until the executor returns. After each executor returns, the lead runs a two-stage review (Stage 1: epic-coherence check by the lead; Stage 2: spec-match + code quality by a fresh reviewer) before moving to the next task. Task specs are self-contained with Goal, Why, and Boundaries sections — executors need no cross-task context bridging.
+**Delegation pattern:** The executing-plans skill uses blocking subagent dispatch — the lead (main context) establishes an epic/<epic-id> working branch (never dispatching on the default branch), then dispatches a fresh executor subagent (Sonnet by default, promotable) per task via the Agent tool (without team_name), which blocks the lead until the executor returns. After each executor returns, the lead runs a two-stage review (Stage 1: epic-coherence check by the lead; Stage 2: spec-match + code quality by a fresh reviewer) before moving to the next task. Task specs are self-contained with Goal, Why, and Boundaries sections — executors need no cross-task context bridging.
 
 ### Common Patterns Location
 
@@ -194,9 +195,9 @@ Complete workflow from idea to PR:
 
 1. **Preordain** (`/hyperpowers:preordain`) - Entry point for large initiatives. Decomposes initiative into leaf epics with dependencies; each leaf epic is independently brainstormable and executable. Skip for single-epic work.
 2. **Brainstorming** (`/hyperpowers:brainstorm`) - Entry point for leaf epics. Socratic questioning to refine requirements, research codebase/external docs, produce bd epic with immutable requirements and the complete VERIFIED task tree, then run batch SRE review against the full tree (Step 7); escalates to preordain per the thresholds in `skills/common-patterns/pipeline-constants.md`
-3. **Executing Plans** (`/hyperpowers:execute-plan`) - Lead reads upfront task list, dispatches fresh executor subagent (Sonnet by default, promotable) per task, runs two-stage review (Stage 1: epic coherence; Stage 2: spec-match + code quality) after each task; on completion runs the reviewer gate plus the post-build Architecture Impact Check, then an explicit STOP for manual validation
+3. **Executing Plans** (`/hyperpowers:execute-plan`) - Lead establishes an epic/<epic-id> working branch (never the default), reads upfront task list, dispatches fresh executor subagent (Sonnet by default, promotable) per task, runs two-stage review (Stage 1: epic coherence; Stage 2: spec-match + code quality) after each task; on completion runs the reviewer gate plus the post-build Architecture Impact Check, persists the completion gate-state (Verdict: APPROVED marker) to the epic's bd notes, then an explicit STOP for manual validation
 4. **Review Implementation** (`/hyperpowers:review-implementation`) - On-demand re-verification against spec (post-gap-fix re-check, auditing an epic implemented elsewhere, mid-epic sanity check) — not the mainline step between executing-plans and finishing
-5. **Finishing Branch** - Creates PR, handles cleanup
+5. **Finishing Branch** - Verifies the epic's completion gate-state (the end-of-epic reviewer's APPROVED marker in bd notes) before integrating; creates PR, handles cleanup
 
 writing-plans (`/hyperpowers:write-plan`) is the off-mainline utility that expands or repairs specs for tasks lacking them (gap-fixes, mid-flight amendments) — not part of the standard flow.
 
