@@ -554,9 +554,7 @@ Before claiming root cause fixed:
 
 <resources>
 **Detailed guides:**
-- [Debugger commands by language](resources/debugger-reference.md)
-- [Instrumentation patterns](resources/instrumentation-patterns.md)
-- [Defense-in-depth examples](resources/defense-patterns.md)
+- [Debugger commands by language](../debugging-with-tools/resources/debugger-reference.md)
 
 **When stuck:**
 - Can't find source → Add instrumentation at each layer, run test

@@ -54,7 +54,7 @@ Symptoms:
 
 **If epic:**
 ```bash
-bd dep tree bd-1  # View complete dependency tree
+bd list --parent bd-1 --all -n 0  # List all child tasks (dep-tree doesn't enumerate children)
 # Note all child task IDs
 ```
 
@@ -492,7 +492,7 @@ Before finishing all tasks:
 
 **Detailed guidance:**
 - [bd command reference](../common-patterns/bd-commands.md)
-- [Task structure examples](resources/task-examples.md) (if exists)
+- [Task spec templates (two-tier)](../common-patterns/spec-templates.md)
 
 **When stuck:**
 - Unsure about file structure → Dispatch codebase-investigator (broad lane)
