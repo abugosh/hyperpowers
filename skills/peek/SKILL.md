@@ -101,7 +101,7 @@ Agent tool (single message, three calls — no team_name):
 
 No `model` field on any of the three — lenses inherit the session model (review depth is the product; it must not be silently downgraded).
 
-Every prompt carries: Mode, the confirmed aims, RECON's change inventory, the worktree path, base ref, and forge rung. DELIVERY additionally carries RECON's Surprises block. CODE additionally carries the suite-run decision from Step 4. `agents/peek.md`'s Mode Detection section defines the full required-input set per mode — cite it, never restate it; a DELIVERY dispatch missing Surprises is an error per that file, not something this skill improvises around.
+Every prompt carries: Mode, target identity (`Target: <branch> -> <base ref>`, both halves — `agents/peek.md` requires the full target identity on every dispatch), the confirmed aims, RECON's change inventory, the worktree path, and forge rung. DELIVERY additionally carries RECON's Surprises block. CODE additionally carries the suite-run decision from Step 4. `agents/peek.md`'s Mode Detection section defines the full required-input set per mode — cite it, never restate it; a DELIVERY dispatch missing Surprises is an error per that file, not something this skill improvises around.
 
 ## Step 6: Synthesis (Lead)
 
