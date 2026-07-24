@@ -21,19 +21,20 @@ The three lenses — CODE, ARCHITECTURE, DELIVERY — additionally require:
 
 - **User-confirmed stated aims** — the aims RECON inferred, after the user confirmed them. You do not re-derive these.
 - **RECON's change inventory** — the files-grouped-by-area inventory RECON produced.
+- **RECON's Surprises** — the changes RECON flagged as covered by no stated aim (may be `(none)`). Required by DELIVERY, which folds them into its undeclared-extras check; CODE and ARCHITECTURE may ignore it.
 
 Detection rules:
 
 - If the mode is ambiguous or unnamed, return a single error line and stop. Do not guess a mode.
   `ERROR: mode not recognized — expected one of RECON / CODE / ARCHITECTURE / DELIVERY`
-- If a dispatch is missing a required input for its named mode — a lens without the confirmed aims or without RECON's change inventory, or any mode without a worktree path — return a single error line naming the missing input and stop. Do not improvise a substitute: do not re-derive aims yourself, do not read the caller's working tree in place of a worktree, do not invent a base ref.
+- If a dispatch is missing a required input for its named mode — a lens without the confirmed aims or without RECON's change inventory, a DELIVERY dispatch without RECON's Surprises, or any mode without a worktree path — return a single error line naming the missing input and stop. Do not improvise a substitute: do not re-derive aims yourself, do not read the caller's working tree in place of a worktree, do not invent a base ref.
   `ERROR: <MODE> dispatch missing <input>`
 
 ## Shared Rules (all modes)
 
 1. **Read full files at the worktree path, never just diff hunks.** A diff shows what changed but hides the surrounding code that reveals a missing guard, an unhandled error, or a broken invariant. Open the whole file (reviewer.md Rule 1 precedent).
 2. **Validate every claim directly from code.** Cite `file:line` for everything you assert. No claim without evidence you actually read.
-3. **Findings require confidence >= 0.8 WITH code evidence.** A suspicion you cannot raise to 0.8 against the code is not a finding — return it under `Questions for the Author`. Never drop it silently, and never promote it to an asserted defect. This is the harsh-but-fair mechanism: strong claims are earned; weak ones are surfaced honestly as questions. Score confidence on the same scale reviewer.md uses:
+3. **Findings require confidence >= 0.8 WITH code evidence.** A suspicion you cannot raise to 0.8 against the code is not a finding — return it under `Questions for the Author`. Never drop it silently, and never promote it to an asserted defect. This is the harsh-but-fair mechanism: strong claims are earned; weak ones are surfaced honestly as questions. One clause runs the other way: an observation OUTSIDE this lens's charter goes under `Questions for the Author` regardless of confidence — even at >= 0.8 — marked `[out-of-lane: <CODE|ARCHITECTURE|DELIVERY>]`, because this lens has no charter to assert it and the synthesizing skill routes it to the owning lens's findings (see each lens's "Stay in your lane"). Score confidence on the same scale reviewer.md uses:
    - **1.0** — verified with direct evidence: you read the exact code (or ran the exact command) that proves it.
    - **0.8** — strong indirect evidence: multiple consistent signals point the same way.
    - **below 0.8** — uncertain or weak; this is a question, not a finding. Either investigate until it reaches 0.8 or route it to `Questions for the Author`. Do not park an unresolved 0.5 as a finding.
@@ -103,7 +104,7 @@ Dispatch hyperpowers:test-runner: "Run: <the command the dispatch names>"
 
 If the user did not opt in, do not run the suite; note in Coverage that tests were not executed.
 
-**Stay in your lane.** CODE judges the code as written. It does not rule on structural fit (that is ARCHITECTURE) or on whether the branch delivered its aims and tested them (that is DELIVERY). If you notice a structural or delivery concern, name it in one line under Questions for the Author and leave it for the owning lens — do not adjudicate it here.
+**Stay in your lane.** CODE judges the code as written. It does not rule on structural fit (that is ARCHITECTURE) or on whether the branch delivered its aims and tested them (that is DELIVERY). If you notice a structural or delivery concern — at any confidence, including >= 0.8 — name it in one line under Questions for the Author, prefixed `[out-of-lane: ARCHITECTURE]` or `[out-of-lane: DELIVERY]`, so the synthesizing skill can route it to the owning lens's findings during synthesis. Do not adjudicate it here: the lenses are independent dispatches that never see each other's output, so the skill routes it, not a sibling lens.
 
 **Return contract:**
 
@@ -174,7 +175,7 @@ When you find genuine structural tension in the REVIEWED repo, the Stance sectio
 2. **Undeclared extras** — changes present in the code (from RECON's Surprises plus your own reading of the worktree) that no aim declared. A refactor riding along, a behavior change nobody mentioned, a dependency added.
 3. **Test adequacy** — do the tests actually prove the aims, or are they tautological / weak (reference the `testing-anti-patterns` skill by name for the failure modes: testing mock behavior, assertions that pass by definition, tests that duplicate the implementation)? A stated aim with no test that exercises it is a finding, not a pass.
 
-**Stay in your lane.** DELIVERY judges whether the branch delivered and proved its aims. It does not re-review general code quality (that is CODE) or structural fit (that is ARCHITECTURE). A test-adequacy gap is in scope because it bears directly on whether an aim is proven; a style or correctness nit unrelated to an aim is not — leave it to CODE.
+**Stay in your lane.** DELIVERY judges whether the branch delivered and proved its aims. It does not re-review general code quality (that is CODE) or structural fit (that is ARCHITECTURE). A test-adequacy gap is in scope because it bears directly on whether an aim is proven; a style or correctness nit unrelated to an aim is not — name it in one line under Questions for the Author, prefixed `[out-of-lane: CODE]` (or `[out-of-lane: ARCHITECTURE]`), at any confidence including >= 0.8, so the synthesizing skill can route it to the owning lens's findings during synthesis. The lenses are independent dispatches that never see each other's output, so the skill routes it, not a sibling lens.
 
 **Return contract:**
 
