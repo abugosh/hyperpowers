@@ -158,9 +158,9 @@ This is an always-run closer — it runs even when the user aborts mid-flow, dec
 All of these mean: **STOP. Follow the process as written.**
 
 - "The diff is small, skip RECON" — RECON runs every time; size does not exempt intent-gathering.
-- "CI is green, skip CODE" — a green suite does not substitute for the CODE lens's judgment.
+- "CI is green, skip CODE" — a green suite does not substitute for the CODE lens's judgment. The same goes for skipping any lens: all three dispatch every run (Step 5); no lens is optional.
 - "I can infer intent without the gate" — Step 4 is interactive by design; inferred intent is not confirmed intent.
-- "The author is senior, soften the findings" — harsh-but-fair cuts both ways: it does not scale with the author's seniority.
+- "The author is senior, soften the findings" — softening includes dropping: every finding stays in the report at its true severity, whoever the author is. Harsh-but-fair does not scale with seniority; only phrasing may be professional, never the finding set.
 </critical_rules>
 
 <verification_checklist>
