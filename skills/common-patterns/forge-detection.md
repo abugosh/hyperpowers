@@ -18,29 +18,41 @@ commands in one place so they don't drift between skills.
 # 1. Get the remote URL — prefer upstream, fall back to origin
 url="$(git remote get-url upstream 2>/dev/null || git remote get-url origin 2>/dev/null)"
 
-# If both lookups fail there is no remote configured at all -> no-forge
-# path directly (rung 3). This is normal for local-only repos, including
-# scratch repos used in pressure testing — not an error condition.
 if [ -z "$url" ]; then
-  : # no remote configured; no-forge path
-fi
+  # Both lookups failed: there is no remote configured at all, so land on the
+  # no-forge path directly (rung 3). Normal for local-only repos, including
+  # scratch repos used in pressure testing — not an error condition. Short-
+  # circuit here so we never reach the host probes below.
+  forge=none
+else
+  # 2. Derive the host from the URL. git remote get-url returns a full URL,
+  #    not a bare host, and it comes in three shapes:
+  #      git@host:owner/repo.git        (scp-style SSH)
+  #      ssh://git@host/owner/repo.git  (ssh:// URL)
+  #      https://host/owner/repo.git    (HTTPS URL)
+  #    Strip scheme, then user@, then everything from the first : or / .
+  host="$url"
+  host="${host#*://}"    # drop scheme:// if present (https://, ssh://)
+  host="${host#*@}"      # drop user@ if present (git@, ssh user)
+  host="${host%%[:/]*}"  # keep up to the first : or / — the bare host
 
-# 2. Extract host from the URL and dispatch
-case "$url" in
-  *github.com*) forge=gh ;;
-  *gitlab.com*) forge=glab ;;
-  *)
-    # Self-hosted: probe auth directly, don't guess from the hostname string.
-    # Self-hosted GitLab URLs rarely contain the word "gitlab".
-    if glab auth status --hostname "$host" >/dev/null 2>&1; then
-      forge=glab
-    elif gh auth status --hostname "$host" >/dev/null 2>&1; then
-      forge=gh
-    else
-      forge=none  # no-forge path; ask the user only if they claim an MR exists
-    fi
-    ;;
-esac
+  # 3. Dispatch on the host
+  case "$host" in
+    github.com) forge=gh ;;
+    gitlab.com) forge=glab ;;
+    *)
+      # Self-hosted: probe auth directly, don't guess from the hostname string.
+      # Self-hosted GitLab URLs rarely contain the word "gitlab".
+      if glab auth status --hostname "$host" >/dev/null 2>&1; then
+        forge=glab
+      elif gh auth status --hostname "$host" >/dev/null 2>&1; then
+        forge=gh
+      else
+        forge=none  # no-forge path; ask the user only if they claim an MR exists
+      fi
+      ;;
+  esac
+fi
 ```
 
 Do NOT probe with `glab repo view` / `gh repo view` — those make network
