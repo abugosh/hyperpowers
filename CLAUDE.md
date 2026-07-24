@@ -156,7 +156,8 @@ Specialized agents run in separate contexts to handle specific tasks:
 5. **codebase-investigator** - Explores codebase state and patterns when planning/designing
 6. **internet-researcher** - Researches APIs, libraries, docs when planning/designing
 7. **ponder** (subagent) - Creates, updates, and reviews LikeC4 architecture models. Single owner of all .c4 file operations. Dispatched by the ponder skill in update, bootstrap, or review mode.
-8. **test-effectiveness-analyst** - Audits test effectiveness with Google Fellow SRE scrutiny (tautological tests, coverage gaming, weak assertions, missing corner cases); returns a prioritized improvement plan. Dispatched by the analyzing-test-effectiveness skill.
+8. **peek** (subagent) - Reviews an arbitrary branch/MR/PR with no bd spec. Four modes (RECON, CODE, ARCHITECTURE, DELIVERY) dispatched by the peek skill; produces aimed-vs-achieved findings with file:line evidence.
+9. **test-effectiveness-analyst** - Audits test effectiveness with Google Fellow SRE scrutiny (tautological tests, coverage gaming, weak assertions, missing corner cases); returns a prioritized improvement plan. Dispatched by the analyzing-test-effectiveness skill.
 
 **Critical pattern:** Agents keep verbose output (test results, formatting diffs) in their own context, returning only essential info to the main conversation.
 
@@ -200,6 +201,10 @@ Complete workflow from idea to PR:
 5. **Finishing Branch** - Verifies the epic's completion gate-state (the end-of-epic reviewer's APPROVED marker in bd notes) before integrating; creates PR, handles cleanup
 
 writing-plans (`/hyperpowers:write-plan`) is the off-mainline utility that expands or repairs specs for tasks lacking them (gap-fixes, mid-flight amendments) — not part of the standard flow.
+
+### MR/Branch Review
+
+For reviewing someone else's branch, MR, or PR with no bd spec involved: **Peek** (`/hyperpowers:peek`) resolves the target, confirms stated intent (recon), fans out three parallel judgment lenses (CODE, ARCHITECTURE, DELIVERY), then synthesizes an aimed-vs-achieved report and offers an optional draft comment. No bd epic required.
 
 ### Architecture (Empirical, Brand-based)
 
@@ -313,7 +318,7 @@ From `using-hyper` - watch for these rationalizations:
 
 ## Current Limitations
 
-From RECOMMENDATIONS.md:
+Known coverage gaps:
 
 **Currently covered:**
 - ✅ Greenfield feature development (idea → design → implementation → PR)
@@ -322,8 +327,9 @@ From RECOMMENDATIONS.md:
 - ✅ Advanced task management (splitting, merging, dependencies, metrics)
 - ✅ Quality culture (TDD, verification, SRE review)
 - ✅ Clean bd integration
+- ✅ MR/branch review (peek)
 
-**Missing (see RECOMMENDATIONS.md for details):**
+**Missing:**
 - ❌ Incident response
 - ❌ Code review response (receiving reviews)
 - ❌ Merge conflict resolution
