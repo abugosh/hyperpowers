@@ -348,17 +348,18 @@ Dispatch the review as a fresh blocking subagent — the review must come from a
 ```
 Agent tool:
   subagent_type: "general-purpose"
-  mode: "bypassPermissions"
   prompt: |
     Load the skill hyperpowers:sre-task-refinement with the Skill tool and
     run its BATCH MODE against epic <epic-id>.
     Inputs: bd show <epic-id>, then bd show each child task.
+    Write your full report to: <absolute path in the lead's session
+    scratchpad, e.g. <scratchpad>/sre-batch-<epic-id>.md>.
     You may strengthen task specs directly via bd update (preserve existing
     sections; never insert placeholders). Do not create, close, or
     re-classify tasks — structural suggestions go in your report.
-    Return: the batch verdict (APPROVE / NEEDS REVISION / REJECT), the
-    cross-task analysis including the epic-coverage table, per-task
-    one-liners, and an exact list of bd updates you applied.
+    Return exactly the one-line verdict per the Report File Contract in
+    skills/sre-task-refinement/SKILL.md:
+    SRE VERDICT: <APPROVE|NEEDS REVISION|REJECT> — report: <path> — <N> specs updated
 ```
 
 Do not pass a model override — the review inherits the session model.
@@ -371,16 +372,17 @@ The full task tree review catches systemic gaps (e.g., missing error handling ac
 
 **Handle the batch verdict**
 
-The dispatch above returns one of three verdicts (vocabulary: the `### Batch Verdict` template in `skills/sre-task-refinement/SKILL.md` — never invent new verdict words):
+The dispatch above returns the one-line `SRE VERDICT:` template (`skills/sre-task-refinement/SKILL.md`). Parse the verdict word from that line, then read the full report — cross-task analysis, epic-coverage table, recommendations — from the report file at the path the line names. Never invent new verdict words:
 
 - **APPROVE** → proceed to Step 8.
-- **NEEDS REVISION** → run the revision loop below, then re-dispatch a fresh SRE batch review using the same dispatch block above. Cap: after 2 re-review rounds (3 SRE runs total) without APPROVE, stop, persist a gate-state (format: `skills/common-patterns/loop-interfaces.md`) to the epic's bd notes, and escalate to the user via AskUserQuestion with the latest report.
-- **REJECT** → no loop: halt, persist a gate-state, and present the report's critical problems to the user; redesign returns to Step 6b or earlier as the user directs.
+- **NEEDS REVISION** → run the revision loop below, then re-dispatch a fresh SRE batch review using the same dispatch block above. Cap: after 2 re-review rounds (3 SRE runs total) without APPROVE, stop, persist a gate-state (format: `skills/common-patterns/loop-interfaces.md`) to the epic's bd notes, and escalate to the user via AskUserQuestion with the latest report file.
+- **REJECT** → no loop: halt, persist a gate-state, and present the report file's critical problems to the user; redesign returns to Step 6b or earlier as the user directs.
+- **Non-compliant return** → the final message lacks a parseable `SRE VERDICT:` line, OR the report file is missing or lacks `### Batch Verdict`, OR the chat line's verdict word contradicts the report file's `### Batch Verdict` → re-dispatch ONCE (fresh subagent, same dispatch block, same path). On a second non-compliant return: persist a gate-state to the epic's bd notes and escalate to the user via AskUserQuestion, attaching whatever partial report exists. This counter is separate from the NEEDS-REVISION cap above — one tracks channel failure (no usable return at all), the other tracks plan quality (the plan itself needs work); a non-compliant return never counts against the NEEDS-REVISION cap.
 
 **Revision loop (NEEDS REVISION):**
 
 1. Spec strengthening is already applied — the SRE reviewer updates specs directly via `bd update` (its Authority rule, `skills/sre-task-refinement/SKILL.md`). Do not re-apply.
-2. For each structural recommendation in the report (add a task, split a task, reorder dependencies, or promote a task via the `Executor: opus` flag): either apply it with plain bd commands (`bd create` + `bd dep add` for tree changes; `bd update` adding the `Executor: opus` line to the task's spec for promotions — SRE batch review is a named promotion-recommendation source in `skills/common-patterns/pipeline-constants.md`; Step 6c's pre-create verification applies to any new task), or explicitly decline it with a recorded reason in the epic's bd notes (it surfaces in the next gate-state's Decided section).
+2. For each structural recommendation in the report file (add a task, split a task, reorder dependencies, or promote a task via the `Executor: opus` flag): either apply it with plain bd commands (`bd create` + `bd dep add` for tree changes; `bd update` adding the `Executor: opus` line to the task's spec for promotions — SRE batch review is a named promotion-recommendation source in `skills/common-patterns/pipeline-constants.md`; Step 6c's pre-create verification applies to any new task), or explicitly decline it with a recorded reason in the epic's bd notes (it surfaces in the next gate-state's Decided section).
 3. Re-dispatch the SRE batch review as a fresh subagent. The lead never marks the tree approved itself — only a fresh SRE run can return APPROVE.
 
 ---

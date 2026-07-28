@@ -287,20 +287,23 @@ Dispatch SRE task refinement as a fresh blocking subagent — this session autho
 ```
 Agent tool:
   subagent_type: "general-purpose"
-  mode: "bypassPermissions"
   prompt: |
     Load the skill hyperpowers:sre-task-refinement with the Skill tool and
     run its BATCH MODE against epic <epic-id> (the test improvement tasks).
     Inputs: bd show <epic-id>, then bd show each child task.
+    Write your full report to: <absolute path in the lead's session
+    scratchpad, e.g. <scratchpad>/sre-batch-<epic-id>.md>.
     You may strengthen task specs directly via bd update (preserve existing
     sections; never insert placeholders). Do not create, close, or
     re-classify tasks — structural suggestions go in your report.
-    Return: the batch verdict (APPROVE / NEEDS REVISION / REJECT), the
-    cross-task analysis including the epic-coverage table, per-task
-    one-liners, and an exact list of bd updates you applied.
+    Return exactly the one-line verdict per the Report File Contract in
+    skills/sre-task-refinement/SKILL.md:
+    SRE VERDICT: <APPROVE|NEEDS REVISION|REJECT> — report: <path> — <N> specs updated
 ```
 
 Do not pass a model override — the review inherits the session model.
+
+Parse the verdict word from the returned `SRE VERDICT:` line, then read the full report from the file at the path it names. Non-compliant return (final message lacks a parseable `SRE VERDICT:` line, OR the report file is missing or lacks `### Batch Verdict`, OR the chat line's verdict word contradicts the report file's `### Batch Verdict`): re-dispatch ONCE (fresh subagent, same block, same path); on a second non-compliant return, persist a gate-state to the epic's bd notes and escalate via AskUserQuestion with whatever partial report exists. This re-dispatch counter is separate from NEEDS REVISION handling — channel failure vs plan quality.
 
 The review applies all 8 categories across the task tree, especially:
 - **Category 8 (Test Meaningfulness)**: Verify the proposed tests actually catch bugs
