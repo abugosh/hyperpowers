@@ -54,7 +54,11 @@ This skill is loaded and executed BY a dispatched review subagent — the lead d
 
 **Authority (the one rule — stated once here, referenced everywhere else in this skill):** You may strengthen task specs directly via `bd update` (preserve existing sections; never insert placeholders). Do not create, close, or re-classify tasks — structural suggestions (splits, new tasks, reordering) go in your report, not in bd.
 
-If you are reading this as the dispatched reviewer: the process below is yours to execute. Apply bd updates directly where the process says to (strengthening specs); every structural change is a recommendation in your report, never a direct bd action. Return your verdict and findings as your final message — it is data for the lead, not prose for a human.
+If you are reading this as the dispatched reviewer: the process below is yours to execute. Apply bd updates directly where the process says to (strengthening specs); every structural change is a recommendation in your report, never a direct bd action.
+
+**Single-task mode:** Return your verdict and findings as your final message — it is data for the lead, not prose for a human.
+
+**Batch mode:** Follow the Report File Contract below instead — the full report goes to a file, not the final message.
 
 ## Announcement
 
@@ -71,6 +75,23 @@ Use batch mode when reviewing a complete task tree as a unit — this is require
 bd list --parent <epic-id>   # List all child tasks (bd dep tree is childless for epics in bd 0.50.x)
 bd show <task-id>            # Read each child task
 ```
+
+### Report File Contract (batch mode)
+
+The dispatch prompt supplies an absolute report file path. Write the full report incrementally to that file — never hold it for a single final-message dump:
+
+1. **Create the file at review start**, before reviewing the first task.
+2. **Append each per-task review block as it is completed** (Phase 1, one task at a time). A mid-run failure must leave partial evidence on disk, not nothing — if you stop after task 3 of 10, the file holds 3 complete task reviews.
+3. **Append the Cross-Task Analysis** (Phase 2) once all per-task reviews are done.
+4. The file MUST end with the `### Batch Verdict` block (template in Batch Mode Output Format, below).
+
+**Final message template (verbatim):**
+```
+SRE VERDICT: <APPROVE|NEEDS REVISION|REJECT> — report: <path> — <N> specs updated
+```
+This vocabulary is registered in `skills/common-patterns/loop-interfaces.md` (Verdict Contracts).
+
+**Verify-before-return gate:** Before returning, confirm the report file exists and contains a verdict: `grep -c "### Batch Verdict" <path>` must return at least 1. If absent, finish the report first — a batch return without a verdict-bearing report file is a contract violation. Do not fall back to returning the report in chat if the file write failed; fix the write and confirm the gate before returning.
 
 ### Process
 
@@ -108,7 +129,7 @@ After reviewing each task individually, run these systemic checks:
 - Flag any criterion with no corresponding task
 
 ### Batch Mode Output Format
-After per-task reviews, append a cross-task section:
+This is the format of the report FILE (per the Report File Contract above), not of the final message. After per-task reviews, append a cross-task section:
 
 ```markdown
 ## Cross-Task Analysis
@@ -524,7 +545,7 @@ After reviewing all tasks:
 - [Critical problems]
 ```
 
-**In batch mode:** Append the Cross-Task Analysis section (from Batch Mode output format above) after the task-by-task reviews. The batch verdict is the authoritative recommendation for the full plan.
+**In batch mode:** This entire Output Format (task-by-task reviews) plus the Cross-Task Analysis section (from Batch Mode Output Format above) is written to the report file per the Report File Contract — not to the final message. The batch verdict is the authoritative recommendation for the full plan. The final message is the one-line `SRE VERDICT: <APPROVE|NEEDS REVISION|REJECT> — report: <path> — <N> specs updated` template only.
 </the_process>
 
 <examples>
