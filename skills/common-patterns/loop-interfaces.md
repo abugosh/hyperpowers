@@ -72,7 +72,7 @@ holds them for whoever asks.
 
 ## Verdict Contracts (lead ↔ agent)
 
-Single source for the three verdict vocabularies in the execution loop.
+Single source for the four verdict vocabularies in the pipeline.
 Definition sites cite this section; parse sites must match it exactly.
 
 - **Executor → lead** (defined in `agents/executor.md`, parsed by
@@ -90,6 +90,12 @@ Definition sites cite this section; parse sites must match it exactly.
   review bodies.
 - **End-of-epic reviewer → lead (completion)** (defined in `agents/reviewer.md`):
   structured verdict `APPROVED` or `GAPS FOUND` with the gap list.
+- **SRE batch reviewer → lead** (defined in `skills/sre-task-refinement/SKILL.md`,
+  batch mode Report File Contract; dispatched by brainstorming Step 7 and
+  analyzing-test-effectiveness Step 5): final message is exactly one line —
+  `SRE VERDICT: <APPROVE|NEEDS REVISION|REJECT> — report: <path> — <N> specs updated`.
+  The full report lives in the file at the path; the lead parses the verdict
+  word immediately after `SRE VERDICT: ` and reads the report file on demand.
 
 The vocabularies are deliberately stage-distinct — do not merge them; do
 not invent new verdict words at any site.
