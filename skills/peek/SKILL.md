@@ -69,7 +69,6 @@ Put the tmp path under the system temp dir, unique per run. Resolve the base ref
 ```
 Agent tool:
   subagent_type: "hyperpowers:peek"
-  mode: "bypassPermissions"
   model: "sonnet"    # the ONLY model override in this skill — mechanical gathering
   prompt: |
     Mode: RECON
@@ -94,9 +93,9 @@ One message, three Agent calls:
 
 ```
 Agent tool (single message, three calls — no team_name):
-  1. subagent_type: "hyperpowers:peek", mode: "bypassPermissions", prompt: "Mode: CODE ..."
-  2. subagent_type: "hyperpowers:peek", mode: "bypassPermissions", prompt: "Mode: ARCHITECTURE ..."
-  3. subagent_type: "hyperpowers:peek", mode: "bypassPermissions", prompt: "Mode: DELIVERY ..."
+  1. subagent_type: "hyperpowers:peek", prompt: "Mode: CODE ..."
+  2. subagent_type: "hyperpowers:peek", prompt: "Mode: ARCHITECTURE ..."
+  3. subagent_type: "hyperpowers:peek", prompt: "Mode: DELIVERY ..."
 ```
 
 No `model` field on any of the three — lenses inherit the session model (review depth is the product; it must not be silently downgraded).

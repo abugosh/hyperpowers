@@ -140,7 +140,6 @@ Dispatch one fresh blocking subagent covering ALL new subtasks:
 ```
 Agent tool:
   subagent_type: "general-purpose"
-  mode: "bypassPermissions"
   prompt: |
     Load the skill hyperpowers:sre-task-refinement with the Skill tool and
     run its SINGLE-TASK MODE against bd-12, bd-13, bd-14.

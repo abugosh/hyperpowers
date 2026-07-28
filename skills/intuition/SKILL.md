@@ -50,7 +50,6 @@ When /intuition is invoked, the lead does NOT run the analysis inline. Dispatch 
 ```
 Agent tool:
   subagent_type: "general-purpose"
-  mode: "bypassPermissions"
   prompt: |
     Load the skill hyperpowers:intuition with the Skill tool and execute
     Steps 0-3 (prepare audit, gather evidence, run all 9 analysis passes,

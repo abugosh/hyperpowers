@@ -96,7 +96,6 @@ Dispatch a fresh executor subagent for the current task:
 Agent tool:
   subagent_type: "hyperpowers:executor"
   model: "sonnet"    # "opus" if the task spec contains the line `Executor: opus`
-  mode: "bypassPermissions"
   prompt: |
     Execute this task:
 
@@ -151,7 +150,6 @@ The fresh Stage-2 code-reviewer owns both spec-match and code quality — the le
 Agent tool:
   subagent_type: "hyperpowers:code-reviewer"
   model: "sonnet"    # "opus" if the task spec contains the line `Executor: opus`
-  mode: "bypassPermissions"
   prompt: |
     Review this change for code quality.
 
@@ -305,7 +303,6 @@ After all tasks return DONE and pass two-stage review:
    ```
    Agent tool:
      subagent_type: "hyperpowers:reviewer"
-     mode: "bypassPermissions"
      prompt: |
        Review the implementation for epic <epic-id>.
        Follow agents/reviewer.md exactly.

@@ -28,7 +28,6 @@ Use for:
 ```
 Agent tool:
   subagent_type: "hyperpowers:reviewer"
-  mode: "bypassPermissions"
   prompt: |
     Review the implementation for epic <epic-id>.
     Follow agents/reviewer.md exactly.

@@ -187,7 +187,6 @@ If the user opts into review, dispatch it as a fresh subagent — this session r
 ```
 Agent tool:
   subagent_type: "general-purpose"
-  mode: "bypassPermissions"
   prompt: |
     Load the skill hyperpowers:sre-task-refinement with the Skill tool and
     run its SINGLE-TASK MODE against <task-id(s)>. You may strengthen the
