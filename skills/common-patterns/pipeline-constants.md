@@ -43,8 +43,9 @@ and immutable epic requirements — not from pre-written code.
 ## Finding Classification (resolution + promotion)
 
 Every review finding — Stage 2, end-of-epic, or otherwise — carries exactly
-one class tag. This section supersedes older "capability vs cosmetic"
-wording; other sections cite it rather than restate it.
+one class tag. This section supersedes older two-way severity wording that
+predated the convention/capability split; other sections cite it rather
+than restate it.
 
 - `[capability]` — behavior correctness or quality: spec mismatch, wrong
   logic, missing error handling, broken contract, meaningful test gap.

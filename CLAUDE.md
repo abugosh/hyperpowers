@@ -161,7 +161,7 @@ Specialized agents run in separate contexts to handle specific tasks:
 
 **Critical pattern:** Agents keep verbose output (test results, formatting diffs) in their own context, returning only essential info to the main conversation.
 
-**Delegation pattern:** The executing-plans skill uses blocking subagent dispatch — the lead (main context) establishes an epic/<epic-id> working branch (never dispatching on the default branch), then dispatches a fresh executor subagent (Sonnet by default, promotable) per task via the Agent tool (without team_name), which blocks the lead until the executor returns. After each executor returns, the lead runs a two-stage review (Stage 1: epic-coherence check by the lead; Stage 2: spec-match + code quality by a fresh reviewer) before moving to the next task. Task specs are self-contained with Goal, Why, and Boundaries sections — executors need no cross-task context bridging.
+**Delegation pattern:** The executing-plans skill uses blocking subagent dispatch — the lead (main context) establishes an epic/<epic-id> working branch (never dispatching on the default branch), then dispatches a fresh executor subagent (Sonnet by default, promotable) per task via the Agent tool (without team_name), which blocks the lead until the executor returns. After each executor returns, the lead runs a two-stage review (Stage 1: epic-coherence check by the lead; Stage 2: spec-match + code quality by a fresh code-reviewer). Stage 2 findings carry a class tag, `[capability]` or `[convention]` (`skills/common-patterns/pipeline-constants.md`, Finding Classification): convention findings the lead fixes directly and verifies by grep/read; capability findings re-dispatch through the promotion ladder, capped at 2 rounds before escalating to the user. Task specs are self-contained with Goal, Why, and Boundaries sections — executors need no cross-task context bridging.
 
 ### Common Patterns Location
 
@@ -171,6 +171,7 @@ To avoid duplication, common elements are centralized in `skills/common-patterns
 - `brainstormable-unit.md` - The unit schema: seven sections, two transports (phase-doc slice, bd leaf epic), cold-session test, additive-only evolution
 - `common-anti-patterns.md` - Anti-patterns to avoid
 - `common-rationalizations.md` - Excuses that signal failure
+- `prose-style.md` - Comment policy, the boy-scout rule, and the human-facing prose baseline
 
 Skills reference these rather than duplicating content.
 
@@ -196,7 +197,7 @@ Complete workflow from idea to PR:
 
 1. **Preordain** (`/hyperpowers:preordain`) - Entry point for large initiatives. Decomposes initiative into leaf epics with dependencies; each leaf epic is independently brainstormable and executable. Skip for single-epic work.
 2. **Brainstorming** (`/hyperpowers:brainstorm`) - Entry point for leaf epics. Socratic questioning to refine requirements, research codebase/external docs, produce bd epic with immutable requirements and the complete VERIFIED task tree, then run batch SRE review against the full tree (Step 7); escalates to preordain per the thresholds in `skills/common-patterns/pipeline-constants.md`
-3. **Executing Plans** (`/hyperpowers:execute-plan`) - Lead establishes an epic/<epic-id> working branch (never the default), reads upfront task list, dispatches fresh executor subagent (Sonnet by default, promotable) per task, runs two-stage review (Stage 1: epic coherence; Stage 2: spec-match + code quality) after each task; on completion runs the reviewer gate plus the post-build Architecture Impact Check, persists the completion gate-state (Verdict: APPROVED marker) to the epic's bd notes, then an explicit STOP for manual validation
+3. **Executing Plans** (`/hyperpowers:execute-plan`) - Lead establishes an epic/<epic-id> working branch (never the default), reads upfront task list, dispatches fresh executor subagent (Sonnet by default, promotable) per task, runs two-stage review (Stage 1: epic coherence; Stage 2: spec-match + code quality, findings class-tagged `[capability]`/`[convention]` — convention lead-fixed directly, capability re-dispatched via the promotion ladder capped at 2 rounds before escalation) after each task; on completion runs the reviewer gate (unchanged) plus the post-build Architecture Impact Check, persists the completion gate-state (Verdict: APPROVED marker) to the epic's bd notes, then an explicit STOP for manual validation
 4. **Review Implementation** (`/hyperpowers:review-implementation`) - On-demand re-verification against spec (post-gap-fix re-check, auditing an epic implemented elsewhere, mid-epic sanity check) — not the mainline step between executing-plans and finishing
 5. **Finishing Branch** - Verifies the epic's completion gate-state (the end-of-epic reviewer's APPROVED marker in bd notes) before integrating; creates PR, handles cleanup
 

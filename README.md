@@ -19,7 +19,7 @@ Reusable workflows for common development tasks:
 - **consider** - Lightweight Socratic thinking partner for exploring ideas before committing to build; routes to brainstorming or intuition when ready
 - **brainstorming** - Interactive design refinement — produces the epic and the complete verified task tree, batch-reviewed by SRE
 - **writing-plans** - Expand or repair specs for tasks that lack them (gap-fixes, amendments) — off the standard flow
-- **executing-plans** - Lead establishes an epic/<epic-id> working branch (never the default), dispatches fresh executor subagent (Sonnet by default, promotable) per task from the upfront task list, runs two-stage review after each task, and persists gate-state (incl. the end-of-epic reviewer's APPROVED marker) to the epic's bd notes
+- **executing-plans** - Lead establishes an epic/<epic-id> working branch (never the default), dispatches fresh executor subagent (Sonnet by default, promotable) per task from the upfront task list, runs two-stage review after each task (Stage 2 findings class-tagged `[capability]`/`[convention]` — convention lead-fixed directly, capability re-dispatched via the promotion ladder capped at 2 rounds before escalation), and persists gate-state (incl. the end-of-epic reviewer's APPROVED marker) to the epic's bd notes
 - **review-implementation** - On-demand re-verification of an implementation against its bd epic spec (post-gap-fix re-check, auditing an epic implemented elsewhere, mid-epic sanity check) — the mainline gate already runs inside executing-plans' completion step
 - **finishing-a-development-branch** - Verifies the end-of-epic reviewer's APPROVED marker in the epic's bd notes, then presents integration options (merge/PR/keep/discard) and closes the epic
 - **sre-task-refinement** - Ensure all corner cases and requirements are understood; runs in batch against the full task tree during brainstorming
@@ -171,7 +171,7 @@ Claude: I'm using the executing-plans skill to orchestrate execution.
 [Establishes working branch epic/bd-N — never dispatches on the default branch]
 [Dispatches fresh executor subagent per task — Sonnet by default, promotable]
 [Executor reads self-contained task spec, implements, commits, returns DONE/BLOCKED/NEEDS_HELP]
-[Lead runs two-stage review (Stage 1: epic coherence; Stage 2: spec-match + code quality) after each task]
+[Lead runs two-stage review (Stage 1: epic coherence; Stage 2: spec-match + code quality, findings class-tagged [capability]/[convention]) after each task]
 
 Claude: The executor reports all criteria met. Dispatching the reviewer agent.
 
