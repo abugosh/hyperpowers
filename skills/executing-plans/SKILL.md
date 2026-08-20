@@ -170,7 +170,9 @@ Agent tool:
     Reply PASS or CONCERNS: <list>.
 ```
 
-If the Stage-2 code-reviewer returns PASS: Task closure is owned by the lead: the lead closes the task only after Stage 2 review passes — the executor never closes tasks. Verify the working branch (Branch Establishment rule), then run `bd close <task-id>`, then proceed to the next task.
+Task closure is owned by the lead — the executor never closes tasks. Exactly two paths authorize closure: a Stage-2 PASS, or a convention-only CONCERNS verdict whose every concern line has been lead-fixed, verified, and recorded (below). No other path closes a task, and both require verifying the working branch (Branch Establishment rule) before `bd close <task-id>`.
+
+If the Stage-2 code-reviewer returns PASS: verify the working branch, run `bd close <task-id>`, then proceed to the next task.
 
 If the Stage-2 code-reviewer returns CONCERNS: the concern lines arrive class-tagged (`[capability]` or `[convention]`, one tag per line — format: `skills/common-patterns/loop-interfaces.md`). The lead owns final classification (`skills/common-patterns/pipeline-constants.md`, Finding Classification) and may retag a line; record the retag in a one-line bd note. Resolution splits by class:
 
@@ -180,6 +182,8 @@ If the Stage-2 code-reviewer returns CONCERNS: the concern lines arrive class-ta
 - **`SUGGESTION:` lines** are non-blocking: persist them to the epic's bd notes as optional follow-ups. Never act on them in-round; they never gate task closure.
 
 A task is still NEVER closed with unaddressed concerns — every concern line is either lead-fixed (`[convention]`) or re-dispatched (`[capability]`).
+
+**Closing after CONCERNS.** A convention-only verdict — every concern line `[convention]` after any retags — closes on the lead-fix path, not on a Stage-2 re-run: no re-run is required or possible for these lines. Once every line is lead-fixed, verified by grep/read, committed, and recorded in the bd note above, verify the working branch (Branch Establishment rule) and run `bd close <task-id>`. A verdict carrying any `[capability]` line — capability-only or mixed — closes only when the re-dispatch loop reaches a Stage-2 PASS; if it hits the round cap first, the task stays open and escalates (section 5). The convention lead-fixes inside a mixed verdict never close the task on their own.
 
 **Stage 1 feedback template** (when the lead's epic-coherence check fails):
 ```
@@ -440,14 +444,14 @@ Before dispatching each task:
 After each DONE return:
 - [ ] Commit-landed check passed: DONE hash in history, `git status --porcelain` clean
 - [ ] Stage 1: lead read the diff (`<base-SHA>..HEAD`) against the recorded base SHA for epic coherence
-- [ ] Stage 2: code-reviewer dispatched and returned PASS (spec-match and code quality)
+- [ ] Stage 2: code-reviewer dispatched (mandatory on every DONE, spec-match and code quality) and its verdict resolved — PASS, or CONCERNS handled per the class split below
 - [ ] Any CONCERNS resolved by class — `[convention]` lines lead-fixed and verified, `[capability]` lines re-dispatched (never closed as-is); promotion applied only to `[capability]` failures
 - [ ] Convention lead-fixes recorded in bd notes with the commit hash (`Convention concerns lead-fixed: ...`)
 - [ ] No convention fix changed behavior — any that would have was retagged `[capability]` and dispatched
 - [ ] Stage-2 round cap respected (`pipeline-constants.md`): 2 capability fix→re-review rounds on a task without PASS → escalated (section 5), not a 3rd round
 - [ ] `SUGGESTION:` lines persisted to the epic's bd notes, not acted on in-round
 - [ ] Any BLOCKED classified before re-dispatch; promotion applied only to capability-class failures
-- [ ] Task closed in bd by the lead (Stage 2 PASS)
+- [ ] Task closed in bd by the lead on an authorized path — Stage 2 PASS, or, for a convention-only CONCERNS verdict, every concern line lead-fixed, verified, and recorded
 - [ ] Working branch verified before task closure
 
 Before completion:
