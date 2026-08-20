@@ -80,6 +80,13 @@ pure-documentation tasks]
 [What is explicitly out of scope for this task]
 ```
 
+## Standing scope
+
+The boy-scout rule (`skills/common-patterns/prose-style.md`) applies to every
+task at both tiers: noise-comment cleanup within spec-named files is always
+in-scope. Specs need not restate it, and Boundaries sections do not need to
+re-grant it.
+
 ## Classification examples
 
 Definitions and time bands live in `pipeline-constants.md`. Examples:
