@@ -85,11 +85,18 @@ Definition sites cite this section; parse sites must match it exactly.
 - **Stage-2 code-reviewer → lead** (stated in `agents/code-reviewer.md`,
   dispatched by executing-plans): leading verdict line `PASS` or
   `CONCERNS: <one-line summary>`, followed by the concern list only — one
-  line per concern: `<file>:<line> — <what and why>`. Never the full
-  structured review: the lead's context must not accumulate per-task
+  line per concern: `[capability|convention] <file>:<line> — <what and
+  why>` — exactly one class tag per line, definitions in
+  `pipeline-constants.md` (Finding Classification). May be followed by
+  non-blocking `SUGGESTION: <file>:<line> — <note>` lines, which the lead
+  persists to the epic's bd notes and never acts on in-round. Never the
+  full structured review: the lead's context must not accumulate per-task
   review bodies.
 - **End-of-epic reviewer → lead (completion)** (defined in `agents/reviewer.md`):
-  structured verdict `APPROVED` or `GAPS FOUND` with the gap list.
+  structured verdict `APPROVED` or `GAPS FOUND` with the gap list. Gap
+  entries carry the same `[capability]`/`[convention]` tags as Stage 2. A
+  non-blocking Suggestions section may follow the gap list and never
+  blocks approval.
 - **SRE batch reviewer → lead** (defined in `skills/sre-task-refinement/SKILL.md`,
   batch mode Report File Contract; dispatched by brainstorming Step 7 and
   analyzing-test-effectiveness Step 5): final message is exactly one line —

@@ -40,6 +40,28 @@ commands, boundaries. Exact code appears only where the planner verified the
 exact site during planning. Drift protection comes from tests, boundaries,
 and immutable epic requirements — not from pre-written code.
 
+## Finding Classification (resolution + promotion)
+
+Every review finding — Stage 2, end-of-epic, or otherwise — carries exactly
+one class tag. This section supersedes older "capability vs cosmetic"
+wording; other sections cite it rather than restate it.
+
+- `[capability]` — behavior correctness or quality: spec mismatch, wrong
+  logic, missing error handling, broken contract, meaningful test gap.
+  Resolution: the executor re-dispatch loop (executing-plans owns the
+  handling); the Opus promotion ladder below applies.
+- `[convention]` — style/prose/doc surface: noise comments, docstring
+  drift, naming nits, formatting, stale cross-references. Resolution: the
+  lead fixes directly under executing-plans' bounded carve-out — no
+  dispatch, no re-review round, never promotes.
+
+Reviewers propose the tag on each finding; the lead owns final
+classification and may retag with a one-line bd note.
+
+**Round cap: 2** — two capability fix→re-review rounds per task (Stage 2),
+and two full end-of-epic gap rounds, then escalate to the user. Single
+source for this constant.
+
 ## Executor Promotion Flag
 
 Default executor model is Sonnet. A task spec containing the line
@@ -48,9 +70,10 @@ Default executor model is Sonnet. A task spec containing the line
 2. SRE batch review, as a recommendation
 3. The lead automatically on re-dispatch, one escalation rung before
    interrupting the user — always after a first BLOCKED; after Stage 2
-   CONCERNS only when the lead classifies the concern as capability-class.
-   Cosmetic/convention concerns never promote. executing-plans owns this
-   classification; this entry defers to it.
+   CONCERNS only when the lead classifies the concern as `[capability]`
+   (see Finding Classification above). `[convention]` concerns never
+   promote. executing-plans owns this classification; this entry defers
+   to it.
 
 ## Complete Task Tree (Handoff Contract)
 
