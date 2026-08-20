@@ -8,7 +8,9 @@ Lead orchestrates execution of a pre-planned task list. All tasks exist in bd be
 </skill_overview>
 
 <rigidity_level>
-MEDIUM FREEDOM — Pre-dispatch verification uses judgment. Dispatch, review, and escalation protocol are rigid (follow exactly). Do not skip stage 1 or stage 2 review. Do not implement code in the lead context. Do not redesign the plan autonomously.
+MEDIUM FREEDOM — Pre-dispatch verification uses judgment. Dispatch, review, and escalation protocol are rigid (follow exactly). Do not skip stage 1 or stage 2 review. Do not redesign the plan autonomously.
+
+The lead never implements task work in the lead context. One carve-out: `[convention]`-class finding fixes (Stage 2 CONCERNS handling and the GAPS FOUND branch below), which the lead applies directly. A convention fix must never change behavior — the moment it would, it stops being a convention fix (retag and dispatch it).
 </rigidity_level>
 
 <quick_reference>
@@ -19,8 +21,8 @@ MEDIUM FREEDOM — Pre-dispatch verification uses judgment. Dispatch, review, an
 | **Branch** | Establish working branch; never dispatch on the default | `git branch --show-current` (+ `git checkout -b epic/<epic-id>` when on main) |
 | **Pre-dispatch** | Verify spec exists and dependencies met | `bd show <task-id>` |
 | **Dispatch** | Record base SHA, then fresh blocking executor subagent per task | `git rev-parse HEAD` + Agent tool (no team_name, Sonnet unless promoted) |
-| **Stage 1** | Lead reads diff vs recorded base SHA for epic coherence | `git merge-base --is-ancestor <hash> HEAD` + `git diff <base-SHA>..HEAD` |
-| **Stage 2** | Stage-2 code-reviewer: spec-match + code quality review | Agent tool (Sonnet unless promoted) |
+| **Stage 1** | Lead reads diff vs recorded base SHA for epic coherence (boy-scout cleanup is in-scope, not drift) | `git merge-base --is-ancestor <hash> HEAD` + `git diff <base-SHA>..HEAD` |
+| **Stage 2** | Stage-2 code-reviewer: spec-match + code quality review; findings resolve by class — `[convention]` lead-fixed, `[capability]` re-dispatched (cap: 2 rounds) | Agent tool (Sonnet unless promoted) |
 | **Escalation** | Halt, summarize, recommend, wait | AskUserQuestion |
 
 **Critical:** Executor returns a one-liner (DONE:, BLOCKED:, or NEEDS_HELP:) — not a multi-section envelope. Parse the first word only. All three loop verdict vocabularies are single-sourced in `skills/common-patterns/loop-interfaces.md` (Verdict Contracts).
@@ -140,7 +142,11 @@ Read the diff for what only the lead can see and the Stage-2 code-reviewer canno
 - Watering-down of any immutable requirement
 - Contradictions with other tasks — already-completed work, or assumptions that remaining tasks depend on
 
-Do not re-check whether the implementation matches the task spec line-by-line — that is Stage 2's job. If any check above fails: note the violation(s), re-dispatch with feedback (see Stage 1 feedback template below).
+Do not re-check whether the implementation matches the task spec line-by-line — that is Stage 2's job.
+
+**Sanctioned, not drift:** an executor that removed noise comments or corrected stale docstrings inside a file the spec already named was following the boy-scout rule (`skills/common-patterns/prose-style.md`), which makes that cleanup mandatory and in-scope. Do not flag it as scope drift. Opening a file the spec does not name is still drift — the boy-scout rule extends what gets fixed inside an authorized file, never which files are authorized.
+
+If any check above fails: note the violation(s), re-dispatch with feedback (see Stage 1 feedback template below).
 
 **Stage 2 — Code-reviewer spec-match and code quality check:**
 
@@ -166,9 +172,14 @@ Agent tool:
 
 If the Stage-2 code-reviewer returns PASS: Task closure is owned by the lead: the lead closes the task only after Stage 2 review passes — the executor never closes tasks. Verify the working branch (Branch Establishment rule), then run `bd close <task-id>`, then proceed to the next task.
 
-If the Stage-2 code-reviewer returns CONCERNS: classify before re-dispatching. A task is NEVER closed with unaddressed CONCERNS — both classes below always re-dispatch with the concern list (Stage-2 CONCERNS re-dispatch template below). The lead's discretion governs only the classification (capability vs cosmetic), which governs promotion (see skills/common-patterns/pipeline-constants.md) — never whether to re-dispatch.
-- **Capability-class** (correctness or quality issue — spec mismatch, wrong logic, missing error handling): if this is the task's first re-dispatch and it is not already promoted, add `Executor: opus` to the task spec and note the promotion in bd (e.g. `bd update <task-id> --notes "Auto-promoted to opus after Stage 2 CONCERNS"`). Re-dispatch with the concern list.
-- **Cosmetic/convention-class** (formatting, citation style, naming): re-dispatch with the concern list. Do NOT promote — promotion is reserved for capability-class failures, and spending it on a convention fix wastes the escalation rung.
+If the Stage-2 code-reviewer returns CONCERNS: the concern lines arrive class-tagged (`[capability]` or `[convention]`, one tag per line — format: `skills/common-patterns/loop-interfaces.md`). The lead owns final classification (`skills/common-patterns/pipeline-constants.md`, Finding Classification) and may retag a line; record the retag in a one-line bd note. Resolution splits by class:
+
+- **`[convention]` concerns — lead fixes them directly, now.** Edit the named sites yourself, verify by grep/read against each concern line, commit on the working branch, and record it: `bd update <task-id> --notes "Convention concerns lead-fixed: <short list> (<commit hash>)"`. No re-dispatch and no Stage-2 re-run for these lines. **Bound:** a convention fix must not change behavior. If mid-fix it turns out to require one, stop, retag the line `[capability]` (one-line bd note), and route it through the capability path below.
+- **`[capability]` concerns — re-dispatch** with the capability concern list only (template below). Promotion rule unchanged: if this is the task's first re-dispatch and it is not already promoted, add `Executor: opus` to the task spec and note it in bd (e.g. `bd update <task-id> --notes "Auto-promoted to opus after Stage 2 [capability] CONCERNS"`). **Round cap (`skills/common-patterns/pipeline-constants.md`): after 2 capability fix→re-review rounds on the same task without PASS, stop and escalate (section 5), carrying the concern history from every round.**
+- **Mixed verdicts:** lead-fix the `[convention]` lines first, then re-dispatch with only the `[capability]` lines.
+- **`SUGGESTION:` lines** are non-blocking: persist them to the epic's bd notes as optional follow-ups. Never act on them in-round; they never gate task closure.
+
+A task is still NEVER closed with unaddressed concerns — every concern line is either lead-fixed (`[convention]`) or re-dispatched (`[capability]`).
 
 **Stage 1 feedback template** (when the lead's epic-coherence check fails):
 ```
@@ -203,13 +214,13 @@ Working directory: <pwd>
 Branch: <working branch>
 ```
 
-**Stage-2 CONCERNS re-dispatch template:**
+**Stage-2 CONCERNS re-dispatch template** (the concern list carries only `[capability]` lines — `[convention]` lines were already lead-fixed):
 ```
 Re-execute this task. The Stage-2 code review returned CONCERNS.
 
 Concerns to address:
-- <file:line — concern 1>
-- <file:line — concern 2>
+- <file:line — capability concern 1>
+- <file:line — capability concern 2>
 
 Task: <bd-task-id>
 
@@ -319,7 +330,16 @@ After all tasks return DONE and pass two-stage review:
    d. **STOP here.** Do not automatically call finishing-a-development-branch. The user needs time to test the implementation manually in their environment, verify edge cases automated tests don't cover, and confirm the feature works as expected in context. Closing the epic removes context the user may need during manual validation — let them explicitly trigger closure when ready.
    e. The epic remains open. The user runs `/hyperpowers:finish-branch` when ready.
 
-   **GAPS FOUND:** Create fix task(s) inline for each gap — spec body per the tier templates in `skills/common-patterns/spec-templates.md` — and link each to the epic: `bd dep add bd-<fix-task> bd-<epic-id> --type parent-child` (the completion re-check and re-review enumerate tasks via `bd list --parent`) — and dispatch executors. This is the one exception to "all tasks planned upfront." These gap-fix tasks follow the same dispatch and two-stage review loop. After all gaps resolved, re-dispatch the end-of-epic reviewer.
+   **GAPS FOUND:** Gap entries arrive class-tagged, same vocabulary as Stage 2 (`skills/common-patterns/loop-interfaces.md`); the lead owns final classification (`skills/common-patterns/pipeline-constants.md`, Finding Classification). Resolve by class:
+
+   - **`[convention]` gaps:** the lead fixes them directly under the same bounded carve-out as Stage 2 — no fix task, no executor. Edit, verify against each gap entry, commit on the working branch, and record it in the epic's bd notes (`bd update <epic-id> --notes "Convention gaps lead-fixed: <short list> (<commit hash>)"`). Same bound: if a fix turns out to require a behavior change, stop, retag it `[capability]`, and route it below.
+   - **`[capability]` gaps:** create fix task(s) inline — spec body per the tier templates in `skills/common-patterns/spec-templates.md` — and link each to the epic: `bd dep add bd-<fix-task> bd-<epic-id> --type parent-child` (the completion re-check and re-review enumerate tasks via `bd list --parent`) — then dispatch executors. This is the one exception to "all tasks planned upfront." These gap-fix tasks follow the same dispatch and two-stage review loop.
+
+   After ALL gaps are resolved — both classes — re-dispatch the end-of-epic reviewer. This re-review is mandatory and unchanged: convention gaps being lead-fixed does not exempt the epic from it.
+
+   **Round cap (`skills/common-patterns/pipeline-constants.md`): after 2 full gap rounds (2 reviewer re-dispatches following the initial review) without APPROVED, stop and escalate (section 5), carrying the outstanding gap list.**
+
+   Any non-blocking Suggestions section the reviewer returns goes to the epic's bd notes as optional follow-ups — it never blocks approval and is never fixed in-round.
 
    **If the review reveals sibling-relevant divergence** — the implementation departed from an upstream shared plan in a way other services or epics depend on — emit a plan-impact notice (format: `skills/common-patterns/loop-interfaces.md`) into the epic's bd notes; the user carries it to the planning repo; sessions never write the shared docs.
 
@@ -385,7 +405,7 @@ Waits for user response before proceeding.
 
 3. **Parse the one-liner** — Executor returns DONE:, BLOCKED:, or NEEDS_HELP: as a one-liner. There are no multi-section status envelopes to parse.
 
-4. **Two-stage review on every DONE** — Stage 1 (lead epic-coherence check against the recorded base SHA — commit-landed check, then diff `<base-SHA>..HEAD`) and Stage 2 (code-reviewer spec-match and code quality check) are both mandatory. Do not skip either stage.
+4. **Two-stage review on every DONE** — Stage 1 (lead epic-coherence check against the recorded base SHA — commit-landed check, then diff `<base-SHA>..HEAD`) and Stage 2 (code-reviewer spec-match and code quality check) are both mandatory on every DONE. Do not skip either stage. Class-split resolution changes only what happens to findings *after* Stage 2 returns — `[convention]` lead-fixes are a resolution path, never a substitute for running Stage 2.
 
 5. **Never redesign autonomously** — On plan-level failures, halt and escalate. Present options; the user decides. Never continue without user input after escalation.
 
@@ -402,7 +422,9 @@ Waits for user response before proceeding.
 - "The end-of-epic reviewer is overkill for gap-fix tasks" → Dispatch the end-of-epic reviewer after all gaps are fixed. No exceptions.
 - "I can answer this NEEDS_HELP myself and keep going" → Answer it in the re-dispatch prompt. Do not implement it in the lead context.
 - "Every task passed two-stage review, the end-of-epic reviewer is redundant" → Per-task review sees one diff at a time. 7/7 epics had gaps only the end-of-epic reviewer caught. Dispatch it.
-- "I'll promote to opus since the Stage-2 code-reviewer raised a concern" → Not for cosmetic or convention-level concerns (formatting, citation style, naming). Promotion is reserved for capability-class failures — don't spend the rung on a convention fix.
+- "I'll promote to opus since the Stage-2 code-reviewer raised a concern" → Not for `[convention]` concerns — those never reach an executor at all; the lead fixes them. Promotion is reserved for `[capability]` failures; don't spend the rung on a convention fix.
+- "This concern is borderline — I'll call it `[convention]` and save a dispatch" → If the fix touches behavior in any way, it is `[capability]`. Dispatch it. The carve-out exists to skip dispatches that buy nothing, not to skip review of real changes.
+- "This convention fix is growing, but I'm halfway through — I'll finish it here" → Stop. A convention fix that grows into behavior was misclassified. Retag it `[capability]`, note the retag, and dispatch it.
 
 </critical_rules>
 
@@ -418,7 +440,11 @@ After each DONE return:
 - [ ] Commit-landed check passed: DONE hash in history, `git status --porcelain` clean
 - [ ] Stage 1: lead read the diff (`<base-SHA>..HEAD`) against the recorded base SHA for epic coherence
 - [ ] Stage 2: code-reviewer dispatched and returned PASS (spec-match and code quality)
-- [ ] Any CONCERNS re-dispatched with the concern list (never closed as-is); promotion applied only to capability-class failures
+- [ ] Any CONCERNS resolved by class — `[convention]` lines lead-fixed and verified, `[capability]` lines re-dispatched (never closed as-is); promotion applied only to `[capability]` failures
+- [ ] Convention lead-fixes recorded in bd notes with the commit hash (`Convention concerns lead-fixed: ...`)
+- [ ] No convention fix changed behavior — any that would have was retagged `[capability]` and dispatched
+- [ ] Stage-2 round cap respected: 2 capability fix→re-review rounds on a task without PASS → escalated (section 5), not a 3rd round
+- [ ] `SUGGESTION:` lines persisted to the epic's bd notes, not acted on in-round
 - [ ] Any BLOCKED classified before re-dispatch; promotion applied only to capability-class failures
 - [ ] Task closed in bd by the lead (Stage 2 PASS)
 - [ ] Working branch verified before task closure
@@ -427,7 +453,8 @@ Before completion:
 - [ ] `bd list --parent <epic-id> --status open` returns 0
 - [ ] End-of-epic reviewer dispatched as blocking subagent
 - [ ] APPROVED → gate-state persisted, post-build Architecture Impact Check run (per `architecture-impact-check.md`), final status presented, then STOP — no automatic call to finish-branch
-- [ ] GAPS FOUND → fix tasks created and dispatched, end-of-epic reviewer dispatched again to confirm
+- [ ] GAPS FOUND → `[convention]` gaps lead-fixed and recorded in the epic's bd notes, `[capability]` gaps turned into linked fix tasks and dispatched, end-of-epic reviewer dispatched again to confirm
+- [ ] Gap-round cap respected: 2 reviewer re-dispatches without APPROVED → escalated (section 5), not a 3rd round
 - [ ] Working branch verified before gate-state persist and any final commits
 
 </verification_checklist>
@@ -455,7 +482,7 @@ Before completion:
   Working directory: <pwd>
   Branch: <working branch>
   ```
-- End-of-epic reviewer GAPS FOUND → Create gap-fix tasks, dispatch executors, re-dispatch the end-of-epic reviewer
+- End-of-epic reviewer GAPS FOUND → Lead-fix the `[convention]` gaps, create gap-fix tasks for the `[capability]` gaps and dispatch executors, then re-dispatch the end-of-epic reviewer
 - End-of-epic reviewer APPROVED → Persist gate-state, run the post-build Architecture Impact Check, present, then STOP — never auto-call finish-branch
 - Escalation → Summarize, recommend, wait for user
 
