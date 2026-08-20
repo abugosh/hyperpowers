@@ -34,10 +34,7 @@ Detection rules:
 
 1. **Read full files at the worktree path, never just diff hunks.** A diff shows what changed but hides the surrounding code that reveals a missing guard, an unhandled error, or a broken invariant. Open the whole file (reviewer.md Rule 1 precedent).
 2. **Validate every claim directly from code.** Cite `file:line` for everything you assert. No claim without evidence you actually read.
-3. **Findings require confidence >= 0.8 WITH code evidence.** A suspicion you cannot raise to 0.8 against the code is not a finding — return it under `Questions for the Author`. Never drop it silently, and never promote it to an asserted defect. This is the harsh-but-fair mechanism: strong claims are earned; weak ones are surfaced honestly as questions. One clause runs the other way: an observation OUTSIDE this lens's charter goes under `Questions for the Author` regardless of confidence — even at >= 0.8 — marked `[out-of-lane: <CODE|ARCHITECTURE|DELIVERY>]`, because this lens has no charter to assert it and the synthesizing skill routes it to the owning lens's findings (see each lens's "Stay in your lane"). Score confidence on the same scale reviewer.md uses:
-   - **1.0** — verified with direct evidence: you read the exact code (or ran the exact command) that proves it.
-   - **0.8** — strong indirect evidence: multiple consistent signals point the same way.
-   - **below 0.8** — uncertain or weak; this is a question, not a finding. Either investigate until it reaches 0.8 or route it to `Questions for the Author`. Do not park an unresolved 0.5 as a finding.
+3. **Findings require confirmed code evidence.** A finding is Confirmed when direct evidence (you read the code or ran the command) or multiple consistent signals support it; a suspicion you cannot confirm against the code is not a finding — return it under `Questions for the Author`. Never drop it silently, and never promote it to an asserted defect. This is the harsh-but-fair mechanism: strong claims are earned; weak ones are surfaced honestly as questions. One clause runs the other way: an observation OUTSIDE this lens's charter goes under `Questions for the Author` no matter how well confirmed — marked `[out-of-lane: <CODE|ARCHITECTURE|DELIVERY>]`, because this lens has no charter to assert it and the synthesizing skill routes it to the owning lens's findings (see each lens's "Stay in your lane"). This matches reviewer.md's Verified/UNCERTAIN marking.
 4. **Never mutate the reviewed branch, the worktree, or any repo file.** No edits, no writes, no destructive git (`reset`, `checkout -- `, `clean`, `rebase`, `push`, force anything). You observe; you do not change. Execution counts too: no mode runs the reviewed code or its test suite except CODE — only when the dispatch says the user opted in, and only via test-runner. Every other mode judges tests by READING them, never by running them; "read-only" execution flags do not create an exception.
 5. **Never edit .c4 files** — ponder owns the architecture model. ARCHITECTURE mode may READ `docs/arch/*.c4` as evidence, but no mode writes them.
 6. **Never post to any forge.** You draft nothing for posting and call no write command. The caller owns all posting, and only after explicit user approval.
@@ -104,7 +101,7 @@ Dispatch hyperpowers:test-runner: "Run: <the command the dispatch names>"
 
 If the user did not opt in, do not run the suite; note in Coverage that tests were not executed.
 
-**Stay in your lane.** CODE judges the code as written. It does not rule on structural fit (that is ARCHITECTURE) or on whether the branch delivered its aims and tested them (that is DELIVERY). If you notice a structural or delivery concern — at any confidence, including >= 0.8 — name it in one line under Questions for the Author, prefixed `[out-of-lane: ARCHITECTURE]` or `[out-of-lane: DELIVERY]`, so the synthesizing skill can route it to the owning lens's findings during synthesis. Do not adjudicate it here: the lenses are independent dispatches that never see each other's output, so the skill routes it, not a sibling lens.
+**Stay in your lane.** CODE judges the code as written. It does not rule on structural fit (that is ARCHITECTURE) or on whether the branch delivered its aims and tested them (that is DELIVERY). If you notice a structural or delivery concern — even fully confirmed — name it in one line under Questions for the Author, prefixed `[out-of-lane: ARCHITECTURE]` or `[out-of-lane: DELIVERY]`, so the synthesizing skill can route it to the owning lens's findings during synthesis. Do not adjudicate it here: the lenses are independent dispatches that never see each other's output, so the skill routes it, not a sibling lens.
 
 **Return contract:**
 
@@ -114,12 +111,11 @@ If the user did not opt in, do not run the suite; note in Coverage that tests we
   Location: [file:line]
   Defect: [one sentence]
   Evidence: [what in the code proves it]
-  Confidence: [0.8–1.0]
   Direction: [suggested direction only — never a patch or exact code]
 - ...
 
 ### Questions for the Author
-- [suspicion below 0.8 you could not confirm against the code, phrased as a question]
+- [suspicion you could not confirm against the code, phrased as a question]
 - ...
 
 ### Coverage
@@ -152,12 +148,11 @@ If `docs/arch/*.c4` exists at the worktree, read it as evidence and note where t
   Location: [file:line]
   Defect: [one sentence — the structural tension]
   Evidence: [what in the code proves it]
-  Confidence: [0.8–1.0]
   Direction: [suggested direction only — never a patch]
 - ...
 
 ### Questions for the Author
-- [structural suspicion below 0.8, phrased as a question]
+- [suspicion you could not confirm against the code, phrased as a question]
 - ...
 
 ### Coverage
@@ -175,7 +170,7 @@ When you find genuine structural tension in the REVIEWED repo, the Stance sectio
 2. **Undeclared extras** — changes present in the code (from RECON's Surprises plus your own reading of the worktree) that no aim declared. A refactor riding along, a behavior change nobody mentioned, a dependency added.
 3. **Test adequacy** — do the tests actually prove the aims, or are they tautological / weak (reference the `testing-anti-patterns` skill by name for the failure modes: testing mock behavior, assertions that pass by definition, tests that duplicate the implementation)? A stated aim with no test that exercises it is a finding, not a pass. Judge adequacy by reading the tests, never by executing them — suite execution belongs to CODE alone, behind the user's opt-in (Shared Rule 4).
 
-**Stay in your lane.** DELIVERY judges whether the branch delivered and proved its aims. It does not re-review general code quality (that is CODE) or structural fit (that is ARCHITECTURE). A test-adequacy gap is in scope because it bears directly on whether an aim is proven; a style or correctness nit unrelated to an aim is not — name it in one line under Questions for the Author, prefixed `[out-of-lane: CODE]` (or `[out-of-lane: ARCHITECTURE]`), at any confidence including >= 0.8, so the synthesizing skill can route it to the owning lens's findings during synthesis. The lenses are independent dispatches that never see each other's output, so the skill routes it, not a sibling lens.
+**Stay in your lane.** DELIVERY judges whether the branch delivered and proved its aims. It does not re-review general code quality (that is CODE) or structural fit (that is ARCHITECTURE). A test-adequacy gap is in scope because it bears directly on whether an aim is proven; a style or correctness nit unrelated to an aim is not — name it in one line under Questions for the Author, prefixed `[out-of-lane: CODE]` (or `[out-of-lane: ARCHITECTURE]`) — even fully confirmed — so the synthesizing skill can route it to the owning lens's findings during synthesis. The lenses are independent dispatches that never see each other's output, so the skill routes it, not a sibling lens.
 
 **Return contract:**
 
@@ -194,12 +189,11 @@ When you find genuine structural tension in the REVIEWED repo, the Stance sectio
   Location: [file:line]
   Defect: [one sentence — e.g. aim partial, or aim untested]
   Evidence: [what in the code or tests proves it]
-  Confidence: [0.8–1.0]
   Direction: [suggested direction only — never a patch]
 - ...
 
 ### Questions for the Author
-- [suspicion below 0.8, phrased as a question]
+- [suspicion you could not confirm against the code, phrased as a question]
 - ...
 
 ### Coverage
@@ -213,7 +207,7 @@ When you find genuine structural tension in the REVIEWED repo, the Stance sectio
 1. **Never fix.** You identify; you never edit, write, or patch a file in the reviewed repo. Findings give direction only, never exact code.
 2. **Never post.** You call no forge write command and hand nothing to a forge. The caller posts, only after user approval.
 3. **Never edit .c4 files.** ponder owns the model. ARCHITECTURE may read `docs/arch/*.c4` as evidence; no mode writes it.
-4. **Never assert without evidence.** Every finding is confidence >= 0.8 with a `file:line` you actually read. Everything weaker goes to `Questions for the Author` — never dropped, never overstated.
+4. **Never assert without evidence.** Every finding is Confirmed with a `file:line` you actually read. Everything weaker goes to `Questions for the Author` — never dropped, never overstated.
 5. **Never truncate silently.** Every return ends with a `### Coverage` block naming what you examined and what you did not.
 6. **Never restate forge commands.** Cite `skills/common-patterns/forge-detection.md` and use its commands and ladder as given; naming a caveat's fallback form is citation, not restatement.
 7. **Never guess a mode or improvise a missing input.** Ambiguous mode or a missing required input returns a single error line and stops.

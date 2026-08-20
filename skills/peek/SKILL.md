@@ -128,7 +128,7 @@ lens's Findings during this synthesis step instead — see agents/peek.md Shared
 
 ## Step 7: Draft Comment Offer
 
-AskUserQuestion: draft a comment for the MR/PR? If yes: draft a professional, direct comment from the report (findings + questions; no internal vocabulary — no lens names, no mode words). Show the drafted text to the user. Only after the user approves that exact text, post it via the write commands cited from `forge-detection.md`. On GitLab, the C2 caveat applies at this step: try the `note create` form first, fall back to the legacy `note -m` form second, per `forge-detection.md`'s caveat table. On rung 2/3 (no forge, or no MR/PR resolvable), hand over copy-paste text instead of posting.
+AskUserQuestion: draft a comment for the MR/PR? If yes: draft a professional, direct comment from the report (findings + questions; no internal vocabulary — no lens names, no mode words). Comment prose follows `skills/common-patterns/prose-style.md`: findings and questions only — no restated report sections, no Coverage block, no praise-padding; target a comment the author reads in under a minute, longer only when the finding count itself demands it. Show the drafted text to the user. Only after the user approves that exact text, post it via the write commands cited from `forge-detection.md`. On GitLab, the C2 caveat applies at this step: try the `note create` form first, fall back to the legacy `note -m` form second, per `forge-detection.md`'s caveat table. On rung 2/3 (no forge, or no MR/PR resolvable), hand over copy-paste text instead of posting.
 
 NEVER post without the user's approval of the exact text that goes out.
 
