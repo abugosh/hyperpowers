@@ -295,6 +295,11 @@ Ready to commit.
 4. **Evidence in every claim** → Show the output
    - Not: "Tests pass"
    - Yes: "Tests pass [Ran: cargo test, Output: 34/34 passed]"
+   - Scope: this bracketed shape (`[Evidence: ...]`, `[Ran: ...]`) is for internal
+     surfaces — verification reports, bd notes, agent return messages, in-session
+     claims to the user. Outward prose (MR/PR comments, commit message bodies,
+     code comments) states conclusions plainly per `skills/common-patterns/prose-style.md`
+     — the evidence requirement still applies, only the sentence shape changes.
 
 5. **Never bypass a failing hook** → Never `git commit --no-verify`. Never edit `.git/hooks` to get past a failing check. Fix the failure, or surface it and stop — a bypassed hook is a verification you chose not to run.
 
