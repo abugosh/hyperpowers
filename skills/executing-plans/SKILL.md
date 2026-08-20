@@ -22,7 +22,7 @@ The lead never implements task work in the lead context. One carve-out: `[conven
 | **Pre-dispatch** | Verify spec exists and dependencies met | `bd show <task-id>` |
 | **Dispatch** | Record base SHA, then fresh blocking executor subagent per task | `git rev-parse HEAD` + Agent tool (no team_name, Sonnet unless promoted) |
 | **Stage 1** | Lead reads diff vs recorded base SHA for epic coherence (boy-scout cleanup is in-scope, not drift) | `git merge-base --is-ancestor <hash> HEAD` + `git diff <base-SHA>..HEAD` |
-| **Stage 2** | Stage-2 code-reviewer: spec-match + code quality review; findings resolve by class — `[convention]` lead-fixed, `[capability]` re-dispatched (cap: 2 rounds) | Agent tool (Sonnet unless promoted) |
+| **Stage 2** | Stage-2 code-reviewer: spec-match + code quality review; findings resolve by class — `[convention]` lead-fixed, `[capability]` re-dispatched (cap: 2 rounds — `pipeline-constants.md`) | Agent tool (Sonnet unless promoted) |
 | **Escalation** | Halt, summarize, recommend, wait | AskUserQuestion |
 
 **Critical:** Executor returns a one-liner (DONE:, BLOCKED:, or NEEDS_HELP:) — not a multi-section envelope. Parse the first word only. All three loop verdict vocabularies are single-sourced in `skills/common-patterns/loop-interfaces.md` (Verdict Contracts).
@@ -286,6 +286,7 @@ Triggered when:
 - Executor's changes contradict assumptions in remaining tasks
 - A task reveals the approach is fundamentally wrong
 - Consecutive BLOCKED threshold reached (see section 4)
+- A round cap is reached (see section 4 Stage 2 and section 6 GAPS FOUND; cap constant: `skills/common-patterns/pipeline-constants.md`)
 
 **Steps — follow exactly:**
 
@@ -443,7 +444,7 @@ After each DONE return:
 - [ ] Any CONCERNS resolved by class — `[convention]` lines lead-fixed and verified, `[capability]` lines re-dispatched (never closed as-is); promotion applied only to `[capability]` failures
 - [ ] Convention lead-fixes recorded in bd notes with the commit hash (`Convention concerns lead-fixed: ...`)
 - [ ] No convention fix changed behavior — any that would have was retagged `[capability]` and dispatched
-- [ ] Stage-2 round cap respected: 2 capability fix→re-review rounds on a task without PASS → escalated (section 5), not a 3rd round
+- [ ] Stage-2 round cap respected (`pipeline-constants.md`): 2 capability fix→re-review rounds on a task without PASS → escalated (section 5), not a 3rd round
 - [ ] `SUGGESTION:` lines persisted to the epic's bd notes, not acted on in-round
 - [ ] Any BLOCKED classified before re-dispatch; promotion applied only to capability-class failures
 - [ ] Task closed in bd by the lead (Stage 2 PASS)
@@ -454,7 +455,7 @@ Before completion:
 - [ ] End-of-epic reviewer dispatched as blocking subagent
 - [ ] APPROVED → gate-state persisted, post-build Architecture Impact Check run (per `architecture-impact-check.md`), final status presented, then STOP — no automatic call to finish-branch
 - [ ] GAPS FOUND → `[convention]` gaps lead-fixed and recorded in the epic's bd notes, `[capability]` gaps turned into linked fix tasks and dispatched, end-of-epic reviewer dispatched again to confirm
-- [ ] Gap-round cap respected: 2 reviewer re-dispatches without APPROVED → escalated (section 5), not a 3rd round
+- [ ] Gap-round cap respected (`pipeline-constants.md`): 2 reviewer re-dispatches without APPROVED → escalated (section 5), not a 3rd round
 - [ ] Working branch verified before gate-state persist and any final commits
 
 </verification_checklist>
