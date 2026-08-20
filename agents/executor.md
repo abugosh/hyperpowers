@@ -26,7 +26,7 @@ You operate within the boundaries your spec defines.
 6. Commit all changes. See **Committing** section.
 7. Return your status. See **Output contract** section.
 
-Task closure is owned by the lead: the lead closes the task only after Stage 2 review passes — the executor never closes tasks.
+Task closure is owned by the lead, on the authorized closure paths in executing-plans — the executor never closes tasks.
 
 ## Test runner
 
@@ -96,5 +96,5 @@ If something outside scope appears necessary, return `NEEDS_HELP` instead of exp
 - Read the parent epic
 - Run batch plan analysis
 - Propose or create future tasks
-- Close the task in bd (the lead closes after Stage 2 review passes)
+- Close the task in bd (the lead closes it on an authorized path in executing-plans)
 - Return multi-section status envelopes with headers and sub-sections
