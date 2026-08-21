@@ -557,6 +557,8 @@ Ordering language (rewrite if found):
 
 **Report format:**
 
+This report follows the Audience Contract (`skills/common-patterns/prose-style.md`, The Reader) — module-level altitude and Pull/Gain/Cost structure per tension, no pass numbers, step references, or mode words in what the architect reads.
+
 ```
 ## Architectural Intuition Report
 
@@ -574,7 +576,7 @@ Ordering language (rewrite if found):
 
 ## Tension: [Descriptive Name]
 **Components/Modules:** [Component A], [Component B]
-**Analysis pass:** [which of the 9 passes found this]
+**Found by:** [the kind of analysis that surfaced this — e.g., change-frequency comparison, dependency-direction check, workaround clustering]
 **Pull 1:** [Structural choice] -- Gain: [what you get]. Cost: [what you pay].
 **Pull 2:** [Alternative choice] -- Gain: [what you get]. Cost: [what you pay].
 **If you assume:** [condition that makes Pull 1 correct].
@@ -619,11 +621,11 @@ Ordering language (rewrite if found):
 **Tensions found:** [count]
 **Accepted (via ADRs):** [count]
 **Drift detected (ADR):** [count]
-**Rate-of-change mismatches (Pass 7):** [count, or "skipped — insufficient history"]
-**Pass 7 filtering stats:** [Analyzed N commits (excluded M bulk, K generated-only, J manifest-only)]
-**Workaround cascades (Pass 8):** [count, or "none"]
-**Mechanism bypass (Pass 9):** [count, or "skipped — no cascades" or "none — cascades without identified bypass"]
-**View drift: see /ponder REVIEW (model-vs-code accuracy)**
+**Rate-of-change mismatches:** [count, or "skipped — insufficient history"]
+**Change-frequency filtering:** [Analyzed N commits (excluded M bulk, K generated-only, J manifest-only)]
+**Workaround cascades:** [count, or "none"]
+**Mechanism bypass:** [count, or "skipped — no cascades" or "none — cascades without identified bypass"]
+**Model-vs-code accuracy:** not checked here — /hyperpowers:ponder audits the model against the code.
 **Stale ADRs (6+ months):** [count, or "none"]
 **Clean (no tensions, no drift):** [yes/no]
 
@@ -631,7 +633,7 @@ Ordering language (rewrite if found):
 All components/modules passed audit. No structural tensions detected.
 
 [If tensions found:]
-[count] tensions require architect resolution. See Step 4 for resolution protocol.
+[count] tensions require architect resolution.
 ```
 
 ---

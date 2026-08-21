@@ -342,8 +342,10 @@ Every model operation must maintain these invariants:
    - likec4 validate: [PASS/FAIL with details]
 
    ### Recommendation
-   [N] discrepancies found. [Suggest update mode dispatch if corrections needed.]
+   [N] discrepancies. [What they mean for the model's trustworthiness — which parts of the model can be relied on, which cannot; whether corrections are warranted.]
    ```
+
+   This summary is read by the architect deciding whether to approve corrections — it follows the Audience Contract (`skills/common-patterns/prose-style.md`, The Reader).
 
 6. **Do NOT make corrections.** Review mode is read-only. Return findings for architect approval. Corrections come via a follow-up UPDATE dispatch after the architect reviews and approves.
 
