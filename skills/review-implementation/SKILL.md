@@ -40,13 +40,13 @@ The reviewer owns the entire review protocol (evidence requirements, quality gat
 
 a. Run the post-build Architecture Impact Check against the epic's work, per `skills/common-patterns/architecture-impact-check.md` (Post-Build Routing) — cite that file, never restate the 5 questions. Any YES routes per that file: dispatch `/ponder` UPDATE when a model exists, or note-and-suggest when none exists.
 
-b. Present the reviewer's APPROVED report to the user.
+b. Present the reviewer's APPROVED report to the user — the report's leading Architect Summary (`agents/reviewer.md`) orients the reader; present the whole report beneath it, nothing dropped.
 
 c. **STOP here.** Do not automatically call finishing-a-development-branch. The user decides the next step — closing the epic, further manual validation, or nothing further. Closing removes context the user may still need.
 
 ## Step 3: GAPS FOUND
 
-Present the reviewer's gap list to the user as-is — do not summarize away detail.
+Present the reviewer's gap list to the user as-is — do not summarize away detail. As-is protects the evidence layer; it is the report's own leading Architect Summary (`agents/reviewer.md`) that makes the full artifact readable at a glance. Present the whole report, summary first, nothing dropped.
 
 If a pipeline session (hyperpowers:executing-plans) owns this epic and is still active, hand the gaps to its gap-fix loop (`skills/executing-plans/SKILL.md`, Completion section, GAPS FOUND branch) rather than fixing them here. If no pipeline session owns the epic (this is a standalone re-check), the user decides how to route the fixes — do not auto-dispatch an executor.
 

@@ -298,8 +298,8 @@ Triggered when:
 
 1. **Halt execution immediately.** Do not dispatch the next task.
 2. **Summarize to user:**
-   - Tasks completed (with commit hashes)
-   - Current failure (what failed and why)
+   - Where the epic stands: what it was building, in system terms — completed tasks trail as evidence (commit hashes), not the headline
+   - The failure and what it means: what failed, why, and the system-level consequence
    - Remaining tasks affected
    - One recommendation: replan remaining tasks / revert and redesign / continue with adjustments
 3. **Persist the gate, then wait.** Emit the gate-state block — including any accumulated plan-impact notices — and write it to the epic's bd notes (format: `skills/common-patterns/loop-interfaces.md`) — the user may return hours later or in a different session, and the question must be answerable in durable prose. Then wait for the user decision. Do NOT continue without user input.
@@ -333,7 +333,11 @@ After all tasks return DONE and pass two-stage review:
 
    a. Verify the working branch, then persist the completion gate-state block to the epic's bd notes (format: `skills/common-patterns/loop-interfaces.md`), including any accumulated plan-impact notices. The block MUST include the machine-checkable marker line `Verdict: APPROVED (end-of-epic reviewer, <date>)` (format: `skills/common-patterns/loop-interfaces.md`). Any non-blocking `### Suggestions` section the reviewer returns goes to the epic's bd notes as optional follow-ups — never acted on in-round, same disposition as the GAPS FOUND branch.
    b. Run the post-build Architecture Impact Check against the work just completed for this epic, per `skills/common-patterns/architecture-impact-check.md` (Post-Build Routing) — cite that file, do not restate the 5 questions here. Any YES routes per that file: dispatch `/ponder` in UPDATE mode when a model exists, or note-and-suggest in the completion report when no model exists.
-   c. Present final status to the user.
+   c. Present final status to the user, at architect altitude per the Audience Contract (`skills/common-patterns/prose-style.md`, The Reader — cite, don't restate):
+      - **What was built:** 3-6 sentences of role-based plain language — the system change this epic delivered (components, behavior, contracts) — leaning on the reviewer's Architect Summary rather than restating the audit.
+      - **Decided during build:** judgment calls the lead made that the architect didn't see — retags, convention lead-fixes, promotions, Suggestions filed to bd notes — as plain descriptions; commit hashes may appear as trailing evidence, never as the narrative.
+      - **Needs you:** the manual-validation focus — what to exercise and why — plus any decisions left on file.
+      No internal vocabulary (stage labels, class tags as narrative) belongs in this presentation; class tags may still appear in trailing evidence.
    d. **STOP here.** Do not automatically call finishing-a-development-branch. The user needs time to test the implementation manually in their environment, verify edge cases automated tests don't cover, and confirm the feature works as expected in context. Closing the epic removes context the user may need during manual validation — let them explicitly trigger closure when ready.
    e. The epic remains open. The user runs `/hyperpowers:finish-branch` when ready.
 
@@ -394,9 +398,10 @@ Tasks bd-51, bd-52, bd-53 are all BLOCKED because the assumed API endpoint
 (/api/v2/tasks) does not exist — the API is still v1 with a different schema.
 
 Lead halts. Summarizes to user:
-- Completed: bd-48, bd-49, bd-50 (commits: a1b2c, d3e4f, g5h6i)
-- Failure: API is v1, not v2. Tasks bd-51–bd-53 assume v2 schema.
-- Recommendation: replan bd-51–bd-53 to use v1 API schema.
+- Status: implementing the task-sync migration; bd-48–50 landed cleanly (commits: a1b2c, d3e4f, g5h6i)
+- Failure: the live API is still v1, not v2 as assumed — bd-51–53 all block on this schema mismatch
+- Remaining tasks affected: bd-51, bd-52, bd-53
+- Recommendation: replan bd-51–bd-53 to use the v1 API schema.
 
 Waits for user response before proceeding.
 </code>
