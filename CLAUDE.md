@@ -150,13 +150,13 @@ bd status bd-3 --status in-progress     # Update task status
 Specialized agents run in separate contexts to handle specific tasks:
 
 1. **executor** (subagent) - Implements a single bd task. Dispatched fresh per task by executing-plans — Sonnet by default, promotable to Opus via the `Executor: opus` flag (see `skills/common-patterns/pipeline-constants.md`). Reads the self-contained task spec, implements, commits, and returns a one-liner status (DONE, BLOCKED, or NEEDS_HELP) to the lead.
-2. **reviewer** (subagent) - Verifies implementation against bd epic spec with Google Fellow SRE scrutiny. Returns APPROVED or GAPS FOUND verdict. Dispatched as one-shot subagent.
+2. **reviewer** (subagent) - Verifies implementation against bd epic spec with Google Fellow SRE scrutiny. Returns APPROVED or GAPS FOUND verdict led by an Architect Summary — system-level judgment with file:line evidence beneath. Dispatched as one-shot subagent.
 3. **test-runner** (uses Haiku) - Runs tests/hooks/commits, returns only summary + failures to keep context clean
 4. **code-reviewer** - Reviews implementations against plans and coding standards
 5. **codebase-investigator** - Explores codebase state and patterns when planning/designing
 6. **internet-researcher** - Researches APIs, libraries, docs when planning/designing
 7. **ponder** (subagent) - Creates, updates, and reviews LikeC4 architecture models. Single owner of all .c4 file operations. Dispatched by the ponder skill in update, bootstrap, or review mode.
-8. **peek** (subagent) - Reviews an arbitrary branch/MR/PR with no bd spec. Four modes (RECON, CODE, ARCHITECTURE, DELIVERY) dispatched by the peek skill; produces aimed-vs-achieved findings with file:line evidence.
+8. **peek** (subagent) - Reviews an arbitrary branch/MR/PR with no bd spec. Four modes (RECON, CODE, ARCHITECTURE, DELIVERY) dispatched by the peek skill; produces aimed-vs-achieved findings, synthesized into an architect-altitude report with file:line evidence beneath.
 9. **test-effectiveness-analyst** - Audits test effectiveness with Google Fellow SRE scrutiny (tautological tests, coverage gaming, weak assertions, missing corner cases); returns a prioritized improvement plan. Dispatched by the analyzing-test-effectiveness skill.
 
 **Critical pattern:** Agents keep verbose output (test results, formatting diffs) in their own context, returning only essential info to the main conversation.
@@ -171,7 +171,7 @@ To avoid duplication, common elements are centralized in `skills/common-patterns
 - `brainstormable-unit.md` - The unit schema: seven sections, two transports (phase-doc slice, bd leaf epic), cold-session test, additive-only evolution
 - `common-anti-patterns.md` - Anti-patterns to avoid
 - `common-rationalizations.md` - Excuses that signal failure
-- `prose-style.md` - Comment policy, the boy-scout rule, and the human-facing prose baseline
+- `prose-style.md` - Comment policy, the boy-scout rule, the audience contract (reports written for the architect-governor reader, a top layer over an evidence layer), and the human-facing prose baseline
 
 Skills reference these rather than duplicating content.
 
@@ -205,7 +205,7 @@ writing-plans (`/hyperpowers:write-plan`) is the off-mainline utility that expan
 
 ### MR/Branch Review
 
-For reviewing someone else's branch, MR, or PR with no bd spec involved: **Peek** (`/hyperpowers:peek`) resolves the target, confirms stated intent (recon), fans out three parallel judgment lenses (CODE, ARCHITECTURE, DELIVERY), then synthesizes an aimed-vs-achieved report and offers an optional draft comment. No bd epic required.
+For reviewing someone else's branch, MR, or PR with no bd spec involved: **Peek** (`/hyperpowers:peek`) resolves the target, confirms stated intent (recon), fans out three parallel judgment lenses (CODE, ARCHITECTURE, DELIVERY), then synthesizes an aimed-vs-achieved report — architect-altitude summary over file:line evidence — and offers an optional draft comment. No bd epic required.
 
 ### Architecture (Empirical, Brand-based)
 

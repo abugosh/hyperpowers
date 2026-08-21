@@ -37,7 +37,7 @@ Reusable workflows for common development tasks:
 **Architecture:**
 - **intuition** - Brand-informed empirical audit of architecture — finds complection, coupling, shearing-layer mismatches, workaround cascades, and drift through structured observation
 - **ponder** - Architecture model ownership — dispatches the ponder subagent for all LikeC4 .c4 file operations (update, bootstrap, review)
-- **peek** - Deep parallel-lens review of a branch/MR/PR without a bd spec — code, architecture, and aimed-vs-achieved lenses with a harsh-but-fair report
+- **peek** - Deep parallel-lens review of a branch/MR/PR without a bd spec — code, architecture, and aimed-vs-achieved lenses synthesized into a harsh-but-fair, architect-altitude report over file:line evidence
 
 **Quality & Testing:**
 - **test-driven-development** - Write tests first, ensure they fail, then implement
@@ -72,7 +72,7 @@ Quick access to key workflows:
 - `/hyperpowers:refactor-execute` - Execute refactor safely with tests staying green
 - `/hyperpowers:intuition` - Brand-informed empirical audit of architecture — finds complection, coupling, shearing layer mismatches, and drift through structured observation
 - `/hyperpowers:ponder` - Architecture model ownership — update, bootstrap, or review LikeC4 models via ponder subagent
-- `/hyperpowers:peek` - Review a branch, MR, or PR — deep review with aimed-vs-achieved report and optional draft comment
+- `/hyperpowers:peek` - Review a branch, MR, or PR — deep review with an architect-altitude aimed-vs-achieved report and optional draft comment
 - `/hyperpowers:analyze-tests` - Audit test quality - identify tautological tests, coverage gaming, missing corner cases
 
 ### Specialized Agents
@@ -80,7 +80,7 @@ Quick access to key workflows:
 Domain-specific agents for complex tasks:
 
 - **executor** - Implements a single bd task; fresh instance dispatched per task (Sonnet by default, promotable per `skills/common-patterns/pipeline-constants.md`); reads self-contained task spec, implements, commits, returns one-liner status (DONE/BLOCKED/NEEDS_HELP) to lead
-- **reviewer** - Verifies implementation against bd epic spec; returns APPROVED or GAPS FOUND verdict
+- **reviewer** - Verifies implementation against bd epic spec; returns APPROVED or GAPS FOUND verdict led by an Architect Summary over file:line evidence
 - **code-reviewer** - Review implementations against plans and coding standards
 - **codebase-investigator** - Understand current codebase state and patterns
 - **internet-researcher** - Research APIs, libraries, and current best practices
