@@ -551,13 +551,13 @@ Ordering language (rewrite if found):
 
 ### Present Tension Report
 
-**Tension report filtering:** If a prose focus was provided in Step 0, filter the Tensions Found section. Tensions involving components named in or implied by the focus are reported in full. Tensions outside the focus area are listed under a new subsection "Tensions Outside Focus (one-line summaries)" with format: "- [Tension Name] — Components: [A], [B] — Pass [N]". Full detail is suppressed for outside-focus tensions. The architect can re-run /intuition without prose focus to see all tensions in detail. If no prose focus, no filtering — all tensions reported in full.
+**Tension report filtering:** If a prose focus was provided in Step 0, filter the Tensions Found section. Tensions involving components named in or implied by the focus are reported in full. Tensions outside the focus area are listed under a new subsection "Tensions Outside Focus (one-line summaries)" with format: "- [Tension Name] — Components: [A], [B] — [the kind of analysis that surfaced it]". Full detail is suppressed for outside-focus tensions. The architect can re-run /intuition without prose focus to see all tensions in detail. If no prose focus, no filtering — all tensions reported in full.
 
 **Determining "components touched by focus":** Use the prose focus to identify component or module names mentioned. Match against the components/modules in the loaded model (if any) and the modules identified in Step 1a evidence gathering. A tension "touches" the focus if any of its components/modules appears in the focus prose or is in a transitive 1-hop neighborhood of a named component.
 
 **Report format:**
 
-This report follows the Audience Contract (`skills/common-patterns/prose-style.md`, The Reader) — module-level altitude and Pull/Gain/Cost structure per tension, no pass numbers, step references, or mode words in what the architect reads.
+This report — including the one-line summaries under "Tensions Outside Focus" — follows the Audience Contract (`skills/common-patterns/prose-style.md`, The Reader — cited, not restated); its module-level altitude and Pull/Gain/Cost structure already comply.
 
 ```
 ## Architectural Intuition Report
