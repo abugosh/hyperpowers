@@ -3,7 +3,8 @@
 Single source of truth for the artifacts that cross the boundary between a
 working session and its governor (the human rotating across parallel lanes),
 and between per-repo sessions and a shared planning layer. Skills reference
-these formats instead of restating them.
+these formats instead of restating them. Reports read by the governor
+follow the Audience Contract in `skills/common-patterns/prose-style.md`.
 
 ## Gate-State Block
 
