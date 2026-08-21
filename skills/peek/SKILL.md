@@ -104,26 +104,33 @@ Every prompt carries: Mode, target identity (`Target: <branch> -> <base ref>`, b
 
 ## Step 6: Synthesis (Lead)
 
-Dedup overlapping findings first: same file:line + same defect = one finding, keep the highest severity. Then assemble the report — this template is this skill's core output contract:
+Dedup overlapping findings first: same file:line + same defect = one finding, keep the highest severity. Then assemble the report for the architect-governor reader per the Audience Contract (`skills/common-patterns/prose-style.md`, The Reader) — one citation, not restated here. RECON's Change Inventory, carried by every lens dispatch since Step 5, is no longer discarded after intent-gathering: it opens the report. This template is this skill's core output contract:
 
 ```
 ## Peek Review: <branch> -> <base>
 
+### What This Branch Does
+[3-6 sentences, architect altitude, role-based plain language: what the branch changes in
+system terms (components/areas touched, contracts or behavior affected, magnitude) and what
+that means for the system — no file:line, no lens names, no internal vocabulary] + RECON's
+area-grouped Change Inventory rendered as a short list
+
 ### Aimed vs Achieved
-[2-4 sentence narrative] + DELIVERY's per-aim table + Undeclared Changes
+[2-4 sentence narrative, top layer per the Audience Contract] + DELIVERY's per-aim table + Undeclared Changes
 
 ### Overall Assessment
-[harsh but fair paragraph, including ARCHITECTURE's stance (fits/fights/reshapes) with its reasoning]
+[harsh but fair paragraph, top layer per the Audience Contract — ARCHITECTURE's stance
+(fits/fights/reshapes) stated as a system consequence, not a lens citation]
 
 ### Findings
-[Critical, then Important, then Suggestions — each with file:line, evidence, suggested direction]
+[evidence layer — Critical, then Important, then Suggestions — each with file:line, evidence, suggested direction]
 
 ### Questions for the Author
-[merged from all lenses, deduped; entries marked `[out-of-lane: <LENS>]` are routed into the owning
+[evidence layer — merged from all lenses, deduped; entries marked `[out-of-lane: <LENS>]` are routed into the owning
 lens's Findings during this synthesis step instead — see agents/peek.md Shared Rule 3 for the marker]
 
 ### Coverage
-[union of all four lenses' Coverage blocks; anything unreviewed listed explicitly, never silently dropped]
+[evidence layer — union of all four lenses' Coverage blocks; anything unreviewed listed explicitly, never silently dropped]
 ```
 
 ## Step 7: Draft Comment Offer
