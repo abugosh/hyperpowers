@@ -263,7 +263,7 @@ Record findings for this task before moving to the next. Use this format:
 
 After reviewing ALL tasks, compile findings into one of two verdicts.
 
-Both templates open with an Architect Summary immediately after the Epic line. Write it per the Audience Contract (`skills/common-patterns/prose-style.md`, The Reader): top-layer altitude only — role-based plain language, no task IDs, no file:line, no class tags. The internal-vocabulary ban applies — no lens/pass/stage/mode words. No vacuous summaries: cite what the epic actually changed or what the gaps actually mean; never restate that quality improved or that review occurred. The evidence layer — Tasks Reviewed, Evidence Summary, Critical Gaps, Important Gaps, and every other audit section — stays below, unchanged, and the Architect Summary must not absorb, compress, or replace it.
+Both templates open with an Architect Summary immediately after the Epic line. Write it per the Audience Contract's top-layer rules, vocabulary ban, and no-vacuous-summaries rule (`skills/common-patterns/prose-style.md`, The Reader — cited, not restated); in this file's terms that also means no task IDs and no class tags. The evidence layer — Tasks Reviewed, Evidence Summary, Critical Gaps, Important Gaps, and every other audit section — stays below, unchanged, and the Architect Summary must not absorb, compress, or replace it.
 
 ### If no gaps found:
 
