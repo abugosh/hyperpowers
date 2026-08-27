@@ -156,7 +156,7 @@ Specialized agents run in separate contexts to handle specific tasks:
 5. **codebase-investigator** - Explores codebase state and patterns when planning/designing
 6. **internet-researcher** - Researches APIs, libraries, docs when planning/designing
 7. **ponder** (subagent) - Creates, updates, and reviews LikeC4 architecture models. Single owner of all .c4 file operations. Dispatched by the ponder skill in update, bootstrap, or review mode.
-8. **peek** (subagent) - Reviews an arbitrary branch/MR/PR with no bd spec. Four modes (RECON, CODE, ARCHITECTURE, DELIVERY) dispatched by the peek skill; produces aimed-vs-achieved findings, synthesized into an architect-altitude report with file:line evidence beneath.
+8. **peek** (subagent) - Reviews an arbitrary branch/MR/PR with no bd spec. Four modes (RECON, CODE, ARCHITECTURE, DELIVERY) dispatched by the peek skill; produces aimed-vs-achieved findings with anchored severity and class tags, synthesized into a verdict-led (APPROVE / APPROVE WITH CHANGES / REQUEST CHANGES) architect-altitude report with file:line evidence beneath; RECON also gathers the MR's prior review state so findings on already-reviewed code must say what earlier reviewers missed.
 9. **test-effectiveness-analyst** - Audits test effectiveness with Google Fellow SRE scrutiny (tautological tests, coverage gaming, weak assertions, missing corner cases); returns a prioritized improvement plan. Dispatched by the analyzing-test-effectiveness skill.
 
 **Critical pattern:** Agents keep verbose output (test results, formatting diffs) in their own context, returning only essential info to the main conversation.
@@ -205,7 +205,7 @@ writing-plans (`/hyperpowers:write-plan`) is the off-mainline utility that expan
 
 ### MR/Branch Review
 
-For reviewing someone else's branch, MR, or PR with no bd spec involved: **Peek** (`/hyperpowers:peek`) resolves the target, confirms stated intent (recon), fans out three parallel judgment lenses (CODE, ARCHITECTURE, DELIVERY), then synthesizes an aimed-vs-achieved report — architect-altitude summary over file:line evidence — and offers an optional draft comment. No bd epic required.
+For reviewing someone else's branch, MR, or PR with no bd spec involved: **Peek** (`/hyperpowers:peek`) resolves the target, confirms stated intent and prior review state (recon), fans out three parallel judgment lenses (CODE, ARCHITECTURE, DELIVERY), then synthesizes a verdict-led aimed-vs-achieved report — architect-altitude summary over file:line evidence — and offers an optional draft comment that carries a re-peek marker. No bd epic required.
 
 ### Architecture (Empirical, Brand-based)
 
