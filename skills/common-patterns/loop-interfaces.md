@@ -73,7 +73,7 @@ holds them for whoever asks.
 
 ## Verdict Contracts (lead ↔ agent)
 
-Single source for the four verdict vocabularies in the pipeline.
+Single source for the five verdict vocabularies in the pipeline.
 Definition sites cite this section; parse sites must match it exactly.
 
 - **Executor → lead** (defined in `agents/executor.md`, parsed by
@@ -104,6 +104,13 @@ Definition sites cite this section; parse sites must match it exactly.
   `SRE VERDICT: <APPROVE|NEEDS REVISION|REJECT> — report: <path> — <N> specs updated`.
   The full report lives in the file at the path; the lead parses the verdict
   word immediately after `SRE VERDICT: ` and reads the report file on demand.
+- **Peek synthesis → user** (derived in `skills/peek/SKILL.md` Step 6 from
+  severities anchored in `pipeline-constants.md`, Severity Anchor): the
+  review report and the draft comment open with exactly one of
+  `Verdict: APPROVE`, `Verdict: APPROVE WITH CHANGES`,
+  `Verdict: REQUEST CHANGES`. Derived mechanically after the synthesis
+  re-check — any Critical → REQUEST CHANGES; else any Important → APPROVE
+  WITH CHANGES; else APPROVE. The lead never hand-picks it.
 
 The vocabularies are deliberately stage-distinct — do not merge them; do
 not invent new verdict words at any site.
