@@ -22,12 +22,13 @@ The three lenses — CODE, ARCHITECTURE, DELIVERY — additionally require:
 - **User-confirmed stated aims** — the aims RECON inferred, after the user confirmed them. You do not re-derive these.
 - **RECON's change inventory** — the files-grouped-by-area inventory RECON produced.
 - **RECON's Surprises** — the changes RECON flagged as covered by no stated aim (may be `(none)`). Required by DELIVERY, which folds them into its undeclared-extras check; CODE and ARCHITECTURE may ignore it.
+- **RECON's Prior Review block** — the review-state block RECON produced: review decision, approvals, settled points (resolved threads), open threads, prior peeks found by the `<!-- peek: <sha> -->` marker, the last review point, and the previously-reviewed / delta split of the Change Inventory. Required by all three lenses. It may state `(unavailable at rung N — <reason>)`; it may never be absent.
 
 Detection rules:
 
 - If the mode is ambiguous or unnamed, return a single error line and stop. Do not guess a mode.
   `ERROR: mode not recognized — expected one of RECON / CODE / ARCHITECTURE / DELIVERY`
-- If a dispatch is missing a required input for its named mode — a lens without the confirmed aims or without RECON's change inventory, a DELIVERY dispatch without RECON's Surprises, or any mode without a worktree path — return a single error line naming the missing input and stop. Do not improvise a substitute: do not re-derive aims yourself, do not read the caller's working tree in place of a worktree, do not invent a base ref.
+- If a dispatch is missing a required input for its named mode — a lens without the confirmed aims or without RECON's change inventory, a DELIVERY dispatch without RECON's Surprises, a lens without RECON's Prior Review block, or any mode without a worktree path — return a single error line naming the missing input and stop. Do not improvise a substitute: do not re-derive aims yourself, do not read the caller's working tree in place of a worktree, do not invent a base ref.
   `ERROR: <MODE> dispatch missing <input>`
 
 ## Shared Rules (all modes)
@@ -48,16 +49,21 @@ Detection rules:
 RECON runs first and establishes intent. It makes no findings — it hands the lenses a confirmed picture of what the branch claims to do and what it actually touches. Gather along the degradation ladder from `skills/common-patterns/forge-detection.md`, take the richest rung the dispatch says is in force, and state which rung you ran at:
 
 - **Rung 1 (forge CLI + MR/PR exists):** read the MR/PR title, description, closing issues, and unresolved discussion threads via that file's Read commands. This is the strongest intent signal — the author stated aims in their own words.
-- **Rung 2 (CLI available, no MR/PR for the branch):** there is no author narrative, so intent is inferred from commits and diff only. Say so explicitly in Intent Basis — do not present inferred intent as stated intent.
-- **Rung 3 (no CLI, no auth, or no remote):** same as rung 2; forge reads are unavailable entirely. Note it and proceed on git alone.
+- **Review state (rung 1 only):** read approvals, the review decision, review threads with their resolution, and conversation comments via the Review state commands in `skills/common-patterns/forge-detection.md` (cite; never restate). From the conversation comments (GitHub) or the non-resolvable discussion notes (GitLab), identify prior peek reviews by the trailing `<!-- peek: <sha> -->` marker and read each one's verdict and findings. Approvals on GitHub carry the reviewed SHA (`commit.oid`); on GitLab they carry a time only (caveat C6). Ignore `PENDING` reviews — they are unsubmitted, not review events.
+- **Rung 2 (CLI available, no MR/PR for the branch):** there is no author narrative, so intent is inferred from commits and diff only. Say so explicitly in Intent Basis — do not present inferred intent as stated intent. Prior Review is `(unavailable at rung 2 — no MR/PR)` and every inventory entry is delta.
+- **Rung 3 (no CLI, no auth, or no remote):** same as rung 2; forge reads are unavailable entirely. Note it and proceed on git alone. Prior Review is `(unavailable at rung 3 — no forge)` and every inventory entry is delta.
 - **Commits:** `git log base..HEAD` for commit messages — available at every rung.
 - **Diff inventory:** `git diff --stat base...HEAD` for the file-level change magnitude — available at every rung.
+- **Last review point:** the newest SHA among review events — a submitted review's reviewed SHA on GitHub (a review with no `commit.oid` is time-mapped like GitLab and marked approximate); on GitLab the newest commit not after the newest `approved_at` / `resolved_at`, marked `approximate (timestamp-mapped)`; a prior peek marker's SHA on either forge. A candidate SHA counts only if `git merge-base --is-ancestor <sha> HEAD` succeeds — a SHA rewritten away by a force-push is not a review point. When there are no review events, no candidate survives the ancestor check, or no current commit predates the newest event, the last review point is `(none)` and every change is delta — say which of the three applies.
+- **Inventory split:** tag every Change Inventory entry `previously-reviewed` when every commit touching that entry's paths is at or before the last review point (`git log <last-point>..HEAD -- <the entry's paths>` is empty), otherwise `delta`. With no last review point, every entry is `delta`.
 
 Where a rung-1 forge read touches an unverified caveat from forge-detection.md's caveat table, name the caveat inline with its fallback (do not restate the CLI — link the fallback FORM to the table):
 
 - **C1** — for MR resolution, pass the branch name explicitly rather than relying on no-arg resolution.
 - **C4** — from `closingIssuesReferences` elements, read only `number` and `title`; do not depend on other sub-fields.
-- **C5** — unresolved inline review-thread comments are not available via `gh pr view --json`; note that gap in Coverage rather than pretending the threads were read.
+- **C5** — unresolved inline review-thread comments are not available via `gh pr view`'s `--json` flag; note that gap in Coverage rather than pretending the threads were read.
+- **C6** — GitLab approvals carry times, not SHAs: mark the last review point approximate.
+- **C7** — read the first 100 review threads; when more exist, name the gap in Coverage.
 
 **Return contract:**
 
@@ -67,21 +73,34 @@ Where a rung-1 forge read touches an unverified caveat from forge-detection.md's
 2. ...
 
 ### Change Inventory
-- [area / directory]: [magnitude, e.g. +120/-30 across 4 files] — [one-line what-changed]
+- [area / directory]: [magnitude, e.g. +120/-30 across 4 files] — [one-line what-changed] — [previously-reviewed | delta]
 - ...
 
 ### Surprises
 - [change with no stated aim covering it] — [file:line], [why it is unexplained]
 - (none) if every change maps to an aim
 
+### Prior Review
+- Review decision: [APPROVED | CHANGES_REQUESTED | REVIEW_REQUIRED | none] or (unavailable at rung N — <reason>)
+- Approvals: [login — date — sha, or "time-mapped"] ... or (none)
+- Settled points: [path:line — one-line summary of what was raised and how it was resolved — resolved by login] ... or (none)
+- Open threads: [path:line — one-line summary] ... or (none)
+- Prior peeks: [sha — Verdict — N findings, one line each] ... or (none)
+- Last review point: [sha | approximate (timestamp-mapped) sha | (none) — <why: no review events | force-pushed past every event | no commit predates the newest event>]
+- Inventory split: previously-reviewed: [areas] / delta: [areas]
+
 ### Intent Basis
 - Degradation rung: [1 | 2 | 3] — [what was and was not reachable at this rung]
 - Confidence in inferred intent: [one line]
+- Prior review basis: [what review state was and was not reachable at this rung]
 
 ### Coverage
 - Examined: [what you read]
 - Not examined / unavailable: [e.g. C5 inline threads out of reach at rung 1]
+- Review state: [read | unavailable at rung N | threads truncated at 100]
 ```
+
+At rung 2/3 the whole Prior Review block is still present with its first line reading `(unavailable at rung N — <reason>)` and every other line `(none)`, `Last review point: (none) — no forge`, `Inventory split: previously-reviewed: (none) / delta: all` — the block is never omitted.
 
 ## CODE Mode Procedure
 
