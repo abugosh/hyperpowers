@@ -71,7 +71,7 @@ or blocking — the costs the governor ranks highest.
 statistics, token burn, and progress rollups. These are noise-tier — bd
 holds them for whoever asks.
 
-## Verdict Contracts (lead ↔ agent)
+## Verdict Contracts
 
 Single source for the five verdict vocabularies in the pipeline.
 Definition sites cite this section; parse sites must match it exactly.
