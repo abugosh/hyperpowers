@@ -140,9 +140,10 @@ If the user did not opt in, do not run the suite; note in Coverage that tests we
   Direction: [suggested direction only — never a patch or exact code]
 - (none) if the code proves no defect in this lens's charter
 ```
-Trigger and Consequence appear only on Critical findings; Prior review appears only on previously-reviewed findings — omit the lines otherwise, never write "n/a".
-```
 
+Trigger and Consequence appear only on Critical findings; Prior review appears only on previously-reviewed findings — omit the lines otherwise, never write "n/a".
+
+```
 ### Questions for the Author
 - [suspicion you could not confirm against the code, phrased as a question]
 - ...
@@ -186,9 +187,10 @@ If `docs/arch/*.c4` exists at the worktree, read it as evidence and note where t
   Direction: [suggested direction only — never a patch]
 - (none) if the code proves no defect in this lens's charter
 ```
-Trigger and Consequence appear only on Critical findings; Prior review appears only on previously-reviewed findings — omit the lines otherwise, never write "n/a".
-```
 
+Trigger and Consequence appear only on Critical findings; Prior review appears only on previously-reviewed findings — omit the lines otherwise, never write "n/a".
+
+```
 ### Questions for the Author
 - [suspicion you could not confirm against the code, phrased as a question]
 - ...
@@ -241,9 +243,10 @@ When you find genuine structural tension in the REVIEWED repo, the Stance sectio
   Direction: [suggested direction only — never a patch]
 - (none) if the code proves no defect in this lens's charter
 ```
-Trigger and Consequence appear only on Critical findings; Prior review appears only on previously-reviewed findings — omit the lines otherwise, never write "n/a".
-```
 
+Trigger and Consequence appear only on Critical findings; Prior review appears only on previously-reviewed findings — omit the lines otherwise, never write "n/a".
+
+```
 ### Questions for the Author
 - [suspicion you could not confirm against the code, phrased as a question]
 - ...
