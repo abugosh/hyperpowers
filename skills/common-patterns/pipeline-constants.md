@@ -42,7 +42,7 @@ and immutable epic requirements — not from pre-written code.
 
 ## Finding Classification (resolution + promotion)
 
-Every review finding — Stage 2, end-of-epic, or otherwise — carries exactly
+Every review finding — Stage 2, end-of-epic, peek, or otherwise — carries exactly
 one class tag. This section supersedes older two-way severity wording that
 predated the convention/capability split; other sections cite it rather
 than restate it.
@@ -62,6 +62,25 @@ classification and may retag with a one-line bd note.
 **Round cap: 2** — two capability fix→re-review rounds per task (Stage 2),
 and two full end-of-epic gap rounds, then escalate to the user. Single
 source for this constant.
+
+## Severity Anchor (peek)
+
+Single definition of the three severity tiers used by peek's lenses
+(`agents/peek.md`) and synthesis (`skills/peek/SKILL.md`). Severity is
+defined by the follow-up it requires, not by how the defect feels:
+
+- **Critical** — a confirmed, reachable path to outage, data loss, security
+  breach, or wrong result. The finding MUST name the Trigger (the input or
+  sequence that reaches the path) and the Consequence (what happens when it
+  does). Requires fix AND re-peek. A finding that cannot name both is
+  Important, never Critical.
+- **Important** — a confirmed defect below that bar that the author must
+  fix before merge. No re-peek: the author self-certifies the fix.
+- **Suggestion** — never blocks, never becomes a fix requirement, and never
+  becomes Critical through dedup or synthesis.
+
+`[convention]` findings (Finding Classification above) are never Critical.
+Consumers cite this section; none restates it.
 
 ## Executor Promotion Flag
 
