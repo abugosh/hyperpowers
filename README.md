@@ -86,7 +86,7 @@ Domain-specific agents for complex tasks:
 - **internet-researcher** - Research APIs, libraries, and current best practices
 - **test-runner** - Run tests/validations/commits without context pollution (uses Haiku)
 - **ponder** (subagent) - Single owner of all LikeC4 .c4 architecture-model operations (update, bootstrap, review); dispatched by the ponder skill
-- **peek** (subagent) - Four-mode branch review engine (RECON, CODE, ARCHITECTURE, DELIVERY); dispatched by the peek skill
+- **peek** (subagent) - Four-mode branch review engine (RECON, CODE, ARCHITECTURE, DELIVERY); dispatched by the peek skill. RECON also gathers the MR's prior review state; lens findings carry anchored severity, class, and scope, and the skill derives a verdict (APPROVE / APPROVE WITH CHANGES / REQUEST CHANGES)
 - **test-effectiveness-analyst** - Audits test effectiveness with SRE scrutiny (tautological tests, coverage gaming, weak assertions); returns a prioritized improvement plan
 
 ### Hooks System
