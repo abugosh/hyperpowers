@@ -67,7 +67,8 @@ never authenticated against looks identical to "no forge available."
 Consumers must state which rung they ran at — never silently downgrade.
 
 1. **Forge CLI available + MR/PR exists** — full metadata (title,
-   description, comments, diff) via the Read commands below.
+   description, comments, review state — approvals, decision, resolved and
+   open threads — and diff) via the Read commands below.
 2. **CLI available, no MR/PR found for the branch** — fall back to commits +
    diff intent (`git log`, `git diff`); note explicitly that no MR/PR was
    found.
@@ -93,6 +94,31 @@ glab mr issues [<iid>|<branch>]
 glab mr diff [<iid>|<branch>] --raw
 ```
 
+#### Review state (GitLab)
+
+```bash
+# Approvals (Free tier): who approved and when. NO SHA — approved_at is a
+# timestamp only, not tied to a commit. `:id` expands to the current
+# directory's project; `glab api` has no `--repo` flag, so reviewing another
+# project requires the URL-encoded full path in place of `:id`.
+glab api projects/:id/merge_requests/<iid>/approvals
+
+# Discussion threads with resolution state: per-note `resolvable`, `resolved`,
+# `resolved_by`, `resolved_at`, and `position.new_path`/`new_line`. There is
+# no discussion-level resolved flag — a thread counts as settled only when
+# every resolvable note in it is resolved. Non-resolvable notes (plain MR
+# comments, including a posted peek comment) ride in the same array with
+# `resolvable: false`. --paginate walks all pages.
+glab api projects/:id/merge_requests/<iid>/discussions --paginate
+```
+
+`glab mr view <iid> --comments` is the human-readable alternative (TTY marks
+✓ resolved / ⚠ unresolved; add `-F json` for a `Discussions` array, gated to
+glab >= v1.37.0; the `--resolved`/`--unresolved` filters are gated to glab >=
+v1.88.0). `approval_state` and `glab mr approvers` are Premium/Ultimate-only
+and silently omit their data on Free tier — do not use either as the primary
+read.
+
 ### GitHub (gh)
 
 ```bash
@@ -103,6 +129,52 @@ gh pr view [<number>|<url>|<branch>] --json title,body,state,baseRefName,headRef
 gh pr diff [<target>] --name-only
 gh pr diff [<target>]
 ```
+
+#### Review state (GitHub)
+
+```bash
+# reviews[]: author.login, state (APPROVED/CHANGES_REQUESTED/COMMENTED/
+# DISMISSED/PENDING — PENDING entries are unsubmitted, ignore them),
+# submittedAt, commit.oid (the SHA the review was submitted against);
+# auto-paginates past 100. latestReviews: one per reviewer, no commit.oid.
+# reviewDecision: APPROVED/CHANGES_REQUESTED/REVIEW_REQUIRED, nullable.
+# comments: conversation comments only (not inline review-thread comments);
+# auto-paginated.
+gh pr view [<number>|<url>|<branch>] --json reviews,latestReviews,reviewDecision,comments
+
+# Thread resolution is GraphQL-only — REST carries no resolution field.
+# The query declares $endCursor and selects reviewThreads(first: 100,
+# after: $endCursor) with pageInfo { hasNextPage endCursor }, so --paginate
+# is at least well-formed against this connection; whether --paginate walks
+# a connection nested under pullRequest (rather than top-level) is
+# unconfirmed (see C7). -F owner='{owner}' -F repo='{repo}' has gh
+# substitute the placeholders from the current directory's repo.
+gh api graphql --paginate -F owner='{owner}' -F repo='{repo}' -F number=<number> -f query='
+  query($owner: String!, $repo: String!, $number: Int!, $endCursor: String) {
+    repository(owner: $owner, name: $repo) {
+      pullRequest(number: $number) {
+        reviewThreads(first: 100, after: $endCursor) {
+          nodes {
+            isResolved
+            isOutdated
+            path
+            line
+            resolvedBy { login }
+            comments(first: 100) {
+              nodes { author { login } body path line createdAt }
+            }
+          }
+          pageInfo { hasNextPage endCursor }
+        }
+      }
+    }
+  }'
+```
+
+`reviews`/`reviewDecision`/`comments` require gh >= v1.9.0; `latestReviews`
+requires gh >= v2.5.0. REST endpoints (`/pulls/{n}/reviews`,
+`/pulls/{n}/comments`) carry no resolution field — thread resolution is
+reachable only through the GraphQL query above.
 
 `closingIssuesReferences` requires gh >= v2.72.0 (2025-05); on older gh the
 field is absent from `--json` output.
@@ -124,9 +196,9 @@ gh pr comment <target> --body "<text>" --edit-last --create-if-none
 
 ## Unverified caveats
 
-Doc-verified against official docs 2026-07-24; NOT runtime-verified (no
-`glab`/`gh` installed on the authoring machine). Each line names what one
-live run would settle.
+Doc-verified against official docs 2026-07-24 (C1-C5) and 2026-08-26 (C6-C9;
+gh v2.98.0, glab v1.115.0); NOT runtime-verified (no `glab`/`gh` installed on
+the authoring machine). Each line names what one live run would settle.
 
 | ID | Caveat | Fallback |
 |----|--------|----------|
@@ -134,7 +206,11 @@ live run would settle.
 | C2 | Legacy `glab mr note -m` vs. the newer `note create` subcommand restructure — backward compat is promised in gitlab-org/cli#8051 but unconfirmed | Try the `note create` form first; on failure retry with the legacy `mr note` form |
 | C3 | `glab auth status --hostname <host>` exit-code contract is undocumented | Treat any non-zero exit or error-shaped output as not-authenticated, not just exit code 1 |
 | C4 | Exact element shape of `gh pr view`'s `closingIssuesReferences` array (expected: number/title/url) is unconfirmed | Consumers must not hard-code sub-fields beyond `number` and `title` without checking actual output first |
-| C5 | `gh pr view --json` does not expose inline review-thread comments, only top-level issue comments | v1 consumers use top-level comments only; treat inline threads as out of reach |
+| C5 | `gh pr view --json` does not expose inline review-thread comments, only top-level issue comments | Read threads via the GraphQL reviewThreads query under Review state (GitHub); pr view --json comments stays top-level only |
+| C6 | GitLab `/approvals` carries `approved_at` but no SHA — how well a last review point mapped from `approved_at` / `resolved_at` onto commit times survives rebase or force-push is unconfirmed | Consumers mark it "approximate (timestamp-mapped)"; when no current commit predates the newest approval, treat every change as delta and say so. Settled by: approve an MR, rebase and force-push it, re-read `/approvals` and compare `approved_at` against the rewritten commit times |
+| C7 | Whether `gh api graphql --paginate` walks the `reviewThreads` connection nested under `pullRequest` (its documented support is for the query's paginated connection with `$endCursor`) is unconfirmed beyond 100 threads | Read the first 100 threads; when `pageInfo.hasNextPage` is true, name the gap in Coverage. Settled by: run the query with `--paginate` against a PR carrying more than 100 review threads and count the nodes returned |
+| C8 | Whether `glab api` resolves `:id` from a subdirectory of the repo, and whether `glab mr view --comments` walks every discussion page, are unconfirmed | Run `glab api` from the repo root; read threads via `discussions --paginate`, never via `mr view --comments`. Settled by: from a subdirectory, run `glab api projects/:id` and `glab mr view <iid> --comments -F json` against an MR with more than 20 discussions and compare the count to `discussions --paginate` |
+| C9 | `glab mr view --resolved` / `--unresolved` exist only on glab >= v1.88.0; their behavior (error vs silent ignore) on older glab is unconfirmed | Fold resolution per note from `discussions --paginate`; never rely on the filters. Settled by: run `glab mr view <iid> --resolved` on a glab older than v1.88.0 and record whether it errors or ignores the flag |
 
 ## Base branch
 
