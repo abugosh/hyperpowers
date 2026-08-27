@@ -61,7 +61,7 @@ Where a rung-1 forge read touches an unverified caveat from forge-detection.md's
 
 - **C1** — for MR resolution, pass the branch name explicitly rather than relying on no-arg resolution.
 - **C4** — from `closingIssuesReferences` elements, read only `number` and `title`; do not depend on other sub-fields.
-- **C5** — unresolved inline review-thread comments are not available via `gh pr view`'s `--json` flag; note that gap in Coverage rather than pretending the threads were read.
+- **C5** — inline review-thread comments are not in `gh pr view`'s `--json` output; read them through the Review state GraphQL query instead, and if that read fails, note the gap in Coverage rather than pretending the threads were read.
 - **C6** — GitLab approvals carry times, not SHAs: mark the last review point approximate.
 - **C7** — read the first 100 review threads; when more exist, name the gap in Coverage.
 
@@ -96,7 +96,7 @@ Where a rung-1 forge read touches an unverified caveat from forge-detection.md's
 
 ### Coverage
 - Examined: [what you read]
-- Not examined / unavailable: [e.g. C5 inline threads out of reach at rung 1]
+- Not examined / unavailable: [e.g. review threads beyond the first 100 (C7), or the GraphQL thread read failing at rung 1]
 - Review state: [read | unavailable at rung N | threads truncated at 100]
 ```
 
