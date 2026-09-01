@@ -166,9 +166,9 @@ Two phases: phase A elects what should happen, phase B approves exactly what lea
 
 **Application — only when the user elects fixes.** All work happens at the worktree:
 
-- One commit per finding, `[convention]` fixes first, then `[capability]` fixes. Additive commits only.
+- One commit per finding, `[convention]` fixes first, then `[capability]` fixes.
 - Commit message: an imperative subject describing the change itself, 60 characters or fewer, and a body of exactly `Applied during review; details in the review comment.` The branch author is the reader, so no plugin vocabulary belongs anywhere in the message — no mode or lens words, no class tags, no severity words.
-- If any `[capability]` fix was applied, dispatch `hyperpowers:test-runner` at the worktree for the repo's suite. On a red or unrunnable suite, run `git -C <tmp-path> reset --hard <last-convention-commit>` and demote those capability fixes back to ordinary findings for the author — the suite rule in `skills/common-patterns/pipeline-constants.md` (Peek Fix Carve-out), cited not restated. When no convention commit exists, the reset target is the reviewed tip recorded at Step 2. Convention fixes survive this reset; capability fixes never reach the author's branch without green-suite evidence.
+- If any `[capability]` fix was applied, dispatch `hyperpowers:test-runner` at the worktree for the repo's suite. On a red or unrunnable suite, run `git -C <tmp-path> reset --hard <last-convention-commit>` and demote those capability fixes back to ordinary findings for the author — the suite rule in `skills/common-patterns/pipeline-constants.md` (Peek Fix Carve-out), cited not restated. When no convention commit exists, the reset target is the reviewed tip recorded at Step 2.
 - If an edit that looked exact turns out to need judgment mid-fix, it was never eligible: reset the worktree to the last good commit, drop the `[fix-proposed]` mark, and return the finding to the report at its original severity for the author to resolve.
 
 **Re-derivation — only when fixes were applied.** The verdict is re-derived per `skills/common-patterns/loop-interfaces.md` (Verdict Contracts, peek entry), which scopes it to the findings not fixed by review. The report gains a `### Fixed by review` block, placed between Overall Assessment and Findings — one line per fix naming the defect and its commit SHA. A fixed finding lives in that block and leaves the Findings section.
@@ -188,7 +188,7 @@ Only on approval, deliver:
 - **Remote target:** `git -C <tmp-path> push origin HEAD:<source-branch>`.
 - **Local target:** `git -C <target-repo> update-ref refs/heads/<branch> <new-sha> <reviewed-tip>` — the trailing old value makes it a compare-and-swap that fails if the branch moved. Refuse the update outright when Step 2's checkout state found the branch checked out in any worktree; the ref moves only for a branch checked out nowhere.
 
-Never force-push, and never amend, squash, or rebase the author's commits.
+Never force-push — every other bound on how commits land is the carve-out's Delivery rule (`skills/common-patterns/pipeline-constants.md`, Peek Fix Carve-out), cited not restated.
 
 Then post the comment under the rules above.
 
