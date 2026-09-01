@@ -205,7 +205,7 @@ writing-plans (`/hyperpowers:write-plan`) is the off-mainline utility that expan
 
 ### MR/Branch Review
 
-For reviewing someone else's branch, MR, or PR with no bd spec involved: **Peek** (`/hyperpowers:peek`) resolves the target, confirms stated intent and prior review state (recon), fans out three parallel judgment lenses (CODE, ARCHITECTURE, DELIVERY), then synthesizes a verdict-led aimed-vs-achieved report — architect-altitude summary over file:line evidence — and offers an optional draft comment that carries a re-peek marker. The synthesis may also offer gated mechanical fixes, applied at the worktree and pushed as additive commits once the user approves the exact diff. No bd epic required.
+For reviewing someone else's branch, MR, or PR with no bd spec involved: **Peek** (`/hyperpowers:peek`) resolves the target, confirms stated intent and prior review state (recon), fans out three parallel judgment lenses (CODE, ARCHITECTURE, DELIVERY), then synthesizes a verdict-led aimed-vs-achieved report — architect-altitude summary over file:line evidence — and offers an optional draft comment that carries a re-peek marker, plus optional gated mechanical fixes applied at the worktree and pushed as additive commits once the user approves the exact diff. No bd epic required.
 
 ### Architecture (Empirical, Brand-based)
 
