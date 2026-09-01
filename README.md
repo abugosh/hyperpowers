@@ -37,7 +37,7 @@ Reusable workflows for common development tasks:
 **Architecture:**
 - **intuition** - Brand-informed empirical audit of architecture — finds complection, coupling, shearing-layer mismatches, workaround cascades, and drift through structured observation
 - **ponder** - Architecture model ownership — dispatches the ponder subagent for all LikeC4 .c4 file operations (update, bootstrap, review)
-- **peek** - Deep parallel-lens review of a branch/MR/PR without a bd spec — code, architecture, and aimed-vs-achieved lenses synthesized into a harsh-but-fair, architect-altitude report that opens with a verdict (APPROVE / APPROVE WITH CHANGES / REQUEST CHANGES), weights the MR's prior review, and sits over file:line evidence, and can — behind an explicit diff-approval gate — apply mechanical fixes (convention and exact sub-Critical capability edits) as additive commits pushed to the branch instead of round-tripping them to the author
+- **peek** - Deep parallel-lens review of a branch/MR/PR without a bd spec — code, architecture, and aimed-vs-achieved lenses synthesized into a harsh-but-fair, architect-altitude report that opens with a verdict (APPROVE / APPROVE WITH CHANGES / REQUEST CHANGES), weights the MR's prior review, and sits over file:line evidence, and can — behind an explicit diff-approval gate — apply mechanical fixes (style cleanups and small, exact code fixes; severe findings always stay with the author) as additive commits pushed to the branch instead of round-tripping them
 
 **Quality & Testing:**
 - **test-driven-development** - Write tests first, ensure they fail, then implement
