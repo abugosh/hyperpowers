@@ -37,7 +37,7 @@ Reusable workflows for common development tasks:
 **Architecture:**
 - **intuition** - Brand-informed empirical audit of architecture — finds complection, coupling, shearing-layer mismatches, workaround cascades, and drift through structured observation
 - **ponder** - Architecture model ownership — dispatches the ponder subagent for all LikeC4 .c4 file operations (update, bootstrap, review)
-- **peek** - Deep parallel-lens review of a branch/MR/PR without a bd spec — code, architecture, and aimed-vs-achieved lenses synthesized into a harsh-but-fair, architect-altitude report that opens with a verdict (APPROVE / APPROVE WITH CHANGES / REQUEST CHANGES), weights the MR's prior review, and sits over file:line evidence
+- **peek** - Deep parallel-lens review of a branch/MR/PR without a bd spec — code, architecture, and aimed-vs-achieved lenses synthesized into a harsh-but-fair, architect-altitude report that opens with a verdict (APPROVE / APPROVE WITH CHANGES / REQUEST CHANGES), weights the MR's prior review, and sits over file:line evidence, and can — behind an explicit diff-approval gate — apply mechanical fixes (convention and exact sub-Critical capability edits) as additive commits pushed to the branch instead of round-tripping them to the author
 
 **Quality & Testing:**
 - **test-driven-development** - Write tests first, ensure they fail, then implement
@@ -72,7 +72,7 @@ Quick access to key workflows:
 - `/hyperpowers:refactor-execute` - Execute refactor safely with tests staying green
 - `/hyperpowers:intuition` - Brand-informed empirical audit of architecture — finds complection, coupling, shearing layer mismatches, and drift through structured observation
 - `/hyperpowers:ponder` - Architecture model ownership — update, bootstrap, or review LikeC4 models via ponder subagent
-- `/hyperpowers:peek` - Review a branch, MR, or PR — deep review with a verdict-led, architect-altitude aimed-vs-achieved report and optional draft comment
+- `/hyperpowers:peek` - Review a branch, MR, or PR — deep review with a verdict-led, architect-altitude aimed-vs-achieved report, optional gated mechanical fixes pushed as additive commits, and optional draft comment
 - `/hyperpowers:analyze-tests` - Audit test quality - identify tautological tests, coverage gaming, missing corner cases
 
 ### Specialized Agents
@@ -86,7 +86,7 @@ Domain-specific agents for complex tasks:
 - **internet-researcher** - Research APIs, libraries, and current best practices
 - **test-runner** - Run tests/validations/commits without context pollution (uses Haiku)
 - **ponder** (subagent) - Single owner of all LikeC4 .c4 architecture-model operations (update, bootstrap, review); dispatched by the ponder skill
-- **peek** (subagent) - Four-mode branch review engine (RECON, CODE, ARCHITECTURE, DELIVERY); dispatched by the peek skill. RECON also gathers the MR's prior review state; lens findings carry anchored severity, class, and scope, and the skill derives a verdict (APPROVE / APPROVE WITH CHANGES / REQUEST CHANGES)
+- **peek** (subagent) - Four-mode branch review engine (RECON, CODE, ARCHITECTURE, DELIVERY); dispatched by the peek skill. RECON also gathers the MR's prior review state; lens findings carry anchored severity, class, and scope, and the skill derives a verdict (APPROVE / APPROVE WITH CHANGES / REQUEST CHANGES); the skill's lead may then resolve fix-eligible findings at the worktree behind the user's diff-approval gate (the agent itself stays read-only)
 - **test-effectiveness-analyst** - Audits test effectiveness with SRE scrutiny (tautological tests, coverage gaming, weak assertions); returns a prioritized improvement plan
 
 ### Hooks System
