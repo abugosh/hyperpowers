@@ -1,9 +1,11 @@
 ---
 name: project-review-seam-reconciliation
-description: Design session (2026-07-07, v3.20.0) reconciling end-of-epic review seam — reviewer agent to become single review engine; review-implementation to shrink/retire
+description: RESOLVED (verified 2026-08-30) — 2026-07-07 review-seam reconciliation landed; reviewer agent is the single end-of-epic engine, review-implementation is on-demand only
 metadata:
   type: project
 ---
+
+**RESOLVED — verified 2026-08-30 against CLAUDE.md (review-implementation now documented as on-demand re-verification, not mainline; executing-plans section 6 dispatches agents/reviewer.md directly). Historical context only below.**
 
 Design direction (2026-07-07, main @ v3.20.0): agents/reviewer.md becomes the single end-of-epic review engine; skills/review-implementation shrinks or retires.
 
