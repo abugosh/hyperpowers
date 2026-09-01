@@ -22,7 +22,7 @@ MEDIUM FREEDOM — the 8-step flow order and its gates (intent confirm, then the
 | 4 | Intent confirm gate | AskUserQuestion: confirm/correct/add aims, confirm/correct the Prior Review summary, opt-in suite run; HOLD on expiry |
 | 5 | Parallel lens dispatch | 3x Agent tool (CODE/ARCHITECTURE/DELIVERY), one message, no model override, blocking |
 | 6 | Synthesis | Lead dedups, applies the re-check, marks fix-eligible findings `[fix-proposed]` per `pipeline-constants.md` (Peek Fix Carve-out), derives the pre-fix verdict (loop-interfaces.md), assembles the report |
-| 7 | Fix + comment gate | Two phases: elect fixes and/or a comment (A), then — only when fixes were applied — approve the exact diff, comment text, and delivery target at (B); exactly one comment is posted per run, never before the user approves its exact text; comment opens with the verdict and ends with the `<!-- peek: <sha> -->` marker |
+| 7 | Fix + comment gate | Two phases: elect fixes and/or a comment (A), then — only when fixes were applied — approve the exact diff, comment text, and delivery target at (B); at most one comment is posted per run, never before the user approves its exact text; comment opens with the verdict and ends with the `<!-- peek: <sha> -->` marker |
 | 8 | Cleanup | `git worktree remove <tmp> --force` + prune; always runs, even on abort |
 </quick_reference>
 
@@ -165,7 +165,7 @@ Two phases: phase A elects what should happen, phase B approves exactly what lea
 
 **The draft comment.** A professional, direct comment built from the report in three parts (four when fixes are delivered — see Re-derivation below) — (a) opens with the report's `Verdict:` line verbatim (the same `Verdict: <word>` text, before anything else), (b) lists findings and questions per the existing prose rules (no internal vocabulary — no lens names, no mode words), (c) ends with `<!-- peek: <sha> -->`, where `<sha>` is the reviewed tip recorded at Step 2, which on a run with no fixes applied is also `git -C <tmp-path> rev-parse HEAD` — the marker renders as nothing on GitHub and GitLab and lets a later RECON recognize this review. Comment prose otherwise follows `skills/common-patterns/prose-style.md`: findings and questions only — no restated report sections, no Coverage block, no praise-padding; target a comment the author reads in under a minute, longer only when the finding count itself demands it. Posting goes through the write commands cited from `forge-detection.md`. On GitLab, the C2 caveat applies: try the `note create` form first, fall back to the legacy `note -m` form second, per `forge-detection.md`'s caveat table. On rung 2/3 (no forge, or no MR/PR resolvable), hand over copy-paste text instead of posting — that text carries the `Verdict:` opening and the `<!-- peek: <sha> -->` marker too.
 
-**When the comment is drafted and posted.** Exactly one comment leaves a run, and nothing is posted until the user approves that exact text. The path decides when both happen:
+**When the comment is drafted and posted.** At most one comment leaves a run — none when the user declines one — and nothing is posted until the user approves that exact text. The path decides when both happen:
 
 - **No fixes elected** (phase A is the only phase): draft the three-part comment here from the Step 6 report, show the user that exact text, and post it on their approval. This is today's flow, unchanged.
 - **Fixes elected:** draft and post nothing here. The comment is built after Re-derivation below, in its four-part form, and the user approves it together with the diff and the target at phase B — it is posted after delivery, or in its report-only form on any fallback path.
@@ -246,7 +246,7 @@ All of these mean: **STOP. Follow the process as written.**
 - "The fix is obvious, push it without the gate" — phase B runs every time fixes were applied. Obviousness is not approval, and a diff nobody looked at is a diff nobody agreed to.
 - "Fix the Critical too while I'm in there" — a Critical is never fix-eligible (`skills/common-patterns/pipeline-constants.md`, Peek Fix Carve-out). The author must confront it; quietly resolving it at review hides the one finding that most needed their attention.
 - "The suite is missing, push the capability fix anyway" — no green suite, no capability fix: demote it back to an ordinary finding for the author. Convention fixes are unaffected by the suite's state.
-- "Post the comment now, deliver the fixes after" — one comment leaves a run. On a fix run it is drafted after re-derivation and posted at phase B; a comment posted ahead of delivery carries a superseded verdict, omits what the review fixed, and stamps a marker the branch has already moved past.
+- "Post the comment now, deliver the fixes after" — at most one comment leaves a run, and on a fix run it is never the pre-fix draft. On a fix run it is drafted after re-derivation and posted at phase B; a comment posted ahead of delivery carries a superseded verdict, omits what the review fixed, and stamps a marker the branch has already moved past.
 </critical_rules>
 
 <verification_checklist>
@@ -257,7 +257,7 @@ Before presenting the report to the user:
 - [ ] User confirmed or corrected the aims and the Prior Review summary — no provisional intent carried forward (Step 4)
 - [ ] All three lenses dispatched in one message, no model override, with their mode-specific required inputs (Step 5)
 - [ ] Findings deduped; re-check applied with every move visible; fix-eligibility pass run and eligible findings marked `[fix-proposed]` (or skipped because the fix path is unavailable); verdict derived per loop-interfaces.md; report opens with the `Verdict:` line and includes Aimed vs Achieved, Overall Assessment, Findings (`- (none)` is a complete Findings section), Questions for the Author, and Coverage (Step 6)
-- [ ] Exactly one comment left the run — drafted pre-fix and posted at phase A on a no-fix run, or drafted after re-derivation and posted at phase B on a fix run — opening with the verdict, ending with the marker, posted only after explicit approval of the exact text, or handed over as copy-paste at rung 2/3 (Step 7)
+- [ ] At most one comment left the run (none when the user declined one) — drafted pre-fix and posted at phase A on a no-fix run, or drafted after re-derivation and posted at phase B on a fix run — opening with the verdict, ending with the marker, posted only after explicit approval of the exact text, or handed over as copy-paste at rung 2/3 (Step 7)
 - [ ] Fixes (if elected) applied per the carve-out, suite green before any `[capability]` fix was delivered, the exact diff and comment text approved at phase B before any push or ref-update, and every non-delivery path left nothing on the author's branch with the marker naming the reviewed tip (Step 7)
 - [ ] Worktree removed and pruned (Step 8) — including on any abort path
 </verification_checklist>
