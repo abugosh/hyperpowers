@@ -22,7 +22,7 @@ MEDIUM FREEDOM — the 8-step flow order and its gates (intent confirm, then the
 | 4 | Intent confirm gate | AskUserQuestion: confirm/correct/add aims, confirm/correct the Prior Review summary, opt-in suite run; HOLD on expiry |
 | 5 | Parallel lens dispatch | 3x Agent tool (CODE/ARCHITECTURE/DELIVERY), one message, no model override, blocking |
 | 6 | Synthesis | Lead dedups, applies the re-check, marks fix-eligible findings `[fix-proposed]` per `pipeline-constants.md` (Peek Fix Carve-out), derives the pre-fix verdict (loop-interfaces.md), assembles the report |
-| 7 | Fix + comment gate | Two phases: elect fixes and/or a comment (A), then approve the exact diff, comment text, and delivery target before any push or post (B); comment opens with the verdict and ends with the `<!-- peek: <sha> -->` marker |
+| 7 | Fix + comment gate | Two phases: elect fixes and/or a comment (A), then — only when fixes were applied — approve the exact diff, comment text, and delivery target at (B); exactly one comment is posted per run, never before the user approves its exact text; comment opens with the verdict and ends with the `<!-- peek: <sha> -->` marker |
 | 8 | Cleanup | `git worktree remove <tmp> --force` + prune; always runs, even on abort |
 </quick_reference>
 
@@ -64,13 +64,14 @@ If neither the fetch nor a local ref resolves the target, abort with a clear mes
 
 Put the tmp path under the system temp dir, unique per run. Resolve the base ref via the base-branch idiom cited from `forge-detection.md` (Base branch section). Record the worktree path — every dispatch in Steps 3-5 and the cleanup in Step 8 need it.
 
-Record three more facts at setup; Step 7's fix path reads all three:
+Record these further facts at setup; Step 7's fix path reads all of them:
 
 - **Target kind** — remote or local, as resolved above.
 - **Reviewed tip** — `git -C <tmp-path> rev-parse HEAD`, run immediately after the worktree exists. This SHA is the pre-fix baseline: the diff boundary at Step 7's approval gate, the reset target when a fix is discarded, and the marker SHA on every path where fixes are not delivered.
 - **Checkout state** (local targets only) — `git worktree list --porcelain | grep -F "branch refs/heads/<branch>"` in the target repo. A hit means some worktree holds that branch and its ref must not be moved.
+- **Delivery remote** (remote targets only) — `git ls-remote --exit-code --heads origin <source-branch>`. A miss means `origin` does not carry the branch at all, which is what a cross-fork MR looks like from here: the review can read that code but can never deliver a commit to it.
 
-The fix path is available for remote targets, and for local targets whose branch is checked out nowhere. The current-branch case is checked out by definition, so it never gets the fix path — those runs are review-only. The user's own checkout is never touched on any path: fixes are made in the disposable worktree and delivered by pushing, or by moving a ref no checkout holds.
+The fix path is available for a remote target whose source branch lives on `origin`, and for a local target whose branch is checked out nowhere. Two targets never get it and run review-only: the current branch, checked out by definition, and a cross-fork MR, whose source branch `origin` does not carry — the offer must never be made on a target that cannot receive it. The user's own checkout is never touched on any path: fixes are made in the disposable worktree and delivered by pushing, or by moving a ref no checkout holds.
 
 ## Step 3: RECON Dispatch
 
@@ -160,9 +161,16 @@ lens's Findings during this synthesis step instead — see agents/peek.md Shared
 
 Two phases: phase A elects what should happen, phase B approves exactly what leaves the worktree. When no finding carries `[fix-proposed]` — nothing was eligible, or Step 2 found the fix path unavailable — phase A is the only phase, with the same options and the same behavior this step has always had.
 
-**Phase A — the offer.** AskUserQuestion (form and gate discipline: `skills/common-patterns/question-format.md`): draft a comment for the MR/PR? The standing options are unchanged — comment as drafted, or no comment. When `[fix-proposed]` findings exist, offer one additional option alongside them: apply the proposed fixes, then approve the diff before anything is pushed. Name the eligible findings in the question so the election is informed.
+**Phase A — the offer.** AskUserQuestion (form and gate discipline: `skills/common-patterns/question-format.md`): draft a comment for the MR/PR? The standing options are unchanged — comment as drafted, or no comment. When `[fix-proposed]` findings exist, offer one additional option alongside them: apply the proposed fixes, then approve the diff, the comment, and the target together at phase B before anything is pushed or posted. Name the eligible findings in the question so the election is informed.
 
-**The draft comment.** A professional, direct comment built from the report in three parts (four when fixes are delivered — see Re-derivation below) — (a) opens with the report's `Verdict:` line verbatim (the same `Verdict: <word>` text, before anything else), (b) lists findings and questions per the existing prose rules (no internal vocabulary — no lens names, no mode words), (c) ends with `<!-- peek: <sha> -->`, where `<sha>` is the reviewed tip recorded at Step 2, which on a run with no fixes applied is also `git -C <tmp-path> rev-parse HEAD` — the marker renders as nothing on GitHub and GitLab and lets a later RECON recognize this review. Comment prose otherwise follows `skills/common-patterns/prose-style.md`: findings and questions only — no restated report sections, no Coverage block, no praise-padding; target a comment the author reads in under a minute, longer only when the finding count itself demands it. Show the drafted text to the user. Only after the user approves that exact text, post it via the write commands cited from `forge-detection.md`. On GitLab, the C2 caveat applies at this step: try the `note create` form first, fall back to the legacy `note -m` form second, per `forge-detection.md`'s caveat table. On rung 2/3 (no forge, or no MR/PR resolvable), hand over copy-paste text instead of posting — that text carries the `Verdict:` opening and the `<!-- peek: <sha> -->` marker too.
+**The draft comment.** A professional, direct comment built from the report in three parts (four when fixes are delivered — see Re-derivation below) — (a) opens with the report's `Verdict:` line verbatim (the same `Verdict: <word>` text, before anything else), (b) lists findings and questions per the existing prose rules (no internal vocabulary — no lens names, no mode words), (c) ends with `<!-- peek: <sha> -->`, where `<sha>` is the reviewed tip recorded at Step 2, which on a run with no fixes applied is also `git -C <tmp-path> rev-parse HEAD` — the marker renders as nothing on GitHub and GitLab and lets a later RECON recognize this review. Comment prose otherwise follows `skills/common-patterns/prose-style.md`: findings and questions only — no restated report sections, no Coverage block, no praise-padding; target a comment the author reads in under a minute, longer only when the finding count itself demands it. Posting goes through the write commands cited from `forge-detection.md`. On GitLab, the C2 caveat applies: try the `note create` form first, fall back to the legacy `note -m` form second, per `forge-detection.md`'s caveat table. On rung 2/3 (no forge, or no MR/PR resolvable), hand over copy-paste text instead of posting — that text carries the `Verdict:` opening and the `<!-- peek: <sha> -->` marker too.
+
+**When the comment is drafted and posted.** Exactly one comment leaves a run, and nothing is posted until the user approves that exact text. The path decides when both happen:
+
+- **No fixes elected** (phase A is the only phase): draft the three-part comment here from the Step 6 report, show the user that exact text, and post it on their approval. This is today's flow, unchanged.
+- **Fixes elected:** draft and post nothing here. The comment is built after Re-derivation below, in its four-part form, and the user approves it together with the diff and the target at phase B — it is posted after delivery, or in its report-only form on any fallback path.
+
+Posting the pre-fix draft on a fix run is the failure this split exists to prevent: it puts a superseded verdict, no list of what the review fixed, and a marker naming a tip the branch has moved past in front of the author, and a second comment after delivery only compounds it.
 
 **Application — only when the user elects fixes.** All work happens at the worktree:
 
@@ -196,7 +204,7 @@ Then post the comment under the rules above.
 
 - **Push rejected, or non-fast-forward** (the author moved the branch while the review ran): report git's output verbatim, then fall back. Do not retry by overwriting the remote branch, and do not rebase onto the new tip.
 - **Compare-and-swap failure on a local target** (the old-value check fails because the branch moved): same fallback, reported the same way.
-- **Cross-fork MR** — the source branch does not live on `origin`: do not hunt for the author's fork remote and do not add remotes. Treat delivery as unavailable, take the same fallback, and say plainly that the fixes could not be delivered because the branch lives on a fork.
+- **Cross-fork MR** — the source branch does not live on `origin`: Step 2's availability test screens the fork-ness it can see, so reaching here means it only became visible at delivery. Do not hunt for the author's fork remote and do not add remotes. Treat delivery as unavailable, take the same fallback, and say plainly that the fixes could not be delivered because the branch lives on a fork.
 - **The user declines at phase B:** discard the fixed form and offer today's report-only comment. Step 8's forced worktree removal is the discard mechanism — no separate cleanup, and nothing to undo on the author's branch.
 
 Both phases follow `skills/common-patterns/question-format.md`: an expired question box is not an answer — re-ask in durable prose and HOLD. Nothing is posted, pushed, or ref-updated on a timeout.
@@ -238,6 +246,7 @@ All of these mean: **STOP. Follow the process as written.**
 - "The fix is obvious, push it without the gate" — phase B runs every time fixes were applied. Obviousness is not approval, and a diff nobody looked at is a diff nobody agreed to.
 - "Fix the Critical too while I'm in there" — a Critical is never fix-eligible (`skills/common-patterns/pipeline-constants.md`, Peek Fix Carve-out). The author must confront it; quietly resolving it at review hides the one finding that most needed their attention.
 - "The suite is missing, push the capability fix anyway" — no green suite, no capability fix: demote it back to an ordinary finding for the author. Convention fixes are unaffected by the suite's state.
+- "Post the comment now, deliver the fixes after" — one comment leaves a run. On a fix run it is drafted after re-derivation and posted at phase B; a comment posted ahead of delivery carries a superseded verdict, omits what the review fixed, and stamps a marker the branch has already moved past.
 </critical_rules>
 
 <verification_checklist>
@@ -248,7 +257,7 @@ Before presenting the report to the user:
 - [ ] User confirmed or corrected the aims and the Prior Review summary — no provisional intent carried forward (Step 4)
 - [ ] All three lenses dispatched in one message, no model override, with their mode-specific required inputs (Step 5)
 - [ ] Findings deduped; re-check applied with every move visible; fix-eligibility pass run and eligible findings marked `[fix-proposed]` (or skipped because the fix path is unavailable); verdict derived per loop-interfaces.md; report opens with the `Verdict:` line and includes Aimed vs Achieved, Overall Assessment, Findings (`- (none)` is a complete Findings section), Questions for the Author, and Coverage (Step 6)
-- [ ] Draft comment (if requested) opens with the verdict, ends with the marker, and was posted only after explicit approval of the exact text, or handed over as copy-paste at rung 2/3 (Step 7)
+- [ ] Exactly one comment left the run — drafted pre-fix and posted at phase A on a no-fix run, or drafted after re-derivation and posted at phase B on a fix run — opening with the verdict, ending with the marker, posted only after explicit approval of the exact text, or handed over as copy-paste at rung 2/3 (Step 7)
 - [ ] Fixes (if elected) applied per the carve-out, suite green before any `[capability]` fix was delivered, the exact diff and comment text approved at phase B before any push or ref-update, and every non-delivery path left nothing on the author's branch with the marker naming the reviewed tip (Step 7)
 - [ ] Worktree removed and pruned (Step 8) — including on any abort path
 </verification_checklist>
