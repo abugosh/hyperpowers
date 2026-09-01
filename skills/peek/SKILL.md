@@ -1,16 +1,16 @@
 ---
 name: peek
-description: "Use when reviewing a colleague's branch, MR, or PR ('review this branch', 'review this MR', 'review this PR') — deep parallel-lens review (code, architecture, aimed-vs-achieved) with no bd spec required, producing a harsh-but-fair report that opens with a verdict (APPROVE / APPROVE WITH CHANGES / REQUEST CHANGES), weights the MR's prior review, and offers an optional draft comment."
+description: "Use when reviewing a colleague's branch, MR, or PR ('review this branch', 'review this MR', 'review this PR') — deep parallel-lens review (code, architecture, aimed-vs-achieved) with no bd spec required, producing a harsh-but-fair report that opens with a verdict (APPROVE / APPROVE WITH CHANGES / REQUEST CHANGES), weights the MR's prior review, and offers an optional draft comment plus an optional gated fix path that applies and pushes mechanical fixes only after the user approves the exact diff."
 ---
 
 <skill_overview>
-Thin orchestrator for a fixed 8-step review flow: resolve the target, stand up a disposable worktree, dispatch the peek agent's RECON mode to establish intent, confirm that intent with the user, fan out three parallel judgment lenses (CODE, ARCHITECTURE, DELIVERY), synthesize their returns into a single aimed-vs-achieved report, offer a draft comment, and always clean up the worktree. No bd epic is required — this is for reviewing someone else's branch, MR, or PR on demand.
+Thin orchestrator for a fixed 8-step review flow: resolve the target, stand up a disposable worktree, dispatch the peek agent's RECON mode to establish intent, confirm that intent with the user, fan out three parallel judgment lenses (CODE, ARCHITECTURE, DELIVERY), synthesize their returns into a single aimed-vs-achieved report, offer gated fixes and a draft comment, and always clean up the worktree. No bd epic is required — this is for reviewing someone else's branch, MR, or PR on demand.
 
 All review protocol — mode charters, evidence rules, return contracts — lives in `agents/peek.md`. This skill never restates it; it only wires the flow.
 </skill_overview>
 
 <rigidity_level>
-MEDIUM FREEDOM — the 8-step flow order and its gates (intent confirm, draft-comment approval) are fixed and must not be skipped or reordered. Judgment inside each lens and during synthesis adapts to what the branch actually contains.
+MEDIUM FREEDOM — the 8-step flow order and its gates (intent confirm, then the fix and comment approvals at Step 7) are fixed and must not be skipped or reordered. Judgment inside each lens and during synthesis adapts to what the branch actually contains.
 </rigidity_level>
 
 <quick_reference>
@@ -21,8 +21,8 @@ MEDIUM FREEDOM — the 8-step flow order and its gates (intent confirm, draft-co
 | 3 | RECON dispatch | Agent tool, subagent_type "hyperpowers:peek", model "sonnet", blocking; returns aims, inventory, Prior Review |
 | 4 | Intent confirm gate | AskUserQuestion: confirm/correct/add aims, confirm/correct the Prior Review summary, opt-in suite run; HOLD on expiry |
 | 5 | Parallel lens dispatch | 3x Agent tool (CODE/ARCHITECTURE/DELIVERY), one message, no model override, blocking |
-| 6 | Synthesis | Lead dedups, applies the re-check, derives the verdict (loop-interfaces.md), assembles the report |
-| 7 | Draft comment offer | AskUserQuestion; comment opens with the verdict and ends with the `<!-- peek: <sha> -->` marker; post only after the user approves the exact text |
+| 6 | Synthesis | Lead dedups, applies the re-check, marks fix-eligible findings `[fix-proposed]` per `pipeline-constants.md` (Peek Fix Carve-out), derives the pre-fix verdict (loop-interfaces.md), assembles the report |
+| 7 | Fix + comment gate | Two phases: elect fixes and/or a comment (A), then approve the exact diff, comment text, and delivery target before any push or post (B); comment opens with the verdict and ends with the `<!-- peek: <sha> -->` marker |
 | 8 | Cleanup | `git worktree remove <tmp> --force` + prune; always runs, even on abort |
 </quick_reference>
 
@@ -62,7 +62,15 @@ When the target is the current branch and a same-named remote branch also exists
 
 If neither the fetch nor a local ref resolves the target, abort with a clear message BEFORE creating anything — there is nothing to clean up in that case.
 
-Put the tmp path under the system temp dir, unique per run. Resolve the base ref via the base-branch idiom cited from `forge-detection.md` (Base branch section). The user's own checkout is never touched. Record the worktree path — every dispatch in Steps 3-5 and the cleanup in Step 8 need it.
+Put the tmp path under the system temp dir, unique per run. Resolve the base ref via the base-branch idiom cited from `forge-detection.md` (Base branch section). Record the worktree path — every dispatch in Steps 3-5 and the cleanup in Step 8 need it.
+
+Record three more facts at setup; Step 7's fix path reads all three:
+
+- **Target kind** — remote or local, as resolved above.
+- **Reviewed tip** — `git -C <tmp-path> rev-parse HEAD`, run immediately after the worktree exists. This SHA is the pre-fix baseline: the diff boundary at Step 7's approval gate, the reset target when a fix is discarded, and the marker SHA on every path where fixes are not delivered.
+- **Checkout state** (local targets only) — `git worktree list --porcelain | grep -F "branch refs/heads/<branch>"` in the target repo. A hit means some worktree holds that branch and its ref must not be moved.
+
+The fix path is available for remote targets, and for local targets whose branch is checked out nowhere. The current-branch case is checked out by definition, so it never gets the fix path — those runs are review-only. The user's own checkout is never touched on any path: fixes are made in the disposable worktree and delivered by pushing, or by moving a ref no checkout holds.
 
 ## Step 3: RECON Dispatch
 
@@ -108,7 +116,9 @@ Dedup overlapping findings first: same file:line + same defect = one finding, ke
 
 **Re-check (lead-owned, every move visible in the report):** a Critical whose `Trigger:` or `Consequence:` line is missing or empty becomes Important, marked `[downgraded: no consequence named]`; a `[convention]` Critical becomes Important, marked `[downgraded: convention]`; a previously-reviewed finding without a `Prior review:` line moves to Questions for the Author; a finding missing Scope is treated as delta; a finding missing Class is assigned one by the lead (`skills/common-patterns/pipeline-constants.md`, Finding Classification: the lead owns final classification). Dedup runs first and the re-check runs on the surviving finding, so a Suggestion never rises above what its evidence supports.
 
-**Derive the verdict** per `skills/common-patterns/loop-interfaces.md` (Verdict Contracts, peek entry) — cite the derivation; never hand-pick.
+**Fix-eligibility pass (lead-owned):** mark each surviving finding `[fix-proposed]` when `skills/common-patterns/pipeline-constants.md` (Peek Fix Carve-out) makes it eligible. That file owns which findings qualify and what evidence delivering them requires — cite it, never restate it. The mark is a proposal and nothing more: no file is edited, no commit is made, and nothing is delivered during synthesis. Skip this pass entirely when Step 2 found the fix path unavailable for this target; no finding gets marked and the run proceeds as review-only.
+
+**Derive the verdict** per `skills/common-patterns/loop-interfaces.md` (Verdict Contracts, peek entry) — cite the derivation; never hand-pick. The Step 6 report carries the honest pre-fix verdict, derived over every surviving finding, because nothing has been fixed yet; Step 7 re-derives it only if fixes are actually applied.
 
 Then assemble the report for the architect-governor reader per the Audience Contract (`skills/common-patterns/prose-style.md`, The Reader) — one citation, not restated here. RECON's Change Inventory, carried by every lens dispatch since Step 5, is no longer discarded after intent-gathering: it opens the report. This template is this skill's core output contract:
 
@@ -136,6 +146,7 @@ approved and at what point; prior peeks)
 
 ### Findings
 [evidence layer — Critical, then Important, then Suggestions — each with severity, class, scope, file:line, evidence, suggested direction, and any downgrade marker; `- (none)` when the lenses returned none]
+[findings the lead can resolve at the worktree carry a trailing `[fix-proposed]` mark — a proposal Step 7 offers, not work already done]
 
 ### Questions for the Author
 [evidence layer — merged from all lenses, deduped; entries marked `[out-of-lane: <LENS>]` are routed into the owning
@@ -145,11 +156,52 @@ lens's Findings during this synthesis step instead — see agents/peek.md Shared
 [evidence layer — union of all four lenses' Coverage blocks; anything unreviewed listed explicitly, never silently dropped]
 ```
 
-## Step 7: Draft Comment Offer
+## Step 7: Fix + Draft Comment Gate
 
-AskUserQuestion: draft a comment for the MR/PR? If yes: draft a professional, direct comment built from the report in three parts — (a) opens with the report's `Verdict:` line verbatim (the same `Verdict: <word>` text, before anything else), (b) lists findings and questions per the existing prose rules (no internal vocabulary — no lens names, no mode words), (c) ends with `<!-- peek: <sha> -->`, where `<sha>` is the reviewed tip (`git -C <tmp-path> rev-parse HEAD`) — the marker renders as nothing on GitHub and GitLab and lets a later RECON recognize this review. Comment prose otherwise follows `skills/common-patterns/prose-style.md`: findings and questions only — no restated report sections, no Coverage block, no praise-padding; target a comment the author reads in under a minute, longer only when the finding count itself demands it. Show the drafted text to the user. Only after the user approves that exact text, post it via the write commands cited from `forge-detection.md`. On GitLab, the C2 caveat applies at this step: try the `note create` form first, fall back to the legacy `note -m` form second, per `forge-detection.md`'s caveat table. On rung 2/3 (no forge, or no MR/PR resolvable), hand over copy-paste text instead of posting — that text carries the `Verdict:` opening and the `<!-- peek: <sha> -->` marker too.
+Two phases: phase A elects what should happen, phase B approves exactly what leaves the worktree. When no finding carries `[fix-proposed]` — nothing was eligible, or Step 2 found the fix path unavailable — phase A is the only phase, with the same options and the same behavior this step has always had.
 
-NEVER post without the user's approval of the exact text that goes out.
+**Phase A — the offer.** AskUserQuestion (form and gate discipline: `skills/common-patterns/question-format.md`): draft a comment for the MR/PR? The standing options are unchanged — comment as drafted, or no comment. When `[fix-proposed]` findings exist, offer one additional option alongside them: apply the proposed fixes, then approve the diff before anything is pushed. Name the eligible findings in the question so the election is informed.
+
+**The draft comment.** A professional, direct comment built from the report in three parts (four when fixes are delivered — see Re-derivation below) — (a) opens with the report's `Verdict:` line verbatim (the same `Verdict: <word>` text, before anything else), (b) lists findings and questions per the existing prose rules (no internal vocabulary — no lens names, no mode words), (c) ends with `<!-- peek: <sha> -->`, where `<sha>` is the reviewed tip recorded at Step 2, which on a run with no fixes applied is also `git -C <tmp-path> rev-parse HEAD` — the marker renders as nothing on GitHub and GitLab and lets a later RECON recognize this review. Comment prose otherwise follows `skills/common-patterns/prose-style.md`: findings and questions only — no restated report sections, no Coverage block, no praise-padding; target a comment the author reads in under a minute, longer only when the finding count itself demands it. Show the drafted text to the user. Only after the user approves that exact text, post it via the write commands cited from `forge-detection.md`. On GitLab, the C2 caveat applies at this step: try the `note create` form first, fall back to the legacy `note -m` form second, per `forge-detection.md`'s caveat table. On rung 2/3 (no forge, or no MR/PR resolvable), hand over copy-paste text instead of posting — that text carries the `Verdict:` opening and the `<!-- peek: <sha> -->` marker too.
+
+**Application — only when the user elects fixes.** All work happens at the worktree:
+
+- One commit per finding, `[convention]` fixes first, then `[capability]` fixes. Additive commits only.
+- Commit message: an imperative subject describing the change itself, 60 characters or fewer, and a body of exactly `Applied during review; details in the review comment.` The branch author is the reader, so no plugin vocabulary belongs anywhere in the message — no mode or lens words, no class tags, no severity words.
+- If any `[capability]` fix was applied, dispatch `hyperpowers:test-runner` at the worktree for the repo's suite. On a red or unrunnable suite, run `git -C <tmp-path> reset --hard <last-convention-commit>` and demote those capability fixes back to ordinary findings for the author — the suite rule in `skills/common-patterns/pipeline-constants.md` (Peek Fix Carve-out), cited not restated. When no convention commit exists, the reset target is the reviewed tip recorded at Step 2. Convention fixes survive this reset; capability fixes never reach the author's branch without green-suite evidence.
+- If an edit that looked exact turns out to need judgment mid-fix, it was never eligible: reset the worktree to the last good commit, drop the `[fix-proposed]` mark, and return the finding to the report at its original severity for the author to resolve.
+
+**Re-derivation — only when fixes were applied.** The verdict is re-derived per `skills/common-patterns/loop-interfaces.md` (Verdict Contracts, peek entry), which scopes it to the findings not fixed by review. The report gains a `### Fixed by review` block, placed between Overall Assessment and Findings — one line per fix naming the defect and its commit SHA. A fixed finding lives in that block and leaves the Findings section.
+
+The draft comment then has four parts, in order: (a) the re-derived `Verdict:` line, (b) a short `Fixed directly (N commits pushed)` list, one line per fix in the author's language, (c) the remaining findings and questions, (d) the `<!-- peek: <sha> -->` marker. `<sha>` is `git -C <tmp-path> rev-parse HEAD`, which after fixes is the post-fix tip — deliberately so: that is the tip the author's branch carries once the fixes land, and the SHA a later RECON must match to recognize this review.
+
+The post-fix tip is correct ONLY when the fixes are actually delivered. On every fallback path below — a decline at phase B, a rejected or non-fast-forward push, a failed compare-and-swap — the marker MUST name the reviewed tip recorded at Step 2 instead. The worktree's HEAD still carries the discarded fix commits until Step 8 removes them, so reading HEAD on a fallback path stamps the comment with a SHA that never reaches the branch and breaks the next RECON's prior-peek matching.
+
+**Phase B — approve the exact delivery.** Runs only when fixes were applied, and runs every time they were. Show the user all three together, before anything leaves the worktree:
+
+1. The full diff: `git -C <tmp-path> diff <reviewed-tip>..HEAD`.
+2. The exact comment text that will be posted.
+3. The named delivery target — the branch, and the remote or repo the commits land on.
+
+Only on approval, deliver:
+
+- **Remote target:** `git -C <tmp-path> push origin HEAD:<source-branch>`.
+- **Local target:** `git -C <target-repo> update-ref refs/heads/<branch> <new-sha> <reviewed-tip>` — the trailing old value makes it a compare-and-swap that fails if the branch moved. Refuse the update outright when Step 2's checkout state found the branch checked out in any worktree; the ref moves only for a branch checked out nowhere.
+
+Never force-push, and never amend, squash, or rebase the author's commits.
+
+Then post the comment under the rules above.
+
+**Fallbacks — the review still lands, the fixes do not.** Each of these leaves the author's branch exactly as the review found it, and each falls back to the report-only comment: the original findings, the pre-fix verdict, and the reviewed tip as the marker SHA.
+
+- **Push rejected, or non-fast-forward** (the author moved the branch while the review ran): report git's output verbatim, then fall back. Do not retry by overwriting the remote branch, and do not rebase onto the new tip.
+- **Compare-and-swap failure on a local target** (the old-value check fails because the branch moved): same fallback, reported the same way.
+- **Cross-fork MR** — the source branch does not live on `origin`: do not hunt for the author's fork remote and do not add remotes. Treat delivery as unavailable, take the same fallback, and say plainly that the fixes could not be delivered because the branch lives on a fork.
+- **The user declines at phase B:** discard the fixed form and offer today's report-only comment. Step 8's forced worktree removal is the discard mechanism — no separate cleanup, and nothing to undo on the author's branch.
+
+Both phases follow `skills/common-patterns/question-format.md`: an expired question box is not an answer — re-ask in durable prose and HOLD. Nothing is posted, pushed, or ref-updated on a timeout.
+
+NEVER post without the user's approval of the exact text that goes out, and NEVER push or move a ref without the user's approval of the exact diff, comment, and target.
 
 ## Step 8: Cleanup
 
@@ -158,18 +210,19 @@ git worktree remove <tmp-path> --force
 git worktree prune
 ```
 
-This is an always-run closer — it runs even when the user aborts mid-flow, declines at a gate, or a dispatch fails partway through. Every path through this skill ends here.
+This is an always-run closer — it runs even when the user aborts mid-flow, declines at a gate, or a dispatch fails partway through. Every path through this skill ends here. The forced removal is also how unapproved fix commits are discarded: any commit Step 7 built but did not deliver dies with the worktree, which is why no separate revert is needed on a fallback path.
 
 </the_process>
 
 <critical_rules>
 ## Rules That Have No Exceptions
 
-1. **Never auto-post.** A draft comment goes out only after the user approves the exact text (Step 7).
+1. **Never auto-post, never auto-push.** A draft comment goes out only after the user approves the exact text, and a fix commit reaches the author's branch only after the user approves the exact diff, comment, and delivery target at Step 7's phase B.
 2. **Never skip the intent gate.** "The diff is tiny, skip confirmation" is the named rationalization — the gate runs every time, regardless of branch size.
 3. **Never restate agent protocol.** Mode charters, evidence rules, and return contracts live in `agents/peek.md`. Cite, never copy.
 4. **The report must open with the `Verdict:` line and include Coverage.** A synthesis that omits either is incomplete: the `Verdict:` line is derived, never hand-picked, and anything unreviewed must be named in Coverage, not silently dropped.
 5. **The worktree is always cleaned up.** Step 8 runs on every path, including aborts and dispatch failures.
+6. **The fix path is bounded by the Peek Fix Carve-out** (`skills/common-patterns/pipeline-constants.md`). Critical findings are never fixed at review; nothing is pushed or ref-updated without phase-B approval of the exact diff.
 
 ## Common Excuses
 
@@ -182,6 +235,9 @@ All of these mean: **STOP. Follow the process as written.**
 - "No Critical makes the review look shallow" — a clean return is a complete result. Severity follows the anchor, not the reviewer's need to look rigorous; manufacturing a finding is the mirror image of softening one.
 - "It has been reviewed four times, something must be wrong" — prior review is evidence to weigh, not a quota to beat. A finding on previously-reviewed code says what the earlier reviewers missed, or it is a question.
 - "It was approved, drop the finding" — approval never suppresses a finding; it demands the `Prior review:` justification. Deferring is the other way to be wrong.
+- "The fix is obvious, push it without the gate" — phase B runs every time fixes were applied. Obviousness is not approval, and a diff nobody looked at is a diff nobody agreed to.
+- "Fix the Critical too while I'm in there" — a Critical is never fix-eligible (`skills/common-patterns/pipeline-constants.md`, Peek Fix Carve-out). The author must confront it; quietly resolving it at review hides the one finding that most needed their attention.
+- "The suite is missing, push the capability fix anyway" — no green suite, no capability fix: demote it back to an ordinary finding for the author. Convention fixes are unaffected by the suite's state.
 </critical_rules>
 
 <verification_checklist>
@@ -191,15 +247,16 @@ Before presenting the report to the user:
 - [ ] RECON dispatched with the sonnet model override, blocking, and returned Stated Aims plus Prior Review before the intent gate (Step 3)
 - [ ] User confirmed or corrected the aims and the Prior Review summary — no provisional intent carried forward (Step 4)
 - [ ] All three lenses dispatched in one message, no model override, with their mode-specific required inputs (Step 5)
-- [ ] Findings deduped; re-check applied with every move visible; verdict derived per loop-interfaces.md; report opens with the `Verdict:` line and includes Aimed vs Achieved, Overall Assessment, Findings (`- (none)` is a complete Findings section), Questions for the Author, and Coverage (Step 6)
+- [ ] Findings deduped; re-check applied with every move visible; fix-eligibility pass run and eligible findings marked `[fix-proposed]` (or skipped because the fix path is unavailable); verdict derived per loop-interfaces.md; report opens with the `Verdict:` line and includes Aimed vs Achieved, Overall Assessment, Findings (`- (none)` is a complete Findings section), Questions for the Author, and Coverage (Step 6)
 - [ ] Draft comment (if requested) opens with the verdict, ends with the marker, and was posted only after explicit approval of the exact text, or handed over as copy-paste at rung 2/3 (Step 7)
+- [ ] Fixes (if elected) applied per the carve-out, suite green before any `[capability]` fix was delivered, the exact diff and comment text approved at phase B before any push or ref-update, and every non-delivery path left nothing on the author's branch with the marker naming the reviewed tip (Step 7)
 - [ ] Worktree removed and pruned (Step 8) — including on any abort path
 </verification_checklist>
 
 <integration>
 **This skill calls:**
 - `hyperpowers:peek` agent (subagent, x4 dispatches — RECON, CODE, ARCHITECTURE, DELIVERY)
-- `hyperpowers:test-runner` (via the CODE lens, only when the user opts into the suite run at Step 4)
+- `hyperpowers:test-runner` (via the CODE lens, only when the user opts into the suite run at Step 4, and by the lead at Step 7 when a `[capability]` fix is applied)
 
 **This skill is called by:**
 - User, via `/hyperpowers:peek`
