@@ -119,7 +119,7 @@ Dedup overlapping findings first: same file:line + same defect = one finding, ke
 
 **Fix-eligibility pass (lead-owned):** mark each surviving finding `[fix-proposed]` when `skills/common-patterns/pipeline-constants.md` (Peek Fix Carve-out) makes it eligible. That file owns which findings qualify and what evidence delivering them requires — cite it, never restate it. The mark is a proposal and nothing more: no file is edited, no commit is made, and nothing is delivered during synthesis. Skip this pass entirely when Step 2 found the fix path unavailable for this target; no finding gets marked and the run proceeds as review-only.
 
-**Derive the verdict** per `skills/common-patterns/loop-interfaces.md` (Verdict Contracts, peek entry) — cite the derivation; never hand-pick. The Step 6 report carries the honest pre-fix verdict, derived over every surviving finding, because nothing has been fixed yet; Step 7 re-derives it only if fixes are actually applied.
+**Derive the verdict** per `skills/common-patterns/loop-interfaces.md` (Verdict Contracts, peek entry) — cite the derivation; never hand-pick. The Step 6 report carries the honest pre-fix verdict, derived over every surviving finding, because nothing has been fixed yet; Step 7 re-derives it only when applied fixes survive.
 
 Then assemble the report for the architect-governor reader per the Audience Contract (`skills/common-patterns/prose-style.md`, The Reader) — one citation, not restated here. RECON's Change Inventory, carried by every lens dispatch since Step 5, is no longer discarded after intent-gathering: it opens the report. This template is this skill's core output contract:
 
