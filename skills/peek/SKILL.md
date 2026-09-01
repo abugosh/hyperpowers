@@ -22,7 +22,7 @@ MEDIUM FREEDOM — the 8-step flow order and its gates (intent confirm, then the
 | 4 | Intent confirm gate | AskUserQuestion: confirm/correct/add aims, confirm/correct the Prior Review summary, opt-in suite run; HOLD on expiry |
 | 5 | Parallel lens dispatch | 3x Agent tool (CODE/ARCHITECTURE/DELIVERY), one message, no model override, blocking |
 | 6 | Synthesis | Lead dedups, applies the re-check, marks fix-eligible findings `[fix-proposed]` per `pipeline-constants.md` (Peek Fix Carve-out), derives the pre-fix verdict (loop-interfaces.md), assembles the report |
-| 7 | Fix + comment gate | Two phases: elect fixes and/or a comment (A), then — only when fixes were applied — approve the exact diff, comment text, and delivery target at (B); at most one comment is posted per run, never before the user approves its exact text; comment opens with the verdict and ends with the `<!-- peek: <sha> -->` marker |
+| 7 | Fix + comment gate | Two phases: elect fixes and/or a comment (A), then — only when applied fixes survive — approve the exact diff, comment text, and delivery target at (B); at most one comment is posted per run, never before the user approves its exact text; comment opens with the verdict and ends with the `<!-- peek: <sha> -->` marker |
 | 8 | Cleanup | `git worktree remove <tmp> --force` + prune; always runs, even on abort |
 </quick_reference>
 
@@ -169,6 +169,7 @@ Two phases: phase A elects what should happen, phase B approves exactly what lea
 
 - **No fixes elected** (phase A is the only phase): draft the three-part comment here from the Step 6 report, show the user that exact text, and post it on their approval. This is today's flow, unchanged.
 - **Fixes elected:** draft and post nothing here. The comment is built after Re-derivation below, in its four-part form, and the user approves it together with the diff and the target at phase B — it is posted after delivery, or in its report-only form on any fallback path.
+- **Fixes elected, none survived:** when every applied fix is reverted before delivery, the worktree is back at the reviewed tip and there is no diff for phase B to approve. The run rejoins the first bullet's timing — the report-only comment (the no-surviving-fix fallback below) is drafted from the Step 6 report, shown to the user as that exact text, and posted on their approval — reached after the application attempt instead of before it.
 
 Posting the pre-fix draft on a fix run is the failure this split exists to prevent: it puts a superseded verdict, no list of what the review fixed, and a marker naming a tip the branch has moved past in front of the author, and a second comment after delivery only compounds it.
 
@@ -179,13 +180,15 @@ Posting the pre-fix draft on a fix run is the failure this split exists to preve
 - If any `[capability]` fix was applied, dispatch `hyperpowers:test-runner` at the worktree for the repo's suite. On a red or unrunnable suite, run `git -C <tmp-path> reset --hard <last-convention-commit>` and demote those capability fixes back to ordinary findings for the author — the suite rule in `skills/common-patterns/pipeline-constants.md` (Peek Fix Carve-out), cited not restated. When no convention commit exists, the reset target is the reviewed tip recorded at Step 2.
 - If an edit that looked exact turns out to need judgment mid-fix, it was never eligible: reset the worktree to the last good commit, drop the `[fix-proposed]` mark, and return the finding to the report at its original severity for the author to resolve.
 
-**Re-derivation — only when fixes were applied.** The verdict is re-derived per `skills/common-patterns/loop-interfaces.md` (Verdict Contracts, peek entry), which scopes it to the findings not fixed by review. The report gains a `### Fixed by review` block, placed between Overall Assessment and Findings — one line per fix naming the defect and its commit SHA. A fixed finding lives in that block and leaves the Findings section.
+When reverting leaves no fix standing — the reset landed back on the reviewed tip because no convention commit existed, or every elected fix was dropped mid-fix — the fix set is empty. Skip Re-derivation and phase B; the no-surviving-fix fallback below owns the rest of the run.
+
+**Re-derivation — only when applied fixes survive.** The verdict is re-derived per `skills/common-patterns/loop-interfaces.md` (Verdict Contracts, peek entry), which scopes it to the findings not fixed by review. The report gains a `### Fixed by review` block, placed between Overall Assessment and Findings — one line per fix naming the defect and its commit SHA. A fixed finding lives in that block and leaves the Findings section.
 
 The draft comment then has four parts, in order: (a) the re-derived `Verdict:` line, (b) a short `Fixed directly (N commits pushed)` list, one line per fix in the author's language, (c) the remaining findings and questions, (d) the `<!-- peek: <sha> -->` marker. `<sha>` is `git -C <tmp-path> rev-parse HEAD`, which after fixes is the post-fix tip — deliberately so: that is the tip the author's branch carries once the fixes land, and the SHA a later RECON must match to recognize this review.
 
-The post-fix tip is correct ONLY when the fixes are actually delivered. On every fallback path below — a decline at phase B, a rejected or non-fast-forward push, a failed compare-and-swap — the marker MUST name the reviewed tip recorded at Step 2 instead. The worktree's HEAD still carries the discarded fix commits until Step 8 removes them, so reading HEAD on a fallback path stamps the comment with a SHA that never reaches the branch and breaks the next RECON's prior-peek matching.
+The post-fix tip is correct ONLY when the fixes are actually delivered. On every fallback path below — an empty fix set after reverts, a decline at phase B, a rejected or non-fast-forward push, a failed compare-and-swap — the marker MUST name the reviewed tip recorded at Step 2 instead. Wherever fix commits were built and not delivered, the worktree's HEAD still carries them until Step 8 removes them, so reading HEAD on a fallback path stamps the comment with a SHA that never reaches the branch and breaks the next RECON's prior-peek matching.
 
-**Phase B — approve the exact delivery.** Runs only when fixes were applied, and runs every time they were. Show the user all three together, before anything leaves the worktree:
+**Phase B — approve the exact delivery.** Runs only when applied fixes survive, and runs every time they do. Show the user all three together, before anything leaves the worktree:
 
 1. The full diff: `git -C <tmp-path> diff <reviewed-tip>..HEAD`.
 2. The exact comment text that will be posted.
@@ -202,6 +205,7 @@ Then post the comment under the rules above.
 
 **Fallbacks — the review still lands, the fixes do not.** Each of these leaves the author's branch exactly as the review found it, and each falls back to the report-only comment: the original findings, the pre-fix verdict, and the reviewed tip as the marker SHA.
 
+- **No applied fix survives to delivery** — the suite demotion above reset a capability-only fix set back to the reviewed tip because no convention commit existed to land on, or every elected fix turned out to need judgment and was dropped mid-fix: nothing is left to deliver and no diff is left to approve, so phase B never runs. Restore those findings to the report's Findings section at their original severity, drop their `[fix-proposed]` marks, and take the report-only comment on the same terms as every other fallback here. Say plainly which fixes were attempted and why they went back to the author.
 - **Push rejected, or non-fast-forward** (the author moved the branch while the review ran): report git's output verbatim, then fall back. Do not retry by overwriting the remote branch, and do not rebase onto the new tip.
 - **Compare-and-swap failure on a local target** (the old-value check fails because the branch moved): same fallback, reported the same way.
 - **Cross-fork MR** — the source branch does not live on `origin`: Step 2's availability test screens the fork-ness it can see, so reaching here means it only became visible at delivery. Do not hunt for the author's fork remote and do not add remotes. Treat delivery as unavailable, take the same fallback, and say plainly that the fixes could not be delivered because the branch lives on a fork.
@@ -243,10 +247,10 @@ All of these mean: **STOP. Follow the process as written.**
 - "No Critical makes the review look shallow" — a clean return is a complete result. Severity follows the anchor, not the reviewer's need to look rigorous; manufacturing a finding is the mirror image of softening one.
 - "It has been reviewed four times, something must be wrong" — prior review is evidence to weigh, not a quota to beat. A finding on previously-reviewed code says what the earlier reviewers missed, or it is a question.
 - "It was approved, drop the finding" — approval never suppresses a finding; it demands the `Prior review:` justification. Deferring is the other way to be wrong.
-- "The fix is obvious, push it without the gate" — phase B runs every time fixes were applied. Obviousness is not approval, and a diff nobody looked at is a diff nobody agreed to.
+- "The fix is obvious, push it without the gate" — phase B runs every time an applied fix survives. Obviousness is not approval, and a diff nobody looked at is a diff nobody agreed to.
 - "Fix the Critical too while I'm in there" — a Critical is never fix-eligible (`skills/common-patterns/pipeline-constants.md`, Peek Fix Carve-out). The author must confront it; quietly resolving it at review hides the one finding that most needed their attention.
 - "The suite is missing, push the capability fix anyway" — no green suite, no capability fix: demote it back to an ordinary finding for the author. Convention fixes are unaffected by the suite's state.
-- "Post the comment now, deliver the fixes after" — at most one comment leaves a run, and on a fix run it is never the pre-fix draft. On a fix run it is drafted after re-derivation and posted at phase B; a comment posted ahead of delivery carries a superseded verdict, omits what the review fixed, and stamps a marker the branch has already moved past.
+- "Post the comment now, deliver the fixes after" — at most one comment leaves a run, and on a fix run it is never the pre-fix draft. On a fix run it is drafted after re-derivation and posted at phase B — or, when no fix survives to deliver, drafted report-only once the fix set is empty; a comment posted ahead of delivery carries a superseded verdict, omits what the review fixed, and stamps a marker the branch has already moved past.
 </critical_rules>
 
 <verification_checklist>
@@ -257,7 +261,7 @@ Before presenting the report to the user:
 - [ ] User confirmed or corrected the aims and the Prior Review summary — no provisional intent carried forward (Step 4)
 - [ ] All three lenses dispatched in one message, no model override, with their mode-specific required inputs (Step 5)
 - [ ] Findings deduped; re-check applied with every move visible; fix-eligibility pass run and eligible findings marked `[fix-proposed]` (or skipped because the fix path is unavailable); verdict derived per loop-interfaces.md; report opens with the `Verdict:` line and includes Aimed vs Achieved, Overall Assessment, Findings (`- (none)` is a complete Findings section), Questions for the Author, and Coverage (Step 6)
-- [ ] At most one comment left the run (none when the user declined one) — drafted pre-fix and posted at phase A on a no-fix run, or drafted after re-derivation and posted at phase B on a fix run — opening with the verdict, ending with the marker, posted only after explicit approval of the exact text, or handed over as copy-paste at rung 2/3 (Step 7)
+- [ ] At most one comment left the run (none when the user declined one) — drafted pre-fix and posted at phase A on a no-fix run, drafted after re-derivation and posted at phase B on a fix run, or — when no applied fix survived — the report-only comment posted with no phase B at all — opening with the verdict, ending with the marker, posted only after explicit approval of the exact text, or handed over as copy-paste at rung 2/3 (Step 7)
 - [ ] Fixes (if elected) applied per the carve-out, suite green before any `[capability]` fix was delivered, the exact diff and comment text approved at phase B before any push or ref-update, and every non-delivery path left nothing on the author's branch with the marker naming the reviewed tip (Step 7)
 - [ ] Worktree removed and pruned (Step 8) — including on any abort path
 </verification_checklist>
