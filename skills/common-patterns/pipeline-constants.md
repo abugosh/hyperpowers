@@ -51,10 +51,11 @@ than restate it.
   logic, missing error handling, broken contract, meaningful test gap.
   Resolution: the executor re-dispatch loop (executing-plans owns the
   handling); the Opus promotion ladder below applies.
-- `[convention]` — style/prose/doc surface: noise comments, docstring
-  drift, naming nits, formatting, stale cross-references. Resolution: the
-  lead fixes directly under executing-plans' bounded carve-out — no
-  dispatch, no re-review round, never promotes.
+- `[convention]` — style/prose/doc surface: noise comments, docstring drift,
+  naming nits, formatting, stale cross-references. Resolution: the consuming
+  pipeline's bounded carve-out — executing-plans' lead-fix valve in-epic, or
+  peek's fix path at review (Peek Fix Carve-out below) — no dispatch, no
+  re-review round, never promotes.
 
 Reviewers propose the tag on each finding; the lead owns final
 classification and may retag with a one-line bd note.
@@ -74,12 +75,39 @@ defined by the follow-up it requires, not by how the defect feels:
   sequence that reaches the path) and the Consequence (what happens when it
   does). Requires fix AND re-peek. A finding that cannot name both is
   Important, never Critical.
-- **Important** — a confirmed defect below that bar that the author must
-  fix before merge. No re-peek: the author self-certifies the fix.
+- **Important** — a confirmed defect below that bar that the author must fix
+  before merge. No re-peek: the author self-certifies the fix — unless the
+  finding was resolved at review under the Peek Fix Carve-out below, which
+  removes it from the author's queue.
 - **Suggestion** — never blocks, never becomes a fix requirement, and never
   becomes Critical through dedup or synthesis.
 
 `[convention]` findings (Finding Classification above) are never Critical.
+Consumers cite this section; none restates it.
+
+## Peek Fix Carve-out
+
+Bounded authority for peek's lead (skills/peek/SKILL.md, synthesis and gate
+steps) to resolve findings at the review worktree instead of routing them
+to the author. Lenses never fix — agents/peek.md's read-only rules are not
+relaxed by this section.
+
+- Eligibility: every `[convention]` finding; a `[capability]` finding only
+  when its severity is Important or Suggestion AND the fix is an exact
+  known edit requiring no judgment (the Simple-task bar above). Critical
+  findings are never fix-eligible.
+- Suite rule: applying any `[capability]` fix requires green-suite evidence
+  from a test-runner dispatch at the worktree before anything is delivered.
+  A red or unrunnable suite demotes the capability fixes back to ordinary
+  findings; `[convention]` fixes are unaffected.
+- Delivery: additive commits only, one per finding, pushed or ref-updated
+  only after the user approves the exact diff, comment text, and target at
+  peek's gate. Never a force-push; never an amend, squash, or rebase of
+  author commits.
+- Verdict: derived over the findings NOT fixed by review
+  (loop-interfaces.md, Verdict Contracts, peek entry); fixed findings move
+  to the report's Fixed-by-review block.
+
 Consumers cite this section; none restates it.
 
 ## Executor Promotion Flag
