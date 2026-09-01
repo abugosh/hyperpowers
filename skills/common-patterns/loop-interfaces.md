@@ -110,9 +110,9 @@ Definition sites cite this section; parse sites must match it exactly.
   `Verdict: APPROVE`, `Verdict: APPROVE WITH CHANGES`,
   `Verdict: REQUEST CHANGES`. Derived mechanically after the synthesis
   re-check, over the findings not fixed by review (pipeline-constants.md,
-  Peek Fix Carve-out; on runs without the fix path that is every surviving finding)
-  — any Critical → REQUEST CHANGES; else any Important → APPROVE WITH
-  CHANGES; else APPROVE. The lead never hand-picks it.
+  Peek Fix Carve-out; on runs without the fix path that is every surviving
+  finding) — any Critical → REQUEST CHANGES; else any Important → APPROVE
+  WITH CHANGES; else APPROVE. The lead never hand-picks it.
 
 The vocabularies are deliberately stage-distinct — do not merge them; do
 not invent new verdict words at any site.
