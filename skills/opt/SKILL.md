@@ -18,7 +18,7 @@ MEDIUM-LOW FREEDOM — the step order, the disposition vocabulary, the escalatio
 <quick_reference>
 | Step | Action | How |
 |------|--------|-----|
-| 1 | Resolve & ingest | Parse argument (URL / number / branch / none); detect forge + rung (`forge-detection.md`); read threads WITH resolution state; record target state; unresolved threads are the work queue |
+| 1 | Resolve & ingest | Parse argument (URL / number / branch / none); detect forge + rung (`forge-detection.md`); read threads WITH resolution state; record target state, worktree path, and pre-run tip; unresolved threads are the work queue |
 | 2 | Normalize | One finding record per claim: source thread, reviewer, claim, location, class + severity (`pipeline-constants.md`) |
 | 3 | Verify against reality | Code, conventions, ADRs, source epic's design and anti-patterns; codebase-investigator for structure; every finding exits confirmed / refuted / contested with evidence |
 | 4 | Escalation check | Accepted `[capability]` defects only: origin-or-symptom (root-cause-tracing) + class sweep for sibling sites (debugging-with-tools Rule 4). Proposes; never acts |
@@ -48,23 +48,28 @@ Parse the `/opt` argument:
 - Bare number → the current repo's MR/PR at that number
 - Branch name → that branch's open MR/PR
 - No argument → the current branch (`git branch --show-current`) and its open MR/PR
-- Review text pasted into the session → the degradation floor; skip forge reads entirely and go to Step 2 with the pasted text as the sole source
+- Review text pasted into the session → the degradation floor; skip forge reads entirely and go to Step 2 with the pasted text as the sole source. Skipping the forge read also skips the only source of target state, so record it as `unknown` and carry that forward: Step 7's re-check becomes a question at the outward gate — the architect states whether the target is still open, and until they do, nothing is pushed. If they name the MR/PR there, read its state through the normal path instead of asking.
 
 Run the Detection idiom from `skills/common-patterns/forge-detection.md` and state which rung of its Degradation ladder is in force. Read threads with their resolution state using that file's Review state commands — GitLab folds resolution per note from `discussions --paginate`; GitHub reads `reviewThreads` through GraphQL. Cite those commands; never restate or reinvent them here.
 
-**Record the target state** (`open`, `merged`, `closed`) from the same read. Step 6 and Step 7 both consult it.
+**Record the target state** (`open`, `merged`, `closed`, or `unknown` when no forge read happened) from the same read. Step 6 and Step 7 both consult it.
 
 **The work queue is the unresolved threads.** A resolved thread is settled — never re-triage it. Resolution is the reviewer's signal that the exchange is done, and honoring it is what makes a second `/opt` run on the same MR safe.
 
 Three queue states this step must handle before anything else runs:
 
 - **Nothing to triage.** Every thread is resolved, or the target carries no review activity at all. Report that in two or three sentences — target, rung, thread counts — and end the run. No normalization, no escalation, no gates: a run with an empty queue fires nothing.
-- **Awaiting-reviewer threads.** An unresolved thread whose latest comment is a reply this loop posted, with no reviewer activity after it, is awaiting-reviewer, not new work. It stays out of the queue and appears in Step 7's wrap-up as pending. A thread re-enters the queue only when a reviewer has commented after our last reply — that new comment is the finding, not the whole thread again.
+- **Awaiting-reviewer threads.** An unresolved thread whose latest comment is ours, with no reviewer activity after it, is awaiting-reviewer, not new work. It stays out of the queue and appears in Step 7's wrap-up as pending. A thread re-enters the queue only when a reviewer has commented after that last reply of ours — that new comment is the finding, not the whole thread again.
+
+  **"Ours" is a login match, not a memory.** A fresh session remembers no prior run, so identity comes from the reads this step already made: the target's own author login (a field of the same target read — `/opt` runs on your own MR/PR, so its author is you) matched against the per-comment `author.login` the thread reads carry (`skills/common-patterns/forge-detection.md`, Review state). That comparison is what makes a second `/opt` run on the same target idempotent, and it holds for replies posted by hand as well as by this loop. When the read cannot establish that login, say so and treat every unresolved thread as work: a duplicated reply is recoverable, a dropped finding is not.
 - **Merged or closed target.** The MR/PR moved on while the review sat. Keep going: triage, verification and dispositions are all still worth doing. But nothing may be pushed to a merged or closed target — at Step 6 every accepted fix becomes a FILE FOLLOW-UP instead, and Step 7's gate covers replies only.
 
 **peek-sourced comments.** A comment ending in `<!-- peek: <sha> -->` came from `hyperpowers:peek`: it opens with a verdict line and carries findings already anchored to severity and file:line. Treat that structure as a head start on Step 2 — and nothing more. It buys no exemption from Step 3; a structured claim is still a claim.
 
-**The worktree.** Work happens on a checkout of the MR branch. If the current directory is already on that branch, use it. Otherwise find the worktree `hyperpowers:finishing-a-development-branch` kept when it created the MR (`git worktree list`), and if it is gone, re-create it: `git worktree add <path> <branch>`. Record the path — Steps 3, 6 and 7 all use it.
+**The worktree.** Work happens on a checkout of the MR branch. If the current directory is already on that branch, use it. Otherwise find the worktree `hyperpowers:finishing-a-development-branch` kept when it created the MR (`git worktree list`), and if it is gone, re-create it: `git worktree add <path> <branch>`. Record two facts about it:
+
+- **Worktree path** — Steps 3, 6 and 7 all use it.
+- **Pre-run tip** — `git -C <worktree> rev-parse HEAD`, run immediately after the worktree is resolved, before any fix touches it. This SHA is the diff boundary at Step 7's outward gate: it is what the architect's approval is measured against, so it must be captured before Step 6 can move HEAD.
 
 **Ingestion valve.** Above **25 unresolved threads** in the queue, do not read them all in the lead. Dispatch one general-purpose subagent with the forge read commands and the Step 2 record schema, and have it return only the normalized finding records — no thread bodies. Below that threshold, read them in the lead: the comment text is needed for judgment in Step 3 and for reply drafting in Step 7 anyway, and 25 threads is where that stops being cheap.
 
@@ -138,7 +143,7 @@ Present the table via AskUserQuestion, following `skills/common-patterns/questio
 
 Work only the dispositions the architect approved. Nothing here is pushed or posted — Step 7's gate owns everything outward.
 
-**Tier 1 — lead-fixed at the worktree.** Every `[convention]` fix, and a `[capability]` fix only when it is an exact known edit needing no judgment. The bar and its suite rule are `skills/common-patterns/pipeline-constants.md` (Peek Fix Carve-out) — cited, not restated. Verify each edit by reading or grepping the changed site. When any capability-touching edit is applied, dispatch `hyperpowers:test-runner` for the repo's suite; a red or unrunnable suite sends those edits back for Tier 2 treatment rather than out the door.
+**Tier 1 — lead-fixed at the worktree.** Only the findings the eligibility bar in `skills/common-patterns/pipeline-constants.md` (Peek Fix Carve-out) admits; its suite rule governs here too. Read that section and apply it whole — this skill paraphrases no part of it, because a half-copied bar is how one bar becomes two. Anything the bar excludes takes Tier 2 instead. Verify each edit by reading or grepping the changed site, and dispatch `hyperpowers:test-runner` for the suite evidence the carve-out requires; edits the carve-out demotes land in Tier 2 rather than going out the door.
 
 **Tier 2 — confirmed defects, failing test first.** Write the test that reproduces the defect, watch it fail for the right reason, then fix. `hyperpowers:test-driven-development` owns the cycle and `hyperpowers:testing-anti-patterns` owns what the test must not do. A reviewer who found a real defect found a missing test with it.
 
@@ -161,12 +166,12 @@ Run `hyperpowers:verification-before-completion` before any claim that something
 
 Reply prose follows `skills/common-patterns/prose-style.md` (human-facing baseline): lead with the outcome, no praise-padding, no hedging, and no internal vocabulary of any kind — not class tags, not severity words, not disposition words, not the names of these steps. The reviewer never sees this machinery and should never learn it exists.
 
-**Re-check the target state** before anything leaves. If the MR/PR became merged or closed since Step 1, no commits are pushed on any path: every fix that was applied becomes a FILE FOLLOW-UP bd issue instead, the replies drop their commit SHAs, and the gate below covers replies alone.
+**Re-check the target state** before anything leaves. Re-read it the way Step 1 did; when Step 1 recorded `unknown` because no forge read was available, the re-check is the gate question named there — the architect confirms the target is still open, and an unanswered question is not a confirmation. If the MR/PR became merged or closed since Step 1, or its state is still unconfirmed, no commits are pushed on any path: every fix that was applied becomes a FILE FOLLOW-UP bd issue instead, the replies drop their commit SHAs, and the gate below covers replies alone.
 
 **The outward gate — one approval covering both.** Show the architect, together, before anything leaves the worktree:
 
 1. The exact reply text for every thread.
-2. The full diff of what will be pushed: `git -C <worktree> diff <pre-run-sha>..HEAD`.
+2. The full diff of what will be pushed: `git -C <worktree> diff <pre-run-tip>..HEAD`, against the tip recorded in Step 1.
 3. The named target — the branch, the remote, and the MR/PR the replies land on.
 
 Nothing outward precedes this gate: no reply posted, no commit pushed, not even the "obvious" one. On approval, push first, then post — a reply naming a SHA the branch does not carry is worse than a late reply:
@@ -241,7 +246,7 @@ Before presenting the wrap-up report:
 - [ ] One disposition table covered every finding exactly once, each with one of the four registered words; every DECLINE carries written reasoning; gate-state persisted on any timeout (Step 5)
 - [ ] Fixes executed in tier: exact-known edits verified and suite-checked, confirmed defects test-first, class fixes only across approved sites; bd issues created for FILE FOLLOW-UP only (Step 6)
 - [ ] Commit messages and reply drafts carry no internal vocabulary (Step 6, Step 7)
-- [ ] Target state re-checked before pushing; nothing pushed to a merged or closed target (Step 7)
+- [ ] Target state re-checked before pushing; nothing pushed to a merged or closed target, or to one whose state was never confirmed (Step 7)
 - [ ] One outward gate approved the exact replies, the exact diff, and the target before anything was pushed or posted; threads left for the reviewer to resolve (Step 7)
 - [ ] Wrap-up report has both layers, with dispositions, filed issues, and pending threads (Step 7)
 </verification_checklist>
