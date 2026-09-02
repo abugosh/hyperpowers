@@ -87,6 +87,8 @@ severity: <per the Severity Anchor>
 
 Class tags and severity come from `skills/common-patterns/pipeline-constants.md` (Finding Classification; Severity Anchor). That file scopes classification to reviews "or otherwise" and gives the lead final say, which is the authority to tag prose comments a colleague wrote without any tag at all. Cite those definitions; do not restate them.
 
+Severity is exactly one of the Severity Anchor's three words — Critical, Important, Suggestion. No fourth tier (`Minor`, `Low`, `Nice-to-have`) is invented for a convention nit that feels more actionable than "Suggestion" sounds; a non-blocking finding is Suggestion, full stop.
+
 **One comment can hold several findings.** A reviewer who writes "this leaks a handle and the variable name is wrong" filed one comment and two findings: they get separate records, separate verification, and separate dispositions. They share a source thread, so Step 7 merges their replies back into one.
 
 ## Step 3: Verify Against Project Reality
