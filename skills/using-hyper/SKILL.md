@@ -43,6 +43,7 @@ HIGH FREEDOM - The meta-process (check for skills, use Skill tool, announce usag
 | Large initiative (sizing gate in `skills/common-patterns/pipeline-constants.md` fires) | hyperpowers:preordain → hyperpowers:brainstorming per leaf epic |
 | Re-verify a completed epic on demand (post-gap-fix re-check, auditing an epic implemented elsewhere, mid-epic sanity check) | hyperpowers:review-implementation |
 | Review a colleague's branch / MR / PR (no bd spec) | hyperpowers:peek |
+| Review feedback arrived on your own MR/PR (triage, fix, reply) | hyperpowers:opt |
 | Phase docs in a planning repo (multiservice) | hyperpowers:portent (draft / check) |
 | Bug report or test failure | hyperpowers:debugging-with-tools → hyperpowers:fixing-bugs |
 | Error deep in execution, unclear origin | hyperpowers:root-cause-tracing |

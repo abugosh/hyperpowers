@@ -366,7 +366,8 @@ glab mr create --title "feat: Add OAuth" --description "..."
 # Report MR created
 "Merge request created: https://gitlab.com/user/repo/-/merge_requests/42
 
-Keeping worktree at ../feature-auth-worktree for MR updates."
+Keeping worktree at ../feature-auth-worktree for MR updates.
+When review feedback arrives, /hyperpowers:opt triages and addresses it at this kept worktree."
 
 # NO worktree cleanup
 # User can address MR feedback in same worktree
@@ -382,6 +383,7 @@ Keeping worktree at ../feature-auth-worktree for MR updates."
 - No need to recreate worktree
 - Preserve local state and experiments
 - Efficient MR iteration workflow
+- Review feedback has an owner: the opt skill picks up from this worktree
 </correction>
 </example>
 

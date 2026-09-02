@@ -38,6 +38,7 @@ Reusable workflows for common development tasks:
 - **intuition** - Brand-informed empirical audit of architecture — finds complection, coupling, shearing-layer mismatches, workaround cascades, and drift through structured observation
 - **ponder** - Architecture model ownership — dispatches the ponder subagent for all LikeC4 .c4 file operations (update, bootstrap, review)
 - **peek** - Deep parallel-lens review of a branch/MR/PR without a bd spec — code, architecture, and aimed-vs-achieved lenses synthesized into a harsh-but-fair, architect-altitude report that opens with a verdict (APPROVE / APPROVE WITH CHANGES / REQUEST CHANGES), weights the MR's prior review, and sits over file:line evidence, and can — behind an explicit diff-approval gate — apply mechanical fixes (style cleanups and small, exact code fixes; severe findings always stay with the author) as additive commits pushed to the branch instead of round-tripping them
+- **opt** - Review-response for your own MR/PR — triages incoming review findings against project reality (decline-with-reasoning is first-class), escalates accepted defects to root-cause + bug-class sweeps, applies tiered fixes, and drafts gated replies to the reviewer
 
 **Quality & Testing:**
 - **test-driven-development** - Write tests first, ensure they fail, then implement
@@ -73,6 +74,7 @@ Quick access to key workflows:
 - `/hyperpowers:intuition` - Brand-informed empirical audit of architecture — finds complection, coupling, shearing layer mismatches, and drift through structured observation
 - `/hyperpowers:ponder` - Architecture model ownership — update, bootstrap, or review LikeC4 models via ponder subagent
 - `/hyperpowers:peek` - Review a branch, MR, or PR — deep review with a verdict-led, architect-altitude aimed-vs-achieved report, optional gated mechanical fixes pushed as additive commits, and optional draft comment
+- `/hyperpowers:opt` - Respond to review feedback on an MR/PR — triage, proportioned fixes, gated replies
 - `/hyperpowers:analyze-tests` - Audit test quality - identify tautological tests, coverage gaming, missing corner cases
 
 ### Specialized Agents

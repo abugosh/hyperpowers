@@ -207,6 +207,10 @@ writing-plans (`/hyperpowers:write-plan`) is the off-mainline utility that expan
 
 For reviewing someone else's branch, MR, or PR with no bd spec involved: **Peek** (`/hyperpowers:peek`) resolves the target, confirms stated intent and prior review state (recon), fans out three parallel judgment lenses (CODE, ARCHITECTURE, DELIVERY), then synthesizes a verdict-led aimed-vs-achieved report — architect-altitude summary over file:line evidence — and offers an optional draft comment that carries a re-peek marker, plus optional gated mechanical fixes applied at the worktree and pushed as additive commits once the user approves the exact diff. No bd epic required.
 
+### Review Response (Receiving Reviews)
+
+For triaging and responding to review feedback on your own MR/PR: `/hyperpowers:opt` ingests incoming MR/PR review threads (or a pasted review, or a peek comment), triages every finding against project reality with an explicit disposition (fix now / file follow-up / decline with reasoning / needs reviewer input), escalates accepted defects to a root-cause check and class sweep, applies tiered fixes at the kept worktree, and drafts gated colleague-facing replies — lead-only, no bd epic required.
+
 ### Architecture (Empirical, Brand-based)
 
 Architecture uses Brand's empirical approach — observe actual change rates through git history rather than predicting forces upfront:
@@ -329,14 +333,14 @@ Known coverage gaps:
 - ✅ Quality culture (TDD, verification, SRE review)
 - ✅ Clean bd integration
 - ✅ MR/branch review (peek)
+- ✅ Code review response — triage + fix + reply (opt)
 
 **Missing:**
 - ❌ Incident response
-- ❌ Code review response (receiving reviews)
 - ❌ Merge conflict resolution
 - ❌ Documentation workflows
 
-Priority: Continue adding collaboration workflows (code review response, incidents).
+Priority: Continue adding collaboration workflows (incident response, merge conflict resolution).
 
 ## File Naming Conventions
 
