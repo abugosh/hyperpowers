@@ -151,7 +151,9 @@ gh pr view [<number>|<url>|<branch>] --json reviews,latestReviews,reviewDecision
 # is at least well-formed against this connection; whether --paginate walks
 # a connection nested under pullRequest (rather than top-level) is
 # unconfirmed (see C7). -F owner='{owner}' -F repo='{repo}' has gh
-# substitute the placeholders from the current directory's repo.
+# substitute the placeholders from the current directory's repo. Each comment
+# node carries `databaseId` — the REST comment id the thread-reply write
+# command below needs; the FIRST node of a thread is its top-level comment.
 gh api graphql --paginate -F owner='{owner}' -F repo='{repo}' -F number=<number> -f query='
   query($owner: String!, $repo: String!, $number: Int!, $endCursor: String) {
     repository(owner: $owner, name: $repo) {
@@ -164,7 +166,7 @@ gh api graphql --paginate -F owner='{owner}' -F repo='{repo}' -F number=<number>
             line
             resolvedBy { login }
             comments(first: 100) {
-              nodes { author { login } body path line createdAt }
+              nodes { databaseId author { login } body path line createdAt }
             }
           }
           pageInfo { hasNextPage endCursor }
@@ -201,21 +203,57 @@ names are user-editable and need not be unique.
 Used only after explicit user approval — the approval gate belongs to the
 consumer skill, not to this file.
 
+Two shapes, and they are not interchangeable. A **new top-level comment**
+opens its own conversation on the MR/PR — right for a standalone statement
+posted once, such as peek's draft comment. A **thread reply** appends into an
+existing review thread — right whenever the consumer answers one particular
+reviewer comment, because it is the only form that leaves the answer where the
+question was asked, and the only one a later read of that thread returns.
+Answering N threads with the top-level form loses the thread anchor on both
+forges and, on GitHub, `--edit-last` overwrites each previous answer by design
+instead of adding one.
+
+### New top-level comment
+
 ```bash
 # GitLab: --unique makes repeated calls idempotent
 glab mr note create <iid|branch> -m "<text>" --unique
 # Fallback for older glab without the `note create` subcommand:
 glab mr note <iid> -m "<text>"
 
-# GitHub: idempotent update via --edit-last, falling back to a new comment
+# GitHub: idempotent UPDATE of the caller's own last comment, falling back to
+# a new one. It edits rather than appends, so use it only where a single
+# standing comment is intended — never for a series of distinct replies.
 gh pr comment <target> --body "<text>" --edit-last --create-if-none
 ```
 
+### Thread reply
+
+```bash
+# GitLab: append a note to an existing discussion. <discussion_id> is the `id`
+# of the discussion object from the `discussions --paginate` read above;
+# passing a field makes the request a POST.
+glab api projects/:id/merge_requests/<iid>/discussions/<discussion_id>/notes -f body="<text>"
+
+# GitHub: reply into an existing review thread. <comment_id> must be that
+# thread's TOP-LEVEL comment — the `databaseId` of the FIRST node in its
+# `comments` from the reviewThreads query above; replies to replies are not
+# supported. {owner}/{repo} are substituted from the current directory's repo.
+gh api "repos/{owner}/{repo}/pulls/<number>/comments/<comment_id>/replies" -f body="<text>"
+```
+
+A reply posted this way is an ordinary note/comment inside the thread: the
+Review state reads above return it on the next run carrying that forge's
+Author field, so a later run can tell its own last reply from a reviewer's
+comment after it. Posting a reply changes no resolution state — resolving
+stays the reviewer's move.
+
 ## Unverified caveats
 
-Doc-verified against official docs 2026-07-24 (C1-C5) and 2026-08-26 (C6-C9;
-gh v2.98.0, glab v1.115.0); NOT runtime-verified (no `glab`/`gh` installed on
-the authoring machine). Each line names what one live run would settle.
+Doc-verified against official docs 2026-07-24 (C1-C5), 2026-08-26 (C6-C9;
+gh v2.98.0, glab v1.115.0) and 2026-09-02 (C10); NOT runtime-verified (no
+`glab`/`gh` installed on the authoring machine). Each line names what one live
+run would settle.
 
 | ID | Caveat | Fallback |
 |----|--------|----------|
@@ -228,6 +266,7 @@ the authoring machine). Each line names what one live run would settle.
 | C7 | Whether `gh api graphql --paginate` walks the `reviewThreads` connection nested under `pullRequest` (its documented support is for the query's paginated connection with `$endCursor`) is unconfirmed beyond 100 threads | Read the first 100 threads; when `pageInfo.hasNextPage` is true, name the gap in Coverage. Settled by: run the query with `--paginate` against a PR carrying more than 100 review threads and count the nodes returned |
 | C8 | Whether `glab api` resolves `:id` from a subdirectory of the repo, and whether `glab mr view --comments` walks every discussion page, are unconfirmed | Run `glab api` from the repo root; read threads via `discussions --paginate`, never via `mr view --comments`. Settled by: from a subdirectory, run `glab api projects/:id` and `glab mr view <iid> --comments -F json` against an MR with more than 20 discussions and compare the count to `discussions --paginate` |
 | C9 | `glab mr view --resolved` / `--unresolved` exist only on glab >= v1.88.0; their behavior (error vs silent ignore) on older glab is unconfirmed | Fold resolution per note from `discussions --paginate`; never rely on the filters. Settled by: run `glab mr view <iid> --resolved` on a glab older than v1.88.0 and record whether it errors or ignores the flag |
+| C10 | Both thread-reply endpoints are doc-verified, but two operand questions are not: whether the GraphQL `databaseId` on a review-thread comment is the same id GitHub's replies endpoint accepts, and whether GitLab accepts a note into a discussion that was created from an individual (non-thread) comment | GitHub: reply only to a thread's FIRST comment — the docs reject replies to replies. GitLab: on a rejected POST, fall back to the top-level comment form and state which form was used. Settled by: post one reply through each form and re-read the thread to confirm the note came back inside it |
 
 ## Base branch
 
