@@ -73,7 +73,7 @@ holds them for whoever asks.
 
 ## Verdict Contracts
 
-Single source for the five verdict vocabularies in the pipeline.
+Single source for the six verdict vocabularies in the pipeline.
 Definition sites cite this section; parse sites must match it exactly.
 
 - **Executor → lead** (defined in `agents/executor.md`, parsed by
@@ -114,6 +114,12 @@ Definition sites cite this section; parse sites must match it exactly.
   every surviving finding) — any Critical → REQUEST CHANGES; else any
   Important → APPROVE WITH CHANGES; else APPROVE.
   The lead never hand-picks it.
+- **Opt disposition → user** (defined in `skills/opt/SKILL.md`, disposition
+  gate; proposed by the lead, decided by the user): every incoming review
+  finding carries exactly one of `FIX NOW`, `FILE FOLLOW-UP`, `DECLINE`,
+  `NEEDS REVIEWER INPUT` in the disposition table. `DECLINE` lines always
+  carry written reasoning. Dispositions are proposals until the user
+  approves the table, and never appear in colleague-facing text.
 
 The vocabularies are deliberately stage-distinct — do not merge them; do
 not invent new verdict words at any site.
