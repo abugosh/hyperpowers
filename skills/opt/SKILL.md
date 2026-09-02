@@ -144,7 +144,7 @@ Work only the dispositions the architect approved. Nothing here is pushed or pos
 
 **Tier 3 — approved class fixes.** Only the sibling sites the architect approved at the gate, each through the Tier 2 path. A class fix with no test at each site is a claim, not a fix.
 
-**FILE FOLLOW-UP.** Fresh bd issues: `bd create "<title>" --type bug|task --description "<the finding and its evidence>"`. Class-level work that needs design rather than mechanical repetition routes to `/hyperpowers:brainstorm` instead of becoming a task nobody can execute. bd issues exist for FILE FOLLOW-UP dispositions and for nothing else in this loop — a FIX NOW does not get a tracking issue, and a DECLINE never does.
+**FILE FOLLOW-UP.** Fresh bd issues in the standard form (`skills/common-patterns/bd-commands.md`): `bd create "<title>" --type bug|task --description "<one-line summary>" --design "<the finding and its evidence>"`. Class-level work that needs design rather than mechanical repetition routes to `/hyperpowers:brainstorm` instead of becoming a task nobody can execute. bd issues exist for FILE FOLLOW-UP dispositions and for nothing else in this loop — a FIX NOW does not get a tracking issue, and a DECLINE never does.
 
 Run `hyperpowers:verification-before-completion` before any claim that something is fixed. The reply drafted in Step 7 states what changed; that statement must already be evidence.
 

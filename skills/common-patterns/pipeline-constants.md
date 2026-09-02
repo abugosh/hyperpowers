@@ -64,10 +64,11 @@ classification and may retag with a one-line bd note.
 and two full end-of-epic gap rounds, then escalate to the user. Single
 source for this constant.
 
-## Severity Anchor (peek)
+## Severity Anchor
 
 Single definition of the three severity tiers used by peek's lenses
-(`agents/peek.md`) and synthesis (`skills/peek/SKILL.md`). Severity is
+(`agents/peek.md`) and synthesis (`skills/peek/SKILL.md`), and by opt's
+finding normalization and triage (`skills/opt/SKILL.md`). Severity is
 defined by the follow-up it requires, not by how the defect feels:
 
 - **Critical** — a confirmed, reachable path to outage, data loss, security
@@ -82,6 +83,9 @@ defined by the follow-up it requires, not by how the defect feels:
 - **Suggestion** — never blocks, never becomes a fix requirement, and never
   becomes Critical through dedup or synthesis.
 
+On the receiving side (opt), severity weights triage; the fix-and-re-peek
+follow-up requirements above bind the giving side only.
+
 `[convention]` findings (Finding Classification above) are never Critical.
 Consumers cite this section; none restates it.
 
@@ -90,7 +94,10 @@ Consumers cite this section; none restates it.
 Bounded authority for peek's lead (skills/peek/SKILL.md, synthesis and gate
 steps) to resolve findings at the review worktree instead of routing them
 to the author. Lenses never fix — agents/peek.md's read-only rules are not
-relaxed by this section.
+relaxed by this section. opt's Step 6 Tier 1 (`skills/opt/SKILL.md`) cites
+the same eligibility and suite rules for architect-approved fixes on the
+author's own branch — there routing-to-author does not arise, and delivery
+waits on opt's outward gate instead of peek's.
 
 - Eligibility: every `[convention]` finding; a `[capability]` finding only
   when its severity is Important or Suggestion AND the fix is an exact
