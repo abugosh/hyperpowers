@@ -23,7 +23,7 @@ MEDIUM-LOW FREEDOM — the step order, the disposition vocabulary, the escalatio
 | 3 | Verify against reality | Code, conventions, ADRs, source epic's design and anti-patterns; codebase-investigator for structure; every finding exits confirmed / refuted / contested with evidence |
 | 4 | Escalation check | Accepted `[capability]` defects only: origin-or-symptom (root-cause-tracing) + class sweep for sibling sites (debugging-with-tools Rule 4). Proposes; never acts |
 | 5 | Batch disposition gate | ONE table, AskUserQuestion: FIX NOW / FILE FOLLOW-UP / DECLINE / NEEDS REVIEWER INPUT. Gate-state persisted on timeout |
-| 6 | Execute (tiered) | Exact-known edits lead-fixed at the worktree; confirmed defects failing-test-first; approved class fixes across swept sites; FILE FOLLOW-UP → fresh bd issues |
+| 6 | Execute (tiered) | Carve-out-eligible fixes lead-fixed at the worktree (bar: `pipeline-constants.md`); confirmed defects failing-test-first; approved class fixes across swept sites; FILE FOLLOW-UP → fresh bd issues |
 | 7 | Replies + outward gate | Per-thread drafts in colleague prose; ONE gate covers posting AND pushing; re-check target state; wrap-up report |
 </quick_reference>
 
@@ -244,7 +244,7 @@ Before presenting the wrap-up report:
 - [ ] Every finding exits Step 3 confirmed, refuted, or contested — with evidence, and none accepted on the reviewer's authority alone
 - [ ] Every accepted `[capability]` defect carries an origin-or-symptom answer and a class-sweep result; no `[convention]` finding was escalated (Step 4)
 - [ ] One disposition table covered every finding exactly once, each with one of the four registered words; every DECLINE carries written reasoning; gate-state persisted on any timeout (Step 5)
-- [ ] Fixes executed in tier: exact-known edits verified and suite-checked, confirmed defects test-first, class fixes only across approved sites; bd issues created for FILE FOLLOW-UP only (Step 6)
+- [ ] Fixes executed in tier: carve-out-eligible fixes verified and suite-checked, confirmed defects test-first, class fixes only across approved sites; bd issues created for FILE FOLLOW-UP only (Step 6)
 - [ ] Commit messages and reply drafts carry no internal vocabulary (Step 6, Step 7)
 - [ ] Target state re-checked before pushing; nothing pushed to a merged or closed target, or to one whose state was never confirmed (Step 7)
 - [ ] One outward gate approved the exact replies, the exact diff, and the target before anything was pushed or posted; threads left for the reviewer to resolve (Step 7)
