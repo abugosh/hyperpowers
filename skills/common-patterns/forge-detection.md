@@ -81,7 +81,8 @@ Consumers must state which rung they ran at — never silently downgrade.
 ### GitLab (glab)
 
 ```bash
-# Full REST MR object: description, title, iid, source_branch, target_branch, web_url
+# Full REST MR object: description, title, iid, source_branch, target_branch,
+# web_url, and author (the MR's own author — `author.username` on this forge)
 glab mr view [<iid>|<branch>] -F json
 
 # Open (unresolved) discussion threads
@@ -104,8 +105,9 @@ glab mr diff [<iid>|<branch>] --raw
 glab api projects/:id/merge_requests/<iid>/approvals
 
 # Discussion threads with resolution state: per-note `resolvable`, `resolved`,
-# `resolved_by`, `resolved_at`, and `position.new_path`/`new_line`. There is
-# no discussion-level resolved flag — a thread counts as settled only when
+# `resolved_by`, `resolved_at`, `author.username` (who wrote that note), and
+# `position.new_path`/`new_line`. There is no discussion-level
+# resolved flag — a thread counts as settled only when
 # every resolvable note in it is resolved. Non-resolvable notes (plain MR
 # comments, including a posted peek comment) ride in the same array with
 # `resolvable: false`. --paginate walks all pages.
@@ -122,8 +124,9 @@ read.
 ### GitHub (gh)
 
 ```bash
-# No-arg form resolves the current branch's PR
-gh pr view [<number>|<url>|<branch>] --json title,body,state,baseRefName,headRefName,closingIssuesReferences,files,commits
+# No-arg form resolves the current branch's PR. The trailing `author` field
+# is the PR's own author — `author.login` on this forge.
+gh pr view [<number>|<url>|<branch>] --json title,body,state,baseRefName,headRefName,closingIssuesReferences,files,commits,author
 
 # Diff: file list, then the patch itself
 gh pr diff [<target>] --name-only
@@ -178,6 +181,20 @@ reachable only through the GraphQL query above.
 
 `closingIssuesReferences` requires gh >= v2.72.0 (2025-05); on older gh the
 field is absent from `--json` output.
+
+### Author fields
+
+An identity comparison — is this comment mine? did a reviewer speak after my
+last reply? — needs two operands, and each forge names them differently. Both
+come from reads already listed above; no extra call is needed.
+
+| | The target's own author | The author of one comment/note |
+|---|---|---|
+| GitHub | `author.login`, from the `gh pr view --json ...,author` read | `author.login`, on `reviews[]` and on every `reviewThreads` comment node in the GraphQL query |
+| GitLab | `author.username`, from `glab mr view -F json` | `author.username`, on every note from `discussions --paginate` |
+
+Match on the login/username, never on the display `name` beside it — display
+names are user-editable and need not be unique.
 
 ## Write commands
 
