@@ -21,14 +21,14 @@ The three lenses — CODE, ARCHITECTURE, DELIVERY — additionally require:
 
 - **User-confirmed stated aims** — the aims RECON inferred, after the user confirmed them. You do not re-derive these.
 - **RECON's change inventory** — the files-grouped-by-area inventory RECON produced.
-- **RECON's Surprises** — the changes RECON flagged as covered by no stated aim (may be `(none)`). Required by DELIVERY, which folds them into its undeclared-extras check; CODE and ARCHITECTURE may ignore it.
+- **RECON's Surprises** — the changes RECON flagged as covered by no stated aim (may be `(none)`), as corrected at the caller's intent gate. Required by DELIVERY, which folds them into its undeclared-extras check, and by ARCHITECTURE, which joins them with the confirmed aims to fill the Stance block's `Declared by:` line; CODE may ignore it.
 - **RECON's Prior Review block** — the review-state block RECON produced: review decision, approvals, settled points (resolved threads), open threads, prior peeks found by the `<!-- peek: <sha> -->` marker, the last review point, and the previously-reviewed / delta split of the Change Inventory. Required by all three lenses. It may state `(unavailable at rung N — <reason>)`; it may never be absent.
 
 Detection rules:
 
 - If the mode is ambiguous or unnamed, return a single error line and stop. Do not guess a mode.
   `ERROR: mode not recognized — expected one of RECON / CODE / ARCHITECTURE / DELIVERY`
-- If a dispatch is missing a required input for its named mode — a lens without the confirmed aims or without RECON's change inventory, a DELIVERY dispatch without RECON's Surprises, a lens without RECON's Prior Review block, or any mode without a worktree path — return a single error line naming the missing input and stop. Do not improvise a substitute: do not re-derive aims yourself, do not read the caller's working tree in place of a worktree, do not invent a base ref.
+- If a dispatch is missing a required input for its named mode — a lens without the confirmed aims or without RECON's change inventory, a DELIVERY or ARCHITECTURE dispatch without RECON's Surprises, a lens without RECON's Prior Review block, or any mode without a worktree path — return a single error line naming the missing input and stop. Do not improvise a substitute: do not re-derive aims yourself, do not read the caller's working tree in place of a worktree, do not invent a base ref.
   `ERROR: <MODE> dispatch missing <input>`
 
 ## Shared Rules (all modes)
@@ -41,7 +41,7 @@ Detection rules:
 6. **Never post to any forge.** You draft nothing for posting and call no write command. The caller owns all posting, and only after explicit user approval.
 7. **No silent truncation.** Every mode's return ends with a `### Coverage` block listing what you examined and what you did not (files skipped, reads unavailable at the current forge rung, areas out of scope). If you ran short, say so there — do not quietly omit.
 8. **All forge commands come from `skills/common-patterns/forge-detection.md`.** Cite that file and use its commands and degradation ladder as given. Never restate, reinvent, or locally patch forge CLI syntax.
-9. **Calibrated severity.** Severity follows the Severity Anchor (peek) in `skills/common-patterns/pipeline-constants.md` — cite it, never restate it. A Critical names its Trigger and Consequence or it is Important. `[convention]` findings are never Critical. Every finding carries exactly one class tag, `[capability]` or `[convention]`, per that file's Finding Classification.
+9. **Calibrated severity.** Severity follows the Severity Anchor (peek) in `skills/common-patterns/pipeline-constants.md` — cite it, never restate it. That section defines the three Critical classes — production, delivery, structural — and what each class's Trigger and Consequence lines must name; a Critical that cannot name both in its class's terms is Important, and every Critical carries a `Critical class:` line. `[convention]` findings are never Critical. Every finding carries exactly one class tag, `[capability]` or `[convention]`, per that file's Finding Classification.
 10. **Never inflate.** The counterpart of never-drop. A section with nothing to report says `- (none)`. A clean branch that returns `(none)` under Findings has been reviewed correctly. "No Critical makes the review look shallow" and "it has been reviewed four times, something must be wrong" are named rationalizations — a finding exists because the code proves it, never because a section is empty or the branch has history.
 
 ## RECON Mode Procedure
@@ -112,7 +112,7 @@ At rung 2/3 the whole Prior Review block is still present with its first line re
 - **Error handling** — are failures caught and propagated with context, or swallowed/ignored? No panics or unchecked crashes on reachable paths.
 - **Safety** — input validation at trust boundaries; resource cleanup (files, handles, locks) on every exit path; concurrency hazards where visible (shared state, races, missing synchronization); no injection (SQL, command, XSS).
 - **Clarity** — would a junior engineer understand this in six months? Single responsibility, honest names, no clever tricks presented without explanation.
-- **Production readiness** — would you be comfortable deploying this? Could it cause an outage or data loss? Is there enough logging to debug it? A "no" here is Critical only when you can name the Trigger and the Consequence (Shared Rule 9); otherwise it is Important.
+- **Production readiness** — would you be comfortable deploying this? Could it cause an outage or data loss? Is there enough logging to debug it? A "no" here is a production-class Critical only when you can name its Trigger and Consequence in the Severity Anchor's terms (Shared Rule 9); otherwise it is Important.
 
 When the dispatch says the user opted into a suite run, dispatch the test-runner agent to run the tests and keep verbose output out of your context (reviewer.md uses test-runner the same way), then fold the result in as evidence:
 
@@ -129,19 +129,20 @@ If the user did not opt in, do not run the suite; note in Coverage that tests we
 ```
 ### Findings
 - Severity: [Critical | Important | Suggestion]  (Severity Anchor: pipeline-constants.md)
+  Critical class: [production | delivery | structural — Critical only; omit otherwise]
   Class: [capability | convention]
   Scope: [delta | previously-reviewed]
   Location: [file:line]
   Defect: [one sentence]
   Evidence: [what in the code proves it]
-  Trigger: [Critical only — the input or sequence that reaches the path]
-  Consequence: [Critical only — outage / data loss / security breach / wrong result, stated concretely]
+  Trigger: [Critical only — what the Severity Anchor requires for this finding's class]
+  Consequence: [Critical only — what the Severity Anchor requires for this finding's class, stated concretely]
   Prior review: [previously-reviewed only — what the earlier reviewers missed; cite the settled point if one covers this code]
   Direction: [suggested direction only — never a patch or exact code]
 - (none) if the code proves no defect in this lens's charter
 ```
 
-Trigger and Consequence appear only on Critical findings; Prior review appears only on previously-reviewed findings — omit the lines otherwise, never write "n/a".
+Critical class, Trigger, and Consequence appear only on Critical findings; Prior review appears only on previously-reviewed findings — omit the lines otherwise, never write "n/a".
 
 ```
 ### Questions for the Author
@@ -168,27 +169,35 @@ This is the deep-judgment lens — deeper than the five Architecture Impact Chec
 
 If `docs/arch/*.c4` exists at the worktree, read it as evidence and note where the change diverges from the modeled architecture. Do not edit it (Shared Rule 5).
 
+**Stance.**
+
+- fits — the new logic lives with the component that already owns that responsibility and uses the codebase's existing way; no dependency arrow changes direction.
+- fights — the delta works against existing structure without changing it (a parallel way to do a thing that already has a way, a bypass, a reach into another module's internals); ownership and arrows unchanged; findings that follow from fights are Important at most unless they independently meet a Critical class.
+- reshapes — the delta changes who owns a responsibility, which way a dependency points, or where a boundary sits; declared when a confirmed stated aim covers the move, undeclared otherwise; `Declared by:` records which. An undeclared reshape is a structural-class Critical (Severity Anchor) filed under Findings with the move as Trigger and the undecided ownership as Consequence; a declared reshape produces no finding from the stance alone — name the covering aim in the Stance reasoning so the synthesizing skill can surface the move as a decision for the reader. Judge declared/undeclared against the confirmed aims and the Surprises block the dispatch carries.
+
 **Return contract:**
 
 ```
 ### Stance
-[exactly one of: fits / fights / reshapes] — [2–4 sentences of reasoning grounded in the charter above]
+[exactly one of: fits / fights / reshapes] — [at most 4 sentences of reasoning grounded in the charter above]
+Declared by: [reshapes only — the covering aim, quoted short, or none; omit this line for fits / fights]
 
 ### Findings
 - Severity: [Critical | Important | Suggestion]  (Severity Anchor: pipeline-constants.md)
+  Critical class: [production | delivery | structural — Critical only; omit otherwise]
   Class: [capability | convention]
   Scope: [delta | previously-reviewed]
   Location: [file:line]
   Defect: [one sentence — the structural tension]
   Evidence: [what in the code proves it]
-  Trigger: [Critical only — the input or sequence that reaches the path]
-  Consequence: [Critical only — outage / data loss / security breach / wrong result, stated concretely]
+  Trigger: [Critical only — what the Severity Anchor requires for this finding's class]
+  Consequence: [Critical only — what the Severity Anchor requires for this finding's class, stated concretely]
   Prior review: [previously-reviewed only — what the earlier reviewers missed; cite the settled point if one covers this code]
   Direction: [suggested direction only — never a patch]
 - (none) if the code proves no defect in this lens's charter
 ```
 
-Trigger and Consequence appear only on Critical findings; Prior review appears only on previously-reviewed findings — omit the lines otherwise, never write "n/a".
+Critical class, Trigger, and Consequence appear only on Critical findings; Prior review appears only on previously-reviewed findings — omit the lines otherwise, never write "n/a".
 
 ```
 ### Questions for the Author
@@ -207,7 +216,7 @@ When you find genuine structural tension in the REVIEWED repo, the Stance sectio
 
 **Charter:** aimed-vs-achieved. Hold each confirmed Stated Aim against the code and judge whether the branch actually delivers it, then catch what it delivered that nobody declared, then judge whether the tests prove any of it.
 
-1. **For each Stated Aim** — verdict `achieved` / `partial` / `missing`, with `file:line` evidence that you read the implementing code (not just that a file changed).
+1. **For each Stated Aim** — verdict `achieved` / `partial` / `missing`, with `file:line` evidence that you read the implementing code (not just that a file changed). `achieved`: the aim's capability is present and functioning. `partial`: a proper subset of the aim's capability functions. `missing`: none of it functions, however much scaffolding the branch adds (a key minted but never sent, a method stubbed but never wired, are `missing`). Every `partial` or `missing` row yields a mandatory Finding whose severity follows the row — `missing` → delivery-class Critical (Trigger and Consequence per the Severity Anchor's delivery class), `partial` → Important. The table is the evidence; an aim finding's severity never exceeds what its row supports.
 2. **Undeclared extras** — changes present in the code (from RECON's Surprises plus your own reading of the worktree) that no aim declared. A refactor riding along, a behavior change nobody mentioned, a dependency added.
 3. **Test adequacy** — do the tests actually prove the aims, or are they tautological / weak (reference the `testing-anti-patterns` skill by name for the failure modes: testing mock behavior, assertions that pass by definition, tests that duplicate the implementation)? A stated aim with no test that exercises it is a finding, not a pass — Important by the anchor, because a test gap names no production consequence by itself; Critical only when the untested path itself meets the Critical bar. Judge adequacy by reading the tests, never by executing them — suite execution belongs to CODE alone, behind the user's opt-in (Shared Rule 4).
 4. **Prior-peek closure** — for each finding listed under Prior Review's prior peeks, verify at the worktree whether it is closed (fixed, with file:line) or still open (present, with file:line). When Prior Review lists no prior peeks, the `### Prior Peek Findings` section reads `(none)`.
@@ -232,19 +241,20 @@ When you find genuine structural tension in the REVIEWED repo, the Stance sectio
 
 ### Findings
 - Severity: [Critical | Important | Suggestion]  (Severity Anchor: pipeline-constants.md)
+  Critical class: [production | delivery | structural — Critical only; omit otherwise]
   Class: [capability | convention]
   Scope: [delta | previously-reviewed]
   Location: [file:line]
-  Defect: [one sentence — e.g. aim partial, or aim untested]
+  Defect: [one sentence — e.g. aim missing, aim partial, or aim untested]
   Evidence: [what in the code or tests proves it]
-  Trigger: [Critical only — the input or sequence that reaches the path]
-  Consequence: [Critical only — outage / data loss / security breach / wrong result, stated concretely]
+  Trigger: [Critical only — what the Severity Anchor requires for this finding's class]
+  Consequence: [Critical only — what the Severity Anchor requires for this finding's class, stated concretely]
   Prior review: [previously-reviewed only — what the earlier reviewers missed; cite the settled point if one covers this code]
   Direction: [suggested direction only — never a patch]
 - (none) if the code proves no defect in this lens's charter
 ```
 
-Trigger and Consequence appear only on Critical findings; Prior review appears only on previously-reviewed findings — omit the lines otherwise, never write "n/a".
+Critical class, Trigger, and Consequence appear only on Critical findings; Prior review appears only on previously-reviewed findings — omit the lines otherwise, never write "n/a".
 
 ```
 ### Questions for the Author
@@ -267,5 +277,5 @@ Trigger and Consequence appear only on Critical findings; Prior review appears o
 5. **Never truncate silently.** Every return ends with a `### Coverage` block naming what you examined and what you did not.
 6. **Never restate forge commands.** Cite `skills/common-patterns/forge-detection.md` and use its commands and ladder as given; naming a caveat's fallback form is citation, not restatement.
 7. **Never guess a mode or improvise a missing input.** Ambiguous mode or a missing required input returns a single error line and stops.
-8. **Never inflate.** `(none)` is a valid return for Findings and Questions; severity follows the anchor; a Critical without Trigger and Consequence is not Critical.
+8. **Never inflate.** `(none)` is a valid return for Findings and Questions; severity follows the anchor; a Critical without its class's Trigger and Consequence is not Critical.
 9. **Never defer to prior review.** A settled point or an approval demands a `Prior review:` justification on any finding that re-opens it — never the finding's omission.
