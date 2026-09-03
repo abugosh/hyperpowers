@@ -114,6 +114,19 @@ Definition sites cite this section; parse sites must match it exactly.
   every surviving finding) — any Critical → REQUEST CHANGES; else any
   Important → APPROVE WITH CHANGES; else APPROVE.
   The lead never hand-picks it.
+- **Peek report Path → user** (derived in `skills/peek/SKILL.md` Step 6,
+  stated once under the report's Overall Assessment): exactly one of
+  `Path: fix in place`, `Path: rework`. `fix in place` — each surviving
+  finding is addressed where it stands and the branch's shape holds.
+  `rework` — the surviving findings share one cause that has to be
+  addressed at its source; fixing them one by one leaves the cause
+  standing. Derivation: `rework` only when the lead names one cause shared
+  by two or more surviving findings in the Overall Assessment sentences;
+  otherwise `fix in place`. Path never changes the verdict, and the label
+  never appears in colleague-facing text — the cause sentence may, in plain
+  language. The accompanying `Decision:` line names what only the reader
+  can decide (a declared reshape to accept or send back, an aim to drop
+  from the description) or reads `(none)`.
 - **Opt disposition → user** (defined in `skills/opt/SKILL.md`, disposition
   gate; proposed by the lead, decided by the user): every incoming review
   finding carries exactly one of `FIX NOW`, `FILE FOLLOW-UP`, `DECLINE`,
