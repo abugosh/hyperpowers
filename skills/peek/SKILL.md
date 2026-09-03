@@ -1,6 +1,6 @@
 ---
 name: peek
-description: "Use when reviewing a colleague's branch, MR, or PR ('review this branch', 'review this MR', 'review this PR') — deep parallel-lens review (code, architecture, aimed-vs-achieved) with no bd spec required, producing a harsh-but-fair report that opens with a verdict (APPROVE / APPROVE WITH CHANGES / REQUEST CHANGES), weights the MR's prior review, and offers an optional draft comment plus an optional gated fix path that applies and pushes mechanical fixes only after the user approves the exact diff."
+description: "Use when reviewing a colleague's branch, MR, or PR ('review this branch', 'review this MR', 'review this PR') — deep parallel-lens review (code, architecture, aimed-vs-achieved) with no bd spec required, producing a report that opens with a verdict (APPROVE / APPROVE WITH CHANGES / REQUEST CHANGES), weights the MR's prior review, and offers an optional draft comment plus an optional gated fix path that applies and pushes mechanical fixes only after the user approves the exact diff."
 ---
 
 <skill_overview>
@@ -19,9 +19,9 @@ MEDIUM FREEDOM — the 8-step flow order and its gates (intent confirm, then the
 | 1 | Resolve target | Parse `/peek` argument (URL / number / branch / none); detect forge + rung (`forge-detection.md`) |
 | 2 | Worktree setup | `git worktree add --detach <tmp> <ref>` (remote fetch or local ref); abort before creating anything if unresolved |
 | 3 | RECON dispatch | Agent tool, subagent_type "hyperpowers:peek", model "sonnet", blocking; returns aims, inventory, Prior Review |
-| 4 | Intent confirm gate | AskUserQuestion: confirm/correct/add aims, confirm/correct the Prior Review summary, opt-in suite run; HOLD on expiry |
+| 4 | Intent confirm gate | AskUserQuestion: confirm/correct/add aims, mark a surprise intended (becomes an aim), confirm/correct the Prior Review summary, opt-in suite run; HOLD on expiry |
 | 5 | Parallel lens dispatch | 3x Agent tool (CODE/ARCHITECTURE/DELIVERY), one message, no model override, blocking |
-| 6 | Synthesis | Lead dedups, applies the re-check, marks fix-eligible findings `[fix-proposed]` per `pipeline-constants.md` (Peek Fix Carve-out), derives the pre-fix verdict (loop-interfaces.md), assembles the report |
+| 6 | Synthesis | Lead dedups, applies the re-check, marks fix-eligible findings `[fix-proposed]` per `pipeline-constants.md` (Peek Fix Carve-out), derives the pre-fix verdict and the Path line (loop-interfaces.md), runs the grading-word self-check (prose-style.md), assembles the report |
 | 7 | Fix + comment gate | Two phases: elect fixes and/or a comment (A), then — only when applied fixes survive — approve the exact diff, comment text, and delivery target at (B); at most one comment is posted per run, never before the user approves its exact text; comment opens with the verdict and ends with the `<!-- peek: <sha> -->` marker |
 | 8 | Cleanup | `git worktree remove <tmp> --force` + prune; always runs, even on abort |
 </quick_reference>
@@ -29,7 +29,7 @@ MEDIUM FREEDOM — the 8-step flow order and its gates (intent confirm, then the
 <when_to_use>
 Use for:
 - Reviewing a colleague's branch, MR, or PR ad hoc — no bd epic exists or is needed
-- Producing a harsh-but-fair aimed-vs-achieved report before approving, merging, or commenting on someone else's work
+- Producing an aimed-vs-achieved report with a derived verdict before approving, merging, or commenting on someone else's work
 - Deep code + architecture judgment on a delta that has no plan document to check it against
 
 **Don't use for:**
@@ -90,11 +90,13 @@ Blocking (no `team_name`). RECON's return contract (Stated Aims, Change Inventor
 
 ## Step 4: Intent Confirm Gate (Interactive)
 
-Play back RECON's Stated Aims and Surprises via AskUserQuestion (form and gate discipline: `skills/common-patterns/question-format.md`) and a one-line Prior Review summary (decision, approvers and when, settled-point count, prior peeks with SHA and finding count — or "unavailable at rung N"). Offer: confirm as-is / correct (free text) / add a missing aim / correct the review history (free text). When a standard test runner is detected in the repo, the same round also offers the opt-in suite run, with "run it" as the default suggestion.
+Play back RECON's Stated Aims and Surprises via AskUserQuestion (form and gate discipline: `skills/common-patterns/question-format.md`) and a one-line Prior Review summary (decision, approvers and when, settled-point count, prior peeks with SHA and finding count — or "unavailable at rung N"). Offer: confirm as-is / correct (free text) / add a missing aim / mark a surprise as intended (it becomes a confirmed aim) / correct the review history (free text). When a standard test runner is detected in the repo, the same round also offers the opt-in suite run, with "run it" as the default suggestion.
+
+An aim added or a surprise marked intended at this gate covers the change it names: a reshape it describes counts as declared for this review, and a surprise left uncovered stays undeclared — the ARCHITECTURE lens grades an undeclared reshape as a structural-class Critical (Severity Anchor, pipeline-constants.md). This gate is the one place the reader's decision enters the record, so say so when asking.
 
 An expired question box is not an answer — re-ask in durable prose and HOLD (per `question-format.md`, Timeouts and Gates). Never proceed on a provisional intent: the lenses in Step 5 are expensive, and wrong intent wastes every one of them.
 
-Carry forward from this step: the confirmed aims, the Prior Review block (as corrected), and the suite-run decision.
+Carry forward from this step: the confirmed aims (including surprises marked intended), the Surprises block as corrected (intended ones removed), the Prior Review block (as corrected), and the suite-run decision.
 
 ## Step 5: Parallel Lens Dispatch
 
@@ -109,15 +111,17 @@ Agent tool (single message, three calls — no team_name):
 
 No `model` field on any of the three — lenses inherit the session model (review depth is the product; it must not be silently downgraded).
 
-Every prompt carries: Mode, target identity (`Target: <branch> -> <base ref>`, both halves — `agents/peek.md` requires the full target identity on every dispatch), the confirmed aims, RECON's change inventory, the worktree path, forge rung, and RECON's Prior Review block verbatim (all three lenses — `agents/peek.md` lists it as a required input; a lens dispatch without it is an error per that file). DELIVERY additionally carries RECON's Surprises block. CODE additionally carries the suite-run decision from Step 4. `agents/peek.md`'s Mode Detection section defines the full required-input set per mode — cite it, never restate it; a DELIVERY dispatch missing Surprises is an error per that file, not something this skill improvises around.
+Every prompt carries: Mode, target identity (`Target: <branch> -> <base ref>`, both halves — `agents/peek.md` requires the full target identity on every dispatch), the confirmed aims, RECON's change inventory, the worktree path, forge rung, and RECON's Prior Review block verbatim (all three lenses — `agents/peek.md` lists it as a required input; a lens dispatch without it is an error per that file). DELIVERY and ARCHITECTURE additionally carry the Surprises block as corrected at Step 4. CODE additionally carries the suite-run decision from Step 4. `agents/peek.md`'s Mode Detection section defines the full required-input set per mode — cite it, never restate it; a DELIVERY or ARCHITECTURE dispatch missing Surprises is an error per that file, not something this skill improvises around.
 
 ## Step 6: Synthesis (Lead)
 
 Dedup overlapping findings first: same file:line + same defect = one finding, keep the highest severity.
 
-**Re-check (lead-owned, every move visible in the report):** a Critical whose `Trigger:` or `Consequence:` line is missing or empty becomes Important, marked `[downgraded: no consequence named]`; a `[convention]` Critical becomes Important, marked `[downgraded: convention]`; a previously-reviewed finding without a `Prior review:` line moves to Questions for the Author; a finding missing Scope is treated as delta; a finding missing Class is assigned one by the lead (`skills/common-patterns/pipeline-constants.md`, Finding Classification: the lead owns final classification). Dedup runs first and the re-check runs on the surviving finding, so a Suggestion never rises above what its evidence supports.
+**Re-check (lead-owned, every move visible in the report):** a Critical whose `Trigger:` or `Consequence:` line is missing or empty becomes Important, marked `[downgraded: no consequence named]`; a `[convention]` Critical becomes Important, marked `[downgraded: convention]`; a previously-reviewed finding without a `Prior review:` line moves to Questions for the Author; a finding missing Scope is treated as delta; a finding missing Class is assigned one by the lead (`skills/common-patterns/pipeline-constants.md`, Finding Classification: the lead owns final classification). The aims table and the Stance block are inputs to this re-check, not only text to render: an aims-table row reading `missing` with no matching delivery-class Critical is filed by the lead, marked `[lead-added: aim missing]`, with Trigger and Consequence drawn from the row and the confirmed aim; a Stance of reshapes with `Declared by: none` and no matching structural-class Critical is filed by the lead, marked `[lead-added: undeclared reshape]`, with Trigger and Consequence drawn from the Stance reasoning; an aim finding whose severity exceeds its table row is corrected to the row's severity, marked `[downgraded: aim partial]`. A lead-added Critical carries both lines or the first rule in this paragraph demotes it. Dedup runs first and the re-check runs on the surviving finding, so a Suggestion never rises above what its evidence supports.
 
 **Fix-eligibility pass (lead-owned):** mark each surviving finding `[fix-proposed]` when `skills/common-patterns/pipeline-constants.md` (Peek Fix Carve-out) makes it eligible. That file owns which findings qualify and what evidence delivering them requires — cite it, never restate it. The mark is a proposal and nothing more: no file is edited, no commit is made, and nothing is delivered during synthesis. Skip this pass entirely when Step 2 found the fix path unavailable for this target; no finding gets marked and the run proceeds as review-only.
+
+**Path and Decision (lead-owned):** `Path: rework` only when one cause shared by two or more surviving findings can be named, and that cause is stated in the Overall Assessment sentences; otherwise `Path: fix in place`. `Decision:` names what only the reader can decide — a declared reshape to accept or send back, an aim to drop from the description — or reads `(none)`. The vocabulary and its rule are registered in `skills/common-patterns/loop-interfaces.md` (Verdict Contracts, peek report Path entry) — cite, never restate. Path never changes the verdict.
 
 **Derive the verdict** per `skills/common-patterns/loop-interfaces.md` (Verdict Contracts, peek entry) — cite the derivation; never hand-pick. The Step 6 report carries the honest pre-fix verdict, derived over every surviving finding, because nothing has been fixed yet; Step 7 re-derives it only when applied fixes survive.
 
@@ -126,24 +130,29 @@ Then assemble the report for the architect-governor reader per the Audience Cont
 ```
 ## Peek Review: <branch> -> <base>
 
-**Verdict: <APPROVE | APPROVE WITH CHANGES | REQUEST CHANGES>** — [one sentence, architect altitude: the consequence that decides it]
+**Verdict: <APPROVE | APPROVE WITH CHANGES | REQUEST CHANGES>** — [one sentence, architect altitude: for REQUEST CHANGES or APPROVE WITH CHANGES the consequence that decides it; for APPROVE the system change that ships]
 
 ### What This Branch Does
-[3-6 sentences, architect altitude, role-based plain language: what the branch changes in
+[At most 6 sentences, architect altitude, role-based plain language: what the branch changes in
 system terms (components/areas touched, contracts or behavior affected, magnitude) and what
 that means for the system — no file:line, no lens names, no internal vocabulary] + RECON's
 area-grouped Change Inventory rendered as a short list + one line of review history (who
 approved and at what point; prior peeks)
 
 ### Aimed vs Achieved
-[2-4 sentence narrative, top layer per the Audience Contract] + DELIVERY's per-aim table + Undeclared Changes
+[At most 4 sentences, top layer per the Audience Contract] + DELIVERY's per-aim table + Undeclared Changes
 
 ### Prior Peek Findings
 [DELIVERY's closure list; omit this section when Prior Review lists no prior peeks]
 
 ### Overall Assessment
-[harsh but fair paragraph, top layer per the Audience Contract — ARCHITECTURE's stance
-(fits/fights/reshapes) stated as a system consequence, not a lens citation]
+[At most 4 sentences, top layer per the Audience Contract: ARCHITECTURE's stance
+(fits/fights/reshapes) stated as a system consequence, never as a lens citation; when
+findings share a cause, that cause named here. Describes the system, never grades the
+work — no quality, effort, or diligence words in either direction (prose-style.md,
+Human-Facing Prose Baseline)]
+Path: fix in place | rework   [exactly one, per the Path rule above]
+Decision: [what only the reader can decide, or (none)]
 
 ### Findings
 [evidence layer — Critical, then Important, then Suggestions — each with severity, class, scope, file:line, evidence, suggested direction, and any downgrade marker; `- (none)` when the lenses returned none]
@@ -157,13 +166,15 @@ lens's Findings during this synthesis step instead — see agents/peek.md Shared
 [evidence layer — union of all four lenses' Coverage blocks; anything unreviewed listed explicitly, never silently dropped]
 ```
 
+**Self-check before presenting (lead-owned):** reread the top layer — the verdict sentence, What This Branch Does, the Aimed vs Achieved narrative, Overall Assessment — against the grading-word list in `skills/common-patterns/prose-style.md` (Human-Facing Prose Baseline). Every hit is rewritten into the concrete evidence behind it or deleted. An APPROVE with `- (none)` under Findings is a short report; nothing is added to make it look reviewed.
+
 ## Step 7: Fix + Draft Comment Gate
 
 Two phases: phase A elects what should happen, phase B approves exactly what leaves the worktree. When no finding carries `[fix-proposed]` — nothing was eligible, or Step 2 found the fix path unavailable — phase A is the only phase, with the same options and the same behavior this step has always had.
 
 **Phase A — the offer.** AskUserQuestion (form and gate discipline: `skills/common-patterns/question-format.md`): draft a comment for the MR/PR? The standing options are unchanged — comment as drafted, or no comment. When `[fix-proposed]` findings exist, offer one additional option alongside them: apply the proposed fixes, then approve the diff, the comment, and the target together at phase B before anything is pushed or posted. Name the eligible findings in the question so the election is informed.
 
-**The draft comment.** A professional, direct comment built from the report in three parts (four when fixes are delivered — see Re-derivation below) — (a) opens with the report's `Verdict:` line verbatim (the same `Verdict: <word>` text, before anything else), (b) lists findings and questions per the existing prose rules (no internal vocabulary — no lens names, no mode words), (c) ends with `<!-- peek: <sha> -->`, where `<sha>` is the reviewed tip recorded at Step 2, which on a run with no fixes applied is also `git -C <tmp-path> rev-parse HEAD` — the marker renders as nothing on GitHub and GitLab and lets a later RECON recognize this review. Comment prose otherwise follows `skills/common-patterns/prose-style.md`: findings and questions only — no restated report sections, no Coverage block, no praise-padding; target a comment the author reads in under a minute, longer only when the finding count itself demands it. Posting goes through the write commands cited from `forge-detection.md`. On GitLab, the C2 caveat applies: try the `note create` form first, fall back to the legacy `note -m` form second, per `forge-detection.md`'s caveat table. On rung 2/3 (no forge, or no MR/PR resolvable), hand over copy-paste text instead of posting — that text carries the `Verdict:` opening and the `<!-- peek: <sha> -->` marker too.
+**The draft comment.** A professional, direct comment built from the report in three parts (four when fixes are delivered — see Re-derivation below) — (a) opens with the report's `Verdict:` line verbatim (the same `Verdict: <word>` text, before anything else), (b) lists findings and questions per the existing prose rules (no internal vocabulary — no lens names, no mode words; the Overall Assessment's cause sentence may appear in plain language, the `Path:` and `Decision:` labels never do), (c) ends with `<!-- peek: <sha> -->`, where `<sha>` is the reviewed tip recorded at Step 2, which on a run with no fixes applied is also `git -C <tmp-path> rev-parse HEAD` — the marker renders as nothing on GitHub and GitLab and lets a later RECON recognize this review. Comment prose otherwise follows `skills/common-patterns/prose-style.md`: findings and questions only — no restated report sections, no Coverage block, no praise-padding; target a comment the author reads in under a minute, longer only when the finding count itself demands it. Posting goes through the write commands cited from `forge-detection.md`. On GitLab, the C2 caveat applies: try the `note create` form first, fall back to the legacy `note -m` form second, per `forge-detection.md`'s caveat table. On rung 2/3 (no forge, or no MR/PR resolvable), hand over copy-paste text instead of posting — that text carries the `Verdict:` opening and the `<!-- peek: <sha> -->` marker too.
 
 **When the comment is drafted and posted.** At most one comment leaves a run — none when the user declines one — and nothing is posted until the user approves that exact text. The path decides when both happen:
 
@@ -232,7 +243,7 @@ This is an always-run closer — it runs even when the user aborts mid-flow, dec
 1. **Never auto-post, never auto-push.** A draft comment goes out only after the user approves the exact text, and a fix commit reaches the author's branch only after the user approves the exact diff, comment, and delivery target at Step 7's phase B.
 2. **Never skip the intent gate.** "The diff is tiny, skip confirmation" is the named rationalization — the gate runs every time, regardless of branch size.
 3. **Never restate agent protocol.** Mode charters, evidence rules, and return contracts live in `agents/peek.md`. Cite, never copy.
-4. **The report must open with the `Verdict:` line and include Coverage.** A synthesis that omits either is incomplete: the `Verdict:` line is derived, never hand-picked, and anything unreviewed must be named in Coverage, not silently dropped.
+4. **The report must open with the `Verdict:` line, carry `Path:` and `Decision:` under Overall Assessment, and include Coverage.** A synthesis that omits any of these is incomplete: the `Verdict:` line is derived, never hand-picked; `Path:` is likewise derived per `skills/common-patterns/loop-interfaces.md`, never hand-picked; and anything unreviewed must be named in Coverage, not silently dropped.
 5. **The worktree is always cleaned up.** Step 8 runs on every path, including aborts and dispatch failures.
 6. **The fix path is bounded by the Peek Fix Carve-out** (`skills/common-patterns/pipeline-constants.md`). Critical findings are never fixed at review; nothing is pushed or ref-updated without phase-B approval of the exact diff.
 
@@ -243,7 +254,7 @@ All of these mean: **STOP. Follow the process as written.**
 - "The diff is small, skip RECON" — RECON runs every time; size does not exempt intent-gathering.
 - "CI is green, skip CODE" — a green suite does not substitute for the CODE lens's judgment. The same goes for skipping any lens: all three dispatch every run (Step 5); no lens is optional.
 - "I can infer intent without the gate" — Step 4 is interactive by design; inferred intent is not confirmed intent.
-- "The author is senior, soften the findings" — softening includes dropping: every finding stays in the report at its true severity, whoever the author is. Harsh-but-fair does not scale with seniority; only phrasing may be professional, never the finding set.
+- "The author is senior, soften the findings" — softening includes dropping: every finding stays in the report at its true severity, whoever the author is. The finding set does not scale with seniority; only phrasing may be professional, never the finding set.
 - "No Critical makes the review look shallow" — a clean return is a complete result. Severity follows the anchor, not the reviewer's need to look rigorous; manufacturing a finding is the mirror image of softening one.
 - "It has been reviewed four times, something must be wrong" — prior review is evidence to weigh, not a quota to beat. A finding on previously-reviewed code says what the earlier reviewers missed, or it is a question.
 - "It was approved, drop the finding" — approval never suppresses a finding; it demands the `Prior review:` justification. Deferring is the other way to be wrong.
@@ -251,6 +262,8 @@ All of these mean: **STOP. Follow the process as written.**
 - "Fix the Critical too while I'm in there" — a Critical is never fix-eligible (`skills/common-patterns/pipeline-constants.md`, Peek Fix Carve-out). The author must confront it; quietly resolving it at review hides the one finding that most needed their attention.
 - "The suite is missing, push the capability fix anyway" — no green suite, no capability fix: demote it back to an ordinary finding for the author. Convention fixes are unaffected by the suite's state.
 - "Post the comment now, deliver the fixes after" — at most one comment leaves a run, and on a fix run it is never the pre-fix draft. On a fix run it is drafted after re-derivation and posted at phase B — or, when no fix survives to deliver, drafted report-only once the fix set is empty; a comment posted ahead of delivery carries a superseded verdict, omits what the review fixed, and stamps a marker the branch has already moved past.
+- "A clean branch deserves some acknowledgment" — the APPROVE verdict is the acknowledgment. An adjective that appears on every report carries no information; describe what the branch changes and stop.
+- "The findings feel like a rework, call it one" — `Path: rework` requires a named shared cause in the Overall Assessment; a feeling without a cause is `fix in place`, and the findings speak for themselves.
 </critical_rules>
 
 <verification_checklist>
@@ -258,9 +271,9 @@ Before presenting the report to the user:
 - [ ] Forge and degradation rung detected and stated (Step 1)
 - [ ] Worktree created with `--detach`, base ref resolved, user's checkout untouched (Step 2)
 - [ ] RECON dispatched with the sonnet model override, blocking, and returned Stated Aims plus Prior Review before the intent gate (Step 3)
-- [ ] User confirmed or corrected the aims and the Prior Review summary — no provisional intent carried forward (Step 4)
-- [ ] All three lenses dispatched in one message, no model override, with their mode-specific required inputs (Step 5)
-- [ ] Findings deduped; re-check applied with every move visible; fix-eligibility pass run and eligible findings marked `[fix-proposed]` (or skipped because the fix path is unavailable); verdict derived per loop-interfaces.md; report opens with the `Verdict:` line and includes Aimed vs Achieved, Overall Assessment, Findings (`- (none)` is a complete Findings section), Questions for the Author, and Coverage (Step 6)
+- [ ] User confirmed or corrected the aims and the Prior Review summary — no provisional intent carried forward; surprises marked intended moved into the aims (Step 4)
+- [ ] All three lenses dispatched in one message, no model override, with their mode-specific required inputs (Surprises to DELIVERY and ARCHITECTURE) (Step 5)
+- [ ] Findings deduped; re-check applied with every move visible; fix-eligibility pass run and eligible findings marked `[fix-proposed]` (or skipped because the fix path is unavailable); verdict derived per loop-interfaces.md; report opens with the `Verdict:` line and includes Aimed vs Achieved, Overall Assessment, Findings (`- (none)` is a complete Findings section), Questions for the Author, and Coverage; Overall Assessment carries `Path:` and `Decision:`; lead-added and downgraded aim/reshape moves visible; top layer passed the grading-word self-check (Step 6)
 - [ ] At most one comment left the run (none when the user declined one) — drafted pre-fix and posted at phase A on a no-fix run, drafted after re-derivation and posted at phase B on a fix run, or — when no applied fix survived — the report-only comment posted with no phase B at all — opening with the verdict, ending with the marker, posted only after explicit approval of the exact text, or handed over as copy-paste at rung 2/3 (Step 7)
 - [ ] Fixes (if elected) applied per the carve-out, suite green before any `[capability]` fix was delivered, the exact diff and comment text approved at phase B before any push or ref-update, and every non-delivery path left nothing on the author's branch with the marker naming the reviewed tip (Step 7)
 - [ ] Worktree removed and pruned (Step 8) — including on any abort path
