@@ -273,7 +273,7 @@ Both templates open with an Architect Summary immediately after the Epic line. W
 ### Epic: <epic-id> - <title>
 
 ### Architect Summary
-[3-6 sentences addressed to the architect-governor: what the epic delivered in system terms — components, behavior, or contracts changed — notable deviations or decisions made during the build, and what remains for manual validation. No task IDs, file:line references, or class tags in this section.]
+[At most 6 sentences addressed to the architect-governor: what the epic delivered in system terms — components, behavior, or contracts changed — notable deviations or decisions made during the build, and what remains for manual validation. No task IDs, file:line references, or class tags in this section.]
 
 ### Tasks Reviewed
 - <task-id>: <title> — PASS
@@ -315,7 +315,7 @@ Recommendation: Ready for manual validation.
 ### Epic: <epic-id> - <title>
 
 ### Architect Summary
-[3-6 sentences addressed to the architect-governor: what the epic delivered, what the gaps collectively mean for the system — which capability or contract is incomplete and what depends on it — and what needs deciding. No task IDs, file:line references, or class tags in this section; per-gap evidence stays in Critical Gaps/Important Gaps below.]
+[At most 6 sentences addressed to the architect-governor: what the epic delivered, what the gaps collectively mean for the system — which capability or contract is incomplete and what depends on it — and what needs deciding. No task IDs, file:line references, or class tags in this section; per-gap evidence stays in Critical Gaps/Important Gaps below.]
 
 ### Tasks Reviewed
 - <task-id>: <title> — PASS

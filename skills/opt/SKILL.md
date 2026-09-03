@@ -188,7 +188,7 @@ Nothing outward precedes this gate: no reply posted, no commit pushed, not even 
 ```
 ## Review Response: <MR/PR> — <branch>
 
-[Top layer, 3-6 sentences at architect altitude: what the review changed about the
+[Top layer, at most 6 sentences at architect altitude: what the review changed about the
 system, what was declined and on what grounds, what moved to follow-up work, and
 anything still open. No file:line, no internal vocabulary.]
 
