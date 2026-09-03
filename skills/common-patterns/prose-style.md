@@ -71,16 +71,34 @@ quality"-style virtue prose fails the contract. The top layer states
 concrete system changes and consequences. Reviewers flag violations as a
 `[convention]` finding.
 
+**The tone rule.** Whether prose may grade at all — the system, not the
+work — is settled in the Human-Facing Prose Baseline below; cited here, not
+restated.
+
 ## Human-Facing Prose Baseline
 
 Applies to anything a human reads: review reports presented to the user,
 MR/PR comments, epic summaries, commit message bodies. Consumers: executor,
-code-reviewer, reviewer, peek, executing-plans. The baseline governs tone;
-the Audience Contract above governs reader and altitude.
+code-reviewer, reviewer, peek, executing-plans, opt, ponder, intuition,
+verification-before-completion, loop-interfaces, spec-templates. The
+baseline governs tone; the Audience Contract above governs reader and
+altitude.
 
 - Lead with the finding or outcome. Don't bury it under setup.
-- No praise-padding — no "strengths" preambles, no acknowledging-what-
-  went-well openers before the substance.
+- Grade the system, never the work or the author. Human-facing prose
+  describes what changed and what it means for the system; it never
+  evaluates the quality, effort, or diligence of the work, in either
+  direction, anywhere in a report — not only as an opener. A grading word
+  is rewritten into the concrete evidence behind it or deleted. The verdict
+  line is the only grade a report carries; a clean result produces a short
+  report, and short is the signal.
+  Grading-word list (the minimum a self-check scans for): careful,
+  carefully, thoughtful, clean, solid, thorough, well-tested, disciplined,
+  high-quality, great care, sloppy, rushed, careless, lazy, right, honest,
+  earn, declines, slip, reasonable, defensible, good.
+- Sentence counts in report templates are ceilings, never floors. A slot
+  that reads "at most N sentences" may be one sentence; nothing is padded
+  to reach a length.
 - No hedging vocabulary — no numeric self-scored confidence, no
   "I believe" / "note that" filler.
 - Evidence citations (file:line, command output) live in internal reports
