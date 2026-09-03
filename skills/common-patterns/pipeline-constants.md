@@ -71,11 +71,31 @@ Single definition of the three severity tiers used by peek's lenses
 finding normalization and triage (`skills/opt/SKILL.md`). Severity is
 defined by the follow-up it requires, not by how the defect feels:
 
-- **Critical** — a confirmed, reachable path to outage, data loss, security
-  breach, or wrong result. The finding MUST name the Trigger (the input or
-  sequence that reaches the path) and the Consequence (what happens when it
-  does). Requires fix AND re-peek. A finding that cannot name both is
+- **Critical** — requires fix AND re-peek. A finding is Critical only when
+  it belongs to one of three classes and names both its Trigger and its
+  Consequence in that class's terms; a finding that cannot name both is
   Important, never Critical.
+  - *Production* — a confirmed, reachable path to outage, data loss,
+    security breach, or wrong result. Trigger: the input or sequence that
+    reaches the path, and it must exist in the reviewed repo or in a
+    contract the repo documents — a caller that would have to exist
+    elsewhere is not a Trigger; that concern is a Question for the Author
+    (agents/peek.md Shared Rule 3). Consequence: what happens when it does, stated
+    concretely.
+  - *Delivery* — a confirmed stated aim the branch does not deliver (the
+    aims table row reads `missing`). Trigger: the aim, quoted, with its
+    source. Consequence: the capability the merge record claims and the
+    merge would not ship, and who relies on that claim.
+  - *Structural* — a change of ownership, dependency direction, or boundary
+    that no confirmed aim covers (an undeclared reshape). Trigger: the
+    move — what responsibility or arrow, from where to where, at file:line.
+    Consequence: the decision the merge would make without a record, and
+    what inherits it afterwards.
+
+  A `partial` aim is Important, not a delivery Critical. A reshape that a
+  confirmed aim covers is a decision for the reader, never a finding from
+  the stance alone. Every Critical finding names its class on a
+  `Critical class:` line so synthesis and triage can read it.
 - **Important** — a confirmed defect below that bar that the author must fix
   before merge. No re-peek: the author self-certifies the fix — unless the
   finding was resolved at review under the Peek Fix Carve-out below, which
