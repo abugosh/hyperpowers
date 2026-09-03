@@ -77,9 +77,11 @@ defined by the follow-up it requires, not by how the defect feels:
   Important, never Critical.
   - *Production* — a confirmed, reachable path to outage, data loss,
     security breach, or wrong result. Trigger: the input or sequence that
-    reaches the path, and it must exist in the reviewed repo or in a
-    contract the repo documents — a caller that would have to exist
-    elsewhere is not a Trigger; that concern is a Question for the Author
+    reaches the path, and it must exist in the reviewed repo or in an
+    interface contract the repo publishes to callers outside it — a caller
+    that would have to exist elsewhere is not a Trigger, and a comment or
+    docstring describing how callers are expected to behave is not such a
+    contract; that concern is a Question for the Author
     (agents/peek.md Shared Rule 3). Consequence: what happens when it does, stated
     concretely.
   - *Delivery* — a confirmed stated aim the branch does not deliver (the
