@@ -73,7 +73,9 @@ holds them for whoever asks.
 
 ## Verdict Contracts
 
-Single source for the six verdict vocabularies in the pipeline.
+Single source for the six verdict vocabularies in the pipeline, plus the one
+non-verdict label that rides beside them (the peek report's `Path:` line, which
+never changes a verdict).
 Definition sites cite this section; parse sites must match it exactly.
 
 - **Executor → lead** (defined in `agents/executor.md`, parsed by
