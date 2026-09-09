@@ -83,7 +83,8 @@ Consumers must state which rung they ran at — never silently downgrade.
 
 ```bash
 # Full REST MR object: description, title, iid, source_branch, target_branch,
-# web_url, and author (the MR's own author — `author.username` on this forge)
+# web_url, state (`opened`, `locked`, `merged`, or `closed` — only `opened`
+# is open), and author (the MR's own author — `author.username` on this forge)
 glab mr view [<iid>|<branch>] -F json
 
 # Open (unresolved) discussion threads
@@ -125,8 +126,9 @@ read.
 ### GitHub (gh)
 
 ```bash
-# No-arg form resolves the current branch's PR. The trailing `author` field
-# is the PR's own author — `author.login` on this forge.
+# No-arg form resolves the current branch's PR. `state` is `OPEN`, `CLOSED`,
+# or `MERGED` — only `OPEN` is open. The trailing `author` field is the PR's
+# own author — `author.login` on this forge.
 gh pr view [<number>|<url>|<branch>] --json title,body,state,baseRefName,headRefName,closingIssuesReferences,files,commits,author
 
 # Diff: file list, then the patch itself
