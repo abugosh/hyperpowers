@@ -41,7 +41,7 @@ Detection rules:
 6. **Never post to any forge.** You draft nothing for posting and call no write command. The caller owns all posting, and only after explicit user approval.
 7. **No silent truncation.** Every mode's return ends with a `### Coverage` block listing what you examined and what you did not (files skipped, reads unavailable at the current forge rung, areas out of scope). If you ran short, say so there — do not quietly omit.
 8. **All forge commands come from `skills/common-patterns/forge-detection.md`.** Cite that file and use its commands and degradation ladder as given. Never restate, reinvent, or locally patch forge CLI syntax.
-9. **Calibrated severity.** Severity follows the Severity Anchor (peek) in `skills/common-patterns/pipeline-constants.md` — cite it, never restate it. That section defines the three Critical classes — production, delivery, structural — and what each class's Trigger and Consequence lines must name; a Critical that cannot name both in its class's terms is Important, and every Critical carries a `Critical class:` line. `[convention]` findings are never Critical. Every Critical and every Important carries exactly one of the anchor's two lines, `Hits:` or `Maintainer cost:`, filled in that file's terms; an Important that carries neither is Suggestion, and a cost line that names only reading effort (the anchor's excluded words) is empty. Suggestions carry neither line. Every finding carries exactly one class tag, `[capability]` or `[convention]`, per that file's Finding Classification.
+9. **Calibrated severity.** Severity follows the Severity Anchor (peek) in `skills/common-patterns/pipeline-constants.md` — cite it, never restate it. That section defines the three Critical classes — production, delivery, structural — and what each class's Trigger and Consequence lines must name; a Critical that cannot name both in its class's terms is not Critical and lands where its `Hits:` or `Maintainer cost:` line puts it, and every Critical carries a `Critical class:` line. `[convention]` findings are never Critical. Every Critical and every Important carries exactly one of the anchor's two lines, `Hits:` or `Maintainer cost:`, filled in that file's terms; an Important that carries neither is Suggestion, and a cost line that names only reading effort (the anchor's excluded words) is empty. Suggestions carry neither line. Every finding carries exactly one class tag, `[capability]` or `[convention]`, per that file's Finding Classification.
 10. **Never inflate.** The counterpart of never-drop. A section with nothing to report says `- (none)`. A clean branch that returns `(none)` under Findings has been reviewed correctly. "No Critical makes the review look shallow" and "it has been reviewed four times, something must be wrong" are named rationalizations — a finding exists because the code proves it, never because a section is empty or the branch has history. A Suggestion whose Direction is to leave the code as it stands, or that offers leaving it as an acceptable outcome — an either/or whose other arm is no change, or a change deferred until some future condition holds — is not a finding: when a real uncertainty remains it is a Question for the Author, otherwise it is nothing.
 
 ## RECON Mode Procedure
@@ -111,7 +111,7 @@ At rung 2/3 the whole Prior Review block is still present with its first line re
 - **Correctness** — does the code do what the confirmed aims say, on the normal path and the edges?
 - **Error handling** — are failures caught and propagated with context, or swallowed/ignored? No panics or unchecked crashes on reachable paths.
 - **Safety** — input validation at trust boundaries; resource cleanup (files, handles, locks) on every exit path; concurrency hazards where visible (shared state, races, missing synchronization); no injection (SQL, command, XSS).
-- **Clarity** — does the code state what the next change needs to know? Single responsibility, names that say what the thing does, no trick presented without the fact that makes it safe. A clarity observation is a Suggestion unless it fills the Important bar's `Maintainer cost:` line (Severity Anchor, Shared Rule 9): a named future edit and the fact the site does not state.
+- **Clarity** — does the code state what the next change needs to know? Single responsibility, names that say what the thing does, no trick presented without the fact that makes it safe. A clarity observation is a Suggestion unless it fills the Important bar's `Maintainer cost:` line (Severity Anchor, Shared Rule 9).
 - **Production readiness** — would you be comfortable deploying this? Could it cause an outage or data loss? Is there enough logging to debug it? A "no" here is a production-class Critical only when you can name its Trigger and Consequence in the Severity Anchor's terms (Shared Rule 9); otherwise it is Important only when it fills one of the anchor's Important lines, and otherwise a Question for the Author (a hit that needs a caller the repo does not have) or a Suggestion.
 
 When the dispatch says the user opted into a suite run, dispatch the test-runner agent to run the tests and keep verbose output out of your context (reviewer.md uses test-runner the same way), then fold the result in as evidence:
@@ -135,8 +135,8 @@ If the user did not opt in, do not run the suite; note in Coverage that tests we
   Location: [file:line]
   Defect: [one sentence]
   Evidence: [what in the code proves it]
-  Hits: [Critical and Important — who reaches the defect and what they observe, per the Severity Anchor; exactly one of Hits / Maintainer cost]
-  Maintainer cost: [Critical and Important — the next edit at file:line and the step or fact the site does not state, per the Severity Anchor; exactly one of Hits / Maintainer cost]
+  Hits: [Critical and Important — what the Severity Anchor requires; exactly one of Hits / Maintainer cost]
+  Maintainer cost: [Critical and Important — what the Severity Anchor requires; exactly one of Hits / Maintainer cost]
   Trigger: [Critical only — what the Severity Anchor requires for this finding's class]
   Consequence: [Critical only — what the Severity Anchor requires for this finding's class, stated concretely]
   Prior review: [previously-reviewed only — what the earlier reviewers missed; cite the settled point if one covers this code]
@@ -192,8 +192,8 @@ Declared by: [reshapes only — the covering aim, quoted short, or none; omit th
   Location: [file:line]
   Defect: [one sentence — the structural tension]
   Evidence: [what in the code proves it]
-  Hits: [Critical and Important — who reaches the defect and what they observe, per the Severity Anchor; exactly one of Hits / Maintainer cost]
-  Maintainer cost: [Critical and Important — the next edit at file:line and the step or fact the site does not state, per the Severity Anchor; exactly one of Hits / Maintainer cost]
+  Hits: [Critical and Important — what the Severity Anchor requires; exactly one of Hits / Maintainer cost]
+  Maintainer cost: [Critical and Important — what the Severity Anchor requires; exactly one of Hits / Maintainer cost]
   Trigger: [Critical only — what the Severity Anchor requires for this finding's class]
   Consequence: [Critical only — what the Severity Anchor requires for this finding's class, stated concretely]
   Prior review: [previously-reviewed only — what the earlier reviewers missed; cite the settled point if one covers this code]
@@ -251,8 +251,8 @@ When you find genuine structural tension in the REVIEWED repo, the Stance sectio
   Location: [file:line]
   Defect: [one sentence — e.g. aim missing, aim partial, or aim untested]
   Evidence: [what in the code or tests proves it]
-  Hits: [Critical and Important — who reaches the defect and what they observe, per the Severity Anchor; exactly one of Hits / Maintainer cost]
-  Maintainer cost: [Critical and Important — the next edit at file:line and the step or fact the site does not state, per the Severity Anchor; exactly one of Hits / Maintainer cost]
+  Hits: [Critical and Important — what the Severity Anchor requires; exactly one of Hits / Maintainer cost]
+  Maintainer cost: [Critical and Important — what the Severity Anchor requires; exactly one of Hits / Maintainer cost]
   Trigger: [Critical only — what the Severity Anchor requires for this finding's class]
   Consequence: [Critical only — what the Severity Anchor requires for this finding's class, stated concretely]
   Prior review: [previously-reviewed only — what the earlier reviewers missed; cite the settled point if one covers this code]

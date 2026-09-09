@@ -128,8 +128,9 @@ read.
 ```bash
 # No-arg form resolves the current branch's PR. `state` is `OPEN`, `CLOSED`,
 # or `MERGED` — only `OPEN` is open. The trailing `author` field is the PR's
-# own author — `author.login` on this forge.
-gh pr view [<number>|<url>|<branch>] --json title,body,state,baseRefName,headRefName,closingIssuesReferences,files,commits,author
+# own author — `author.login` on this forge. `number` is the operand the
+# Approve write below takes.
+gh pr view [<number>|<url>|<branch>] --json number,title,body,state,baseRefName,headRefName,closingIssuesReferences,files,commits,author
 
 # Diff: file list, then the patch itself
 gh pr diff [<target>] --name-only

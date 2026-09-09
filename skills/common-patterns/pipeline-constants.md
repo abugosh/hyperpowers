@@ -121,13 +121,16 @@ defined by the follow-up it requires, not by how the defect feels:
   author says about readiness. Critical findings carry the same line
   (exactly one of the two) beside their Trigger and Consequence, so a
   Critical that fails its class check lands at the tier its line supports.
+  A Critical the synthesizing lead files from the aims table or the Stance
+  carries Trigger and Consequence only; the line is a lens's to write.
 - **Suggestion** — never blocks, never becomes a fix requirement, and never
   becomes Critical through dedup or synthesis. Clarity, naming, and
   structure opinions on a branch that ships live here unless they fill an
   Important line.
 
 On the receiving side (opt), severity weights triage; the fix-and-re-peek
-follow-up requirements above bind the giving side only. The follow-up
+follow-up requirements and the `Hits:` / `Maintainer cost:` line requirement
+above bind the giving side only. The follow-up
 split — Critical: fix and re-peek; Important: fix and self-certify;
 Suggestion: optional — is what peek's draft comment tells the author
 (`skills/peek/SKILL.md`, Step 7).
