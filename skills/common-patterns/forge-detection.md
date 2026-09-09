@@ -7,10 +7,11 @@ restate or reinvent them locally.
 
 ## Purpose
 
-Any skill that needs MR/PR metadata or wants to post a comment (e.g. peek)
-does host detection once, using the idiom below, then follows the
-degradation ladder to decide what's actually available. This keeps forge
-commands in one place so they don't drift between skills.
+Any skill that needs MR/PR metadata, wants to post a comment, or wants to
+submit an approval (e.g. peek) does host detection once, using the idiom
+below, then follows the degradation ladder to decide what's actually
+available. This keeps forge commands in one place so they don't drift
+between skills.
 
 ## Detection
 
@@ -198,6 +199,25 @@ come from reads already listed above; no extra call is needed.
 Match on the login/username, never on the display `name` beside it — display
 names are user-editable and need not be unique.
 
+### Identity (the caller's own login)
+
+The approve write below needs a third operand beside the two Author fields:
+the login the CLI is authenticated as, so a consumer can refuse to approve
+its own target. One read per forge; neither is covered by the reads above.
+
+```bash
+# GitHub: the authenticated user's login. --jq is native to gh api.
+gh api user --jq .login
+
+# GitLab: glab api has no --jq; pipe through jq. Never parse
+# `glab auth status` — it writes to stderr for humans and its shape is unpinned.
+glab api user | jq -r .username
+```
+
+Compare the result with the target's own author operand from the Author
+fields table on the login/username, never the display name. Empty output
+or a non-zero exit means identity is unknown, not "not the author" (C11).
+
 ## Write commands
 
 Used only after explicit user approval — the approval gate belongs to the
@@ -248,12 +268,62 @@ Author field, so a later run can tell its own last reply from a reviewer's
 comment after it. Posting a reply changes no resolution state — resolving
 stays the reviewer's move.
 
+### Approve
+
+A forge approval is a state change on the MR/PR, separate from any comment.
+It never carries the review text: the comment above carries the findings and
+the `<!-- peek: <sha> -->` marker; the approval carries the state. A consumer
+posts the comment first and approves second, and never approves without the
+comment (peek's Step 7 owns that ordering and its gate).
+
+```bash
+# GitHub: approve. --body is optional for --approve; omit it, the comment
+# already carries the text. Success prints `Approved pull request OWNER/REPO#N`.
+# With --repo an explicit PR argument is mandatory.
+gh pr review <number> --approve
+
+# GitLab: approve at a specific head SHA. No body flag exists. --sha binds
+# the approval to the reviewed tip: a mismatch returns 409, which means the
+# branch moved — report it, never retry against the new tip. Prints
+# `- Approving merge request !N` then `✓ Approved`. Refuses closed/merged MRs
+# before the API call.
+glab mr approve <iid> --sha <reviewed-tip>
+```
+
+Self-approval and refusals, per forge:
+
+- **GitHub** refuses an author approving their own PR, unconditionally:
+  `failed to create review: GraphQL: Can not approve your own pull request (addPullRequestReview)`
+  (REST: 422 `Review Can not approve your own pull request`). A repeat
+  approve by the same login creates a second APPROVED review silently
+  (observed, not documented) — read `reviews[]` (Review state; `commit.oid`
+  is the reviewed SHA, which `latestReviews` lacks) for an APPROVED entry by
+  the caller's login at the reviewed tip before approving (C15).
+- **GitLab Free** lets the author approve their own MR — "Prevent approval
+  by merge request creator" is a Premium/Ultimate setting — so the
+  consumer's own identity check is the only guard. Every ineligible approve
+  (author block on licensed tiers, missing permission, re-authentication
+  required, already approved) returns the same bare
+  `POST .../merge_requests/<iid>/approve: 401 {message: 401 Unauthorized}`;
+  the status cannot distinguish the cases (C14). Free-tier approvals never
+  block merging and are dropped when new commits land by default.
+  `glab mr revoke <iid>` removes the caller's own approval (404 when none
+  is held).
+- Neither forge gets a "request changes" write from this file. GitLab Free
+  has no such state (Premium/Ultimate only, via the
+  `mergeRequestRequestChanges` GraphQL mutation, listed reviewers only);
+  GitHub's `gh pr review --request-changes` locks the PR until the same
+  reviewer re-reviews or the review is dismissed, outliving the session.
+  Consumers stay comment-only for that verdict.
+
 ## Unverified caveats
 
 Doc-verified against official docs 2026-07-24 (C1-C5), 2026-08-26 (C6-C9;
-gh v2.98.0, glab v1.115.0) and 2026-09-02 (C10); NOT runtime-verified (no
-`glab`/`gh` installed on the authoring machine). Each line names what one live
-run would settle.
+gh v2.98.0, glab v1.115.0), 2026-09-02 (C10), and 2026-09-08 (C11-C16;
+approve and identity commands, doc-verified from the gh and glab manuals and
+CLI source, no CLI installed on the authoring machine); NOT runtime-verified
+(no `glab`/`gh` installed on the authoring machine). Each line names what one
+live run would settle.
 
 | ID | Caveat | Fallback |
 |----|--------|----------|
@@ -267,6 +337,12 @@ run would settle.
 | C8 | Whether `glab api` resolves `:id` from a subdirectory of the repo, and whether `glab mr view --comments` walks every discussion page, are unconfirmed | Run `glab api` from the repo root; read threads via `discussions --paginate`, never via `mr view --comments`. Settled by: from a subdirectory, run `glab api projects/:id` and `glab mr view <iid> --comments -F json` against an MR with more than 20 discussions and compare the count to `discussions --paginate` |
 | C9 | `glab mr view --resolved` / `--unresolved` exist only on glab >= v1.88.0; their behavior (error vs silent ignore) on older glab is unconfirmed | Fold resolution per note from `discussions --paginate`; never rely on the filters. Settled by: run `glab mr view <iid> --resolved` on a glab older than v1.88.0 and record whether it errors or ignores the flag |
 | C10 | Both thread-reply endpoints are doc-verified, but two operand questions are not: whether the GraphQL `databaseId` on a review-thread comment is the same id GitHub's replies endpoint accepts, and whether GitLab accepts a note into a discussion that was created from an individual (non-thread) comment | GitHub: reply only to a thread's FIRST comment — the docs reject replies to replies; on a rejected reply, never fall back to `gh pr comment --edit-last` (it overwrites the previous reply) — hand the reply text to the user as copy-paste and say which thread it belongs to. GitLab: on a rejected POST, fall back to the top-level comment form and state which form was used. Settled by: post one reply through each form and re-read the thread to confirm the note came back inside it |
+| C11 | The two Identity reads above (`gh api user`, `glab api user`) are doc-verified as the authenticated identity but not run; whether a token scoped to one org or host returns the expected login is unconfirmed | Treat empty output or a non-zero exit as identity unknown: the consumer withdraws any action that needs it and says why. Settled by: run each command on an authenticated CLI and compare with the login the forge UI shows |
+| C12 | `gh pr review <number> --approve` with no `--body` is doc-verified (body optional for approve) but not run | On `body cannot be blank`, report the message verbatim and treat the approval as not submitted — never re-run with a `--body` the user did not approve at the consumer's gate (peek Step 7: approval failures are reported, never retried). Settled by: one approve on a test PR with no body; if the body proves mandatory, the command above gains a fixed one-line `--body` and this row closes |
+| C13 | `glab mr approve <iid> --sha <sha>`: the flag exists in archived <=1.22 source and current docs; whether a mismatch surfaces through glab as a 409 with a readable message is unconfirmed | Report glab's output verbatim; treat any non-zero exit as not-approved and never retry against a new tip. Settled by: approve with a stale `--sha` on a test MR and record the exit code and message |
+| C14 | GitLab returns a bare 401 for every ineligible approve, so "already approved" and "not allowed" are indistinguishable by status | Before approving, read `/approvals` (Review state) and withdraw when the caller's login is already listed; on 401, report "not approved — GitLab gives one status for every refusal". Settled by: approve twice on a test MR and record both responses |
+| C15 | A repeat `gh pr review --approve` by the same login creating a second APPROVED review is observed, not documented | Before approving, read `reviews[]` (Review state — `commit.oid` is the reviewed SHA; `latestReviews` carries none) and withdraw when the caller's login already shows APPROVED at the reviewed tip. Settled by: approve twice on a test PR and count the reviews |
+| C16 | Whether `glab mr approve` accepts the URL and `!iid` argument forms on every installed version is unconfirmed (both are in current source and absent from the manual) | Pass the plain iid (GitLab) or number (GitHub). Settled by: run each with a URL argument on the installed version |
 
 ## Base branch
 
