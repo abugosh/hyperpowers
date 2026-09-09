@@ -37,7 +37,7 @@ Reusable workflows for common development tasks:
 **Architecture:**
 - **intuition** - Brand-informed empirical audit of architecture — finds complection, coupling, shearing-layer mismatches, workaround cascades, and drift through structured observation
 - **ponder** - Architecture model ownership — dispatches the ponder subagent for all LikeC4 .c4 file operations (update, bootstrap, review)
-- **peek** - Deep parallel-lens review of a branch/MR/PR without a bd spec — code, architecture, and aimed-vs-achieved lenses synthesized into an architect-altitude report that opens with a verdict (APPROVE / APPROVE WITH CHANGES / REQUEST CHANGES), weights the MR's prior review, and sits over file:line evidence, and can — behind an explicit diff-approval gate — apply mechanical fixes (style cleanups and small, exact code fixes; severe findings always stay with the author) as additive commits pushed to the branch instead of round-tripping them
+- **peek** - Deep parallel-lens review of a branch/MR/PR without a bd spec — code, architecture, and aimed-vs-achieved lenses synthesized into an architect-altitude report that opens with a verdict (APPROVE / APPROVE WITH CHANGES / REQUEST CHANGES), weights the MR's prior review, and sits over file:line evidence, tells the author which findings need a re-review and which they self-certify, and can — behind an explicit diff-approval gate — apply mechanical fixes (style cleanups and small, exact code fixes; severe findings always stay with the author) as additive commits pushed to the branch instead of round-tripping them — and, behind the same gate, can submit a forge approval on APPROVE and APPROVE WITH CHANGES when the reviewer is not the author
 - **opt** - Review-response for your own MR/PR — triages incoming review findings against project reality (decline-with-reasoning is first-class), escalates accepted defects to root-cause + bug-class sweeps, applies tiered fixes, and drafts gated replies to the reviewer
 
 **Quality & Testing:**
@@ -73,7 +73,7 @@ Quick access to key workflows:
 - `/hyperpowers:refactor-execute` - Execute refactor safely with tests staying green
 - `/hyperpowers:intuition` - Brand-informed empirical audit of architecture — finds complection, coupling, shearing layer mismatches, and drift through structured observation
 - `/hyperpowers:ponder` - Architecture model ownership — update, bootstrap, or review LikeC4 models via ponder subagent
-- `/hyperpowers:peek` - Review a branch, MR, or PR — deep review with a verdict-led, architect-altitude aimed-vs-achieved report, optional gated mechanical fixes pushed as additive commits, and optional draft comment
+- `/hyperpowers:peek` - Review a branch, MR, or PR — deep review with a verdict-led, architect-altitude aimed-vs-achieved report, optional gated mechanical fixes pushed as additive commits, an optional draft comment that states the follow-up each tier needs, and an optional gated forge approval
 - `/hyperpowers:opt` - Respond to review feedback on an MR/PR — triage, proportioned fixes, gated replies
 - `/hyperpowers:analyze-tests` - Audit test quality - identify tautological tests, coverage gaming, missing corner cases
 
@@ -88,7 +88,7 @@ Domain-specific agents for complex tasks:
 - **internet-researcher** - Research APIs, libraries, and current best practices
 - **test-runner** - Run tests/validations/commits without context pollution (uses Haiku)
 - **ponder** (subagent) - Single owner of all LikeC4 .c4 architecture-model operations (update, bootstrap, review); dispatched by the ponder skill
-- **peek** (subagent) - Four-mode branch review engine (RECON, CODE, ARCHITECTURE, DELIVERY); dispatched by the peek skill. RECON also gathers the MR's prior review state; lens findings carry anchored severity, class, and scope, and the skill derives a verdict (APPROVE / APPROVE WITH CHANGES / REQUEST CHANGES); the skill's lead may then resolve fix-eligible findings at the worktree behind the user's diff-approval gate (the agent itself stays read-only)
+- **peek** (subagent) - Four-mode branch review engine (RECON, CODE, ARCHITECTURE, DELIVERY); dispatched by the peek skill. RECON also gathers the MR's prior review state; lens findings carry anchored severity, class, and scope, and the skill derives a verdict (APPROVE / APPROVE WITH CHANGES / REQUEST CHANGES); the skill's lead may then resolve fix-eligible findings at the worktree behind the user's diff-approval gate (the agent itself stays read-only); every Critical and Important carries the Severity Anchor's `Hits:` or `Maintainer cost:` line, synthesis demotes a finding that cannot fill it, and behind the same gate the skill can submit a forge approval on APPROVE and APPROVE WITH CHANGES when the reviewer is not the author
 - **test-effectiveness-analyst** - Audits test effectiveness with SRE scrutiny (tautological tests, coverage gaming, weak assertions); returns a prioritized improvement plan
 
 ### Hooks System
