@@ -73,8 +73,9 @@ defined by the follow-up it requires, not by how the defect feels:
 
 - **Critical** — requires fix AND re-peek. A finding is Critical only when
   it belongs to one of three classes and names both its Trigger and its
-  Consequence in that class's terms; a finding that cannot name both is
-  Important, never Critical.
+  Consequence in that class's terms; a finding that cannot name both is not
+  Critical: it is Important when it fills one of the Important lines below
+  on its own, otherwise Suggestion.
   - *Production* — a confirmed, reachable path to outage, data loss,
     security breach, or wrong result. Trigger: the input or sequence that
     reaches the path, and it must exist in the reviewed repo or in an
@@ -98,15 +99,38 @@ defined by the follow-up it requires, not by how the defect feels:
   confirmed aim covers is a decision for the reader, never a finding from
   the stance alone. Every Critical finding names its class on a
   `Critical class:` line so synthesis and triage can read it.
-- **Important** — a confirmed defect below that bar that the author must fix
-  before merge. No re-peek: the author self-certifies the fix — unless the
-  finding was resolved at review under the Peek Fix Carve-out below, which
-  removes it from the author's queue.
+- **Important** — requires fix before merge, no re-peek: the author
+  self-certifies the fix — unless the finding was resolved at review under
+  the Peek Fix Carve-out below, which removes it from the author's queue. A
+  finding is Important only when it is a confirmed defect below the Critical
+  bar AND fills exactly one of two lines, in the delta's terms:
+  - `Hits:` — who reaches the defect and what they observe. The one who hits
+    it is a caller, user, or job that exists in the reviewed repo or in an
+    interface contract the repo publishes to callers outside it — the same
+    reachability the production class requires of a Trigger; a caller that
+    would have to exist elsewhere is a Question for the Author, not a hit.
+  - `Maintainer cost:` — the next change that pays for the defect: a named
+    future edit at file:line, and the step it must add or the fact it must
+    hold that the code at that site does not itself state.
+    Reading effort is not a cost: "confusing", "unclear", "harder to read",
+    "surprising", and their synonyms never fill this line, and neither does
+    a fact the site already states in code, a docstring, or a comment.
+
+  A finding that fills neither line is Suggestion, whatever it feels like.
+  Severity is a property of the code and the delta, never of what the
+  author says about readiness. Critical findings carry the same line
+  (exactly one of the two) beside their Trigger and Consequence, so a
+  Critical that fails its class check lands at the tier its line supports.
 - **Suggestion** — never blocks, never becomes a fix requirement, and never
-  becomes Critical through dedup or synthesis.
+  becomes Critical through dedup or synthesis. Clarity, naming, and
+  structure opinions on a branch that ships live here unless they fill an
+  Important line.
 
 On the receiving side (opt), severity weights triage; the fix-and-re-peek
-follow-up requirements above bind the giving side only.
+follow-up requirements above bind the giving side only. The follow-up
+split — Critical: fix and re-peek; Important: fix and self-certify;
+Suggestion: optional — is what peek's draft comment tells the author
+(`skills/peek/SKILL.md`, Step 7).
 
 `[convention]` findings (Finding Classification above) are never Critical.
 Consumers cite this section; none restates it.
