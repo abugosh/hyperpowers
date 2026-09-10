@@ -6,11 +6,11 @@ description: Use to audit test quality with Google Fellow SRE scrutiny - dispatc
 <skill_overview>
 Orchestrate a test-effectiveness audit end to end: confirm scope, dispatch the test-effectiveness-analyst agent to apply Google Fellow SRE scrutiny, present its findings to the user, create a bd epic with tracked improvement tasks, and run one batch SRE review against the full tree before handing off to execution.
 
-**CRITICAL MINDSET: Assume tests were written by junior engineers optimizing for coverage metrics.** The analyst agent applies this skeptical default — RED or YELLOW until proven GREEN, GREEN only with evidence — and reads production code before categorizing any test. This skill's job is orchestration and bd tracking, not re-deriving that methodology.
+This skill's job is orchestration and bd tracking; the categorization methodology, including the analyst's default assumption, lives in `agents/test-effectiveness-analyst.md`.
 </skill_overview>
 
 <rigidity_level>
-MEDIUM FREEDOM - Follow the 5-step orchestration (Scope, Dispatch Analyst, Present Findings, Create bd Epic + Tasks, Batch SRE Review) exactly; this is the rigid spine. The categorization methodology (RED/YELLOW/GREEN criteria, corner-case categories) is rigid too, but it lives in agents/test-effectiveness-analyst.md — this skill never restates it. Task-template wording is flexible but every generated task must carry the two-tier spec sections.
+MEDIUM FREEDOM - Follow the 5-step orchestration (Scope, Dispatch Analyst, Present Findings, Create bd Epic + Tasks, Batch SRE Review) exactly; this is the rigid spine. The categorization methodology (RED/YELLOW/GREEN criteria, corner-case categories) is rigid too, and it lives in agents/test-effectiveness-analyst.md. Task-template wording is flexible but every generated task must carry the two-tier spec sections.
 </rigidity_level>
 
 <quick_reference>
@@ -22,7 +22,7 @@ MEDIUM FREEDOM - Follow the 5-step orchestration (Scope, Dispatch Analyst, Prese
 | 4. Create bd Epic + Tasks | Epic + up to 4 two-tier tasks, linked with dependencies | Tracked improvement plan |
 | 5. Batch SRE Review | Fresh subagent runs sre-task-refinement against the full tree | APPROVE / NEEDS REVISION / REJECT + handoff |
 
-**Methodology owner:** `agents/test-effectiveness-analyst.md` holds the RED/YELLOW/GREEN criteria, the corner-case categories, and the full analysis process (including the per-language mutation-testing commands). This skill never restates them — read the agent file directly if you need the criteria.
+**Methodology owner:** `agents/test-effectiveness-analyst.md` holds the RED/YELLOW/GREEN criteria, the corner-case categories, and the full analysis process (including the per-language mutation-testing commands) — read the agent file directly if you need the criteria.
 
 **bd Integration (MANDATORY):**
 - Create bd epic for test quality improvement
@@ -81,7 +81,7 @@ Agent tool:
 
 No model override — the agent's own frontmatter pin (`model: sonnet`) governs.
 
-The agent file owns the methodology. This skill never restates the RED/YELLOW/GREEN criteria, the corner-case categories, or the analysis process — if a finding needs more depth, ask the analyst to elaborate rather than re-deriving categories here.
+The agent file owns the methodology — if a finding needs more depth, ask the analyst to elaborate rather than re-deriving categories here.
 
 ---
 
@@ -475,7 +475,6 @@ All of these mean: **STOP. You're skipping the orchestration process.**
 
 - "I'll just fix these without bd" (Untracked work = forgotten work)
 - "SRE refinement is overkill for test fixes" (Test tasks need same rigor as feature tasks)
-- "I'll restate the RED/YELLOW/GREEN criteria here for clarity" (Methodology lives in agents/test-effectiveness-analyst.md — restating it here creates drift between the two)
 </critical_rules>
 
 <verification_checklist>
