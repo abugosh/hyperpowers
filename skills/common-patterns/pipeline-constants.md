@@ -67,9 +67,11 @@ source for this constant.
 ## Severity Anchor
 
 Single definition of the three severity tiers used by peek's lenses
-(`agents/peek.md`) and synthesis (`skills/peek/SKILL.md`), and by opt's
-finding normalization and triage (`skills/opt/SKILL.md`). Severity is
-defined by the follow-up it requires, not by how the defect feels:
+(`agents/peek.md`) and synthesis (`skills/peek/SKILL.md`), by opt's
+finding normalization and triage (`skills/opt/SKILL.md`), and — Important
+bar only — by the in-epic judges (`agents/reviewer.md`,
+`agents/code-reviewer.md`; in-epic paragraph below). Severity is defined
+by the follow-up it requires, not by how the defect feels:
 
 - **Critical** — requires fix AND re-peek. A finding is Critical only when
   it belongs to one of three classes and names both its Trigger and its
@@ -127,6 +129,17 @@ defined by the follow-up it requires, not by how the defect feels:
   becomes Critical through dedup or synthesis. Clarity, naming, and
   structure opinions on a branch that ships live here unless they fill an
   Important line.
+
+In-epic (the end-of-epic reviewer and the Stage-2 code-reviewer), a gap
+or concern is either a contract miss — its line opens `Contract:` and
+names the item missed — or a finding that fills one of the two Important
+lines above; everything else is a Suggestion. The contract
+at Stage 2 is the task spec and the standing scope every spec carries
+(`spec-templates.md`, Standing scope); at the end-of-epic gate it adds
+the epic's requirements, success criteria, and anti-patterns. In-epic
+there is no Critical tier — a defect that would be Critical elsewhere is
+a gap by the line it fills — and no follow-up split: the lead routes
+every gap or concern by its class tag (Finding Classification).
 
 On the receiving side (opt), severity weights triage; the fix-and-re-peek
 follow-up requirements and the `Hits:` / `Maintainer cost:` line requirement

@@ -82,8 +82,8 @@ Quick access to key workflows:
 Domain-specific agents for complex tasks:
 
 - **executor** - Implements a single bd task; fresh instance dispatched per task (Sonnet by default, promotable per `skills/common-patterns/pipeline-constants.md`); reads self-contained task spec, implements, commits, returns one-liner status (DONE/BLOCKED/NEEDS_HELP) to lead
-- **reviewer** - Verifies implementation against bd epic spec; returns APPROVED or GAPS FOUND verdict led by an Architect Summary over file:line evidence
-- **code-reviewer** - Review implementations against plans and coding standards
+- **reviewer** - Verifies implementation against bd epic spec; APPROVED is defined positively and every gap is a contract miss or meets the Severity Anchor's Important bar; returns the verdict led by an Architect Summary over file:line evidence
+- **code-reviewer** - Reviews a task's change against its spec and production code quality; a concern is a contract miss or meets the same Important bar; the rest are suggestions
 - **codebase-investigator** - Understand current codebase state and patterns
 - **internet-researcher** - Research APIs, libraries, and current best practices
 - **test-runner** - Run tests/validations/commits without context pollution (uses Haiku)

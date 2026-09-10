@@ -150,9 +150,9 @@ bd status bd-3 --status in-progress     # Update task status
 Specialized agents run in separate contexts to handle specific tasks:
 
 1. **executor** (subagent) - Implements a single bd task. Dispatched fresh per task by executing-plans — Sonnet by default, promotable to Opus via the `Executor: opus` flag (see `skills/common-patterns/pipeline-constants.md`). Reads the self-contained task spec, implements, commits, and returns a one-liner status (DONE, BLOCKED, or NEEDS_HELP) to the lead.
-2. **reviewer** (subagent) - Verifies implementation against bd epic spec with Google Fellow SRE scrutiny. Returns APPROVED or GAPS FOUND verdict led by an Architect Summary — system-level judgment with file:line evidence beneath. Dispatched as one-shot subagent.
+2. **reviewer** (subagent) - Verifies implementation against bd epic spec with Google Fellow SRE scrutiny. APPROVED is defined positively and every gap is a contract miss or meets the Severity Anchor's Important bar (`skills/common-patterns/pipeline-constants.md`, in-epic paragraph), class-tagged for routing. Returns the verdict led by an Architect Summary — system-level judgment with file:line evidence beneath. Dispatched as one-shot subagent.
 3. **test-runner** (uses Haiku) - Runs tests/hooks/commits, returns only summary + failures to keep context clean
-4. **code-reviewer** - Reviews implementations against plans and coding standards
+4. **code-reviewer** - Reviews a task's change against its spec and production code quality; a concern is a contract miss or meets the same Important bar as the reviewer's gaps; the rest are suggestions
 5. **codebase-investigator** - Explores codebase state and patterns when planning/designing
 6. **internet-researcher** - Researches APIs, libraries, docs when planning/designing
 7. **ponder** (subagent) - Creates, updates, and reviews LikeC4 architecture models. Single owner of all .c4 file operations. Dispatched by the ponder skill in update, bootstrap, or review mode.

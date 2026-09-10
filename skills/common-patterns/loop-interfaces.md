@@ -90,16 +90,18 @@ Definition sites cite this section; parse sites must match it exactly.
   `CONCERNS: <one-line summary>`, followed by the concern list only — one
   line per concern: `[capability|convention] <file>:<line> — <what and
   why>` — exactly one class tag per line, definitions in
-  `pipeline-constants.md` (Finding Classification). May be followed by
-  non-blocking `SUGGESTION: <file>:<line> — <note>` lines, which the lead
-  persists to the epic's bd notes and never acts on in-round. Never the
+  `pipeline-constants.md` (Finding Classification). Its why opens with
+  `Contract:`, `Hits:`, or `Maintainer cost:` — which one, per
+  `pipeline-constants.md` (Severity Anchor, in-epic paragraph). May be followed
+  by non-blocking `SUGGESTION: <file>:<line> — <note>` lines, which the
+  lead persists to the epic's bd notes and never acts on in-round. Never the
   full structured review: the lead's context must not accumulate per-task
   review bodies.
 - **End-of-epic reviewer → lead (completion)** (defined in `agents/reviewer.md`):
   structured verdict `APPROVED` or `GAPS FOUND` with the gap list. Gap
-  entries carry the same `[capability]`/`[convention]` tags as Stage 2. A
-  non-blocking Suggestions section may follow the gap list and never
-  blocks approval.
+  entries carry the same `[capability]`/`[convention]` tag and the same
+  `Contract:` / `Hits:` / `Maintainer cost:` qualifier as Stage 2. A
+  Suggestions section may follow the gap list; it never blocks approval.
 - **SRE batch reviewer → lead** (defined in `skills/sre-task-refinement/SKILL.md`,
   batch mode Report File Contract; dispatched by brainstorming Step 7 and
   analyzing-test-effectiveness Step 5): final message is exactly one line —

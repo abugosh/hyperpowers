@@ -157,7 +157,7 @@ Agent tool:
   subagent_type: "hyperpowers:code-reviewer"
   model: "sonnet"    # "opus" if the task spec contains the line `Executor: opus`
   prompt: |
-    Review this change for code quality.
+    Review this change.
 
     Task spec:
     <paste task spec here>
@@ -165,11 +165,11 @@ Agent tool:
     Changes (git diff):
     <paste git diff output here>
 
-    Check: Does the implementation match the spec? Any anti-patterns,
-    missing error handling, or quality issues?
-    Reply PASS or CONCERNS: <one-line summary>, followed by the concern
-    list — one line per concern: `[capability|convention] <file>:<line>
-    — <what and why>` (contract: skills/common-patterns/loop-interfaces.md).
+    This is a Stage-2 per-task review. Review per your charter
+    (agents/code-reviewer.md); the concern bar is the Severity Anchor's
+    in-epic paragraph (skills/common-patterns/pipeline-constants.md).
+    Reply per your Stage-2 verdict contract
+    (skills/common-patterns/loop-interfaces.md, Verdict Contracts).
 ```
 
 Task closure is owned by the lead — the executor never closes tasks. Exactly two paths authorize closure: a Stage-2 PASS, or a convention-only CONCERNS verdict whose every concern line has been lead-fixed, verified, and recorded (below). No other path closes a task, and both require verifying the working branch (Branch Establishment rule) before `bd close <task-id>`.
