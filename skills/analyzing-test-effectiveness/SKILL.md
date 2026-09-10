@@ -293,9 +293,7 @@ Agent tool:
     Inputs: bd show <epic-id>, then bd show each child task.
     Write your full report to: <absolute path in the lead's session
     scratchpad, e.g. <scratchpad>/sre-batch-<epic-id>.md>.
-    You may strengthen task specs directly via bd update (preserve existing
-    sections; never insert placeholders). Do not create, close, or
-    re-classify tasks — structural suggestions go in your report.
+    Spec edits follow the skill's Authority rule.
     Return exactly the one-line verdict per the Report File Contract in
     skills/sre-task-refinement/SKILL.md:
     SRE VERDICT: <APPROVE|NEEDS REVISION|REJECT> — report: <path> — <N> specs updated
@@ -304,13 +302,6 @@ Agent tool:
 Do not pass a model override — the review inherits the session model.
 
 Parse the verdict word from the returned `SRE VERDICT:` line, then read the full report from the file at the path it names. Non-compliant return (final message lacks a parseable `SRE VERDICT:` line, OR the report file is missing or lacks `### Batch Verdict`, OR the chat line's verdict word contradicts the report file's `### Batch Verdict`): re-dispatch ONCE (fresh subagent, same block, same path); on a second non-compliant return, persist a gate-state to the epic's bd notes and escalate via AskUserQuestion with whatever partial report exists. This re-dispatch counter is separate from NEEDS REVISION handling — channel failure vs plan quality.
-
-The review applies all 8 categories across the task tree, especially:
-- **Category 8 (Test Meaningfulness)**: Verify the proposed tests actually catch bugs
-- **Category 6 (Edge Cases)**: Ensure corner cases are comprehensive
-- **Category 3 (Success Criteria)**: Ensure criteria are measurable
-
-SRE refinement runs once against the full task tree — not per-task.
 
 On APPROVE (or NEEDS REVISION resolved via the bd updates above), hand off to hyperpowers:executing-plans to implement the tasks.
 
@@ -403,7 +394,7 @@ bd-1 (Epic: Test Quality Improvement)
 - [ ] Verdict recorded: APPROVE / NEEDS REVISION / REJECT
 - [ ] Category 8 (Test Meaningfulness) and Category 6 (Edge Cases) covered in the cross-task analysis
 - [ ] Success criteria are measurable across the tree
-- [ ] Anti-patterns specified per task
+- [ ] Task-level anti-patterns where a task carries task-specific risk (sre-task-refinement Category 5)
 
 ## Next Steps
 
@@ -514,7 +505,7 @@ Before completing analysis:
 **SRE Refinement Verification:**
 - [ ] Category 8 (Test Meaningfulness) covered in the batch review's cross-task analysis
 - [ ] Success criteria are measurable (not "tests work")
-- [ ] Anti-patterns specified for each task
+- [ ] Task-level anti-patterns where a task carries task-specific risk (sre-task-refinement Category 5)
 - [ ] No placeholder text in task designs
 
 **Validation:**

@@ -45,7 +45,7 @@ These rationalizations appear across multiple contexts. When you catch yourself 
 | "Checklist is just suggestion" | Track every item in the repo's tracker (bd when beads is present, TodoWrite otherwise). |
 | "Subtask can reference parent for details" | NO. Subtasks must be complete. NO placeholders, NO "see parent". |
 | "I'll use placeholder and fill in later" | NO. Write actual content NOW. No meta-references like "[detailed above]". |
-| "Design field is too long, use placeholder" | Length doesn't matter. Write full content. Placeholder defeats the purpose. |
+| "Design field is too long, use placeholder" | A placeholder is a missing spec. Write the content the task needs — and only that; length is not the goal. |
 | "Should I continue to the next task?" | YES. You have a tracked plan. Execute it. Don't interrupt your own workflow. |
 | "Let me ask user's preference for remaining tasks" | NO. The user gave you the work. Do it. Only ask at natural completion points. |
 | "Should I stop here or keep going?" | Your tracker tells you. If tasks remain, continue. |

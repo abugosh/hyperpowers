@@ -204,6 +204,7 @@ Result: 1 YES. /intuition was offered and deferred (user chose to proceed).
 ### Problem
 Users must create accounts manually. Manual signup has 40% abandonment rate.
 Google OAuth reduces friction and is the most-requested auth feature.
+Origin: signup has one entry point, the password form at routes/signup.ts:12; the abandonment is measured at that field.
 
 ### Research Findings
 **Codebase:**

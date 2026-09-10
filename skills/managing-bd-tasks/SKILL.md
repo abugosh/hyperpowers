@@ -145,10 +145,8 @@ Agent tool:
     run its SINGLE-TASK MODE against bd-12, bd-13, bd-14.
     Inputs: bd show bd-12, bd show bd-13, bd show bd-14; bd show bd-1 for
     epic requirements context.
-    You may strengthen the specs directly via bd update (preserve existing
-    sections; never insert placeholders). Do not create, close, or
-    re-classify tasks.
-    Return: per-task verdict (APPROVE / NEEDS REVISION) with one-line
+    Spec edits follow the skill's Authority rule.
+    Return: per-task verdict (APPROVE / NEEDS REVISION / REJECT) with one-line
     reasons and an exact list of bd updates applied.
 ```
 

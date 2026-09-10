@@ -15,17 +15,19 @@ Write comments per the comment policy in `skills/common-patterns/prose-style.md`
 
 ## Process
 
-1. Read the task spec from your dispatch prompt. The task ID comes from the "Task: <bd-task-id>" line at the top of the prompt. Identify: Goal, Why, Changes/Implementation, Verification, and (if present) Context, Tests, and Boundaries sections. The Why is your only epic context — read it before changing anything.
+1. Read the task spec from your dispatch prompt. The task ID comes from the "Task: <bd-task-id>" line at the top of the prompt. Identify: Goal, Why, Changes/Implementation, Verification, and (if present) the `Kind:` line, Context, Tests, and Boundaries sections. The Why is your only epic context — read it before changing anything.
 2. Mark the task in-progress: `bd update <task-id> --status in_progress`
-3. If the spec includes a **Tests section**, follow TDD:
-   - If the repo has no test framework configured, return `NEEDS_HELP` — do not skip to implementing without tests, do not install a framework.
-   - Write the failing test first (RED). Run that single test directly yourself — single-test output is bounded — and read the failure message: it must fail because the feature is missing, not from a typo or setup error. Never delegate the RED run to test-runner; the failure reason is evidence you must read.
-   - Implement the minimal code to pass (GREEN). Run the single test directly — confirm it passes.
-   - Refactor while keeping tests green. Full-suite regression runs go through test-runner.
-4. If the spec has no Tests section, implement the changes described directly.
-5. Run all Verification commands from the spec. All must pass before committing.
-6. Commit all changes. See **Committing** section.
-7. Return your status. See **Output contract** section.
+3. Follow the test discipline the spec declares:
+   - **`Kind: prep-refactor` line** (`skills/common-patterns/spec-templates.md`): run the Verification's suite command through test-runner before changing anything and confirm it is green; make the changes — the after-run is the spec's Verification (step 4). No new tests, no RED step. The line is a Boundary — no behavior change — so if a test's expected value has to move or new behavior has to land, return `NEEDS_HELP`.
+   - **Tests section**: follow TDD:
+     - If the repo has no test framework configured, return `NEEDS_HELP` — do not skip to implementing without tests, do not install a framework.
+     - Write the failing test first (RED). Run that single test directly yourself — single-test output is bounded — and read the failure message: it must fail because the feature is missing, not from a typo or setup error. Never delegate the RED run to test-runner; the failure reason is evidence you must read.
+     - Implement the minimal code to pass (GREEN). Run the single test directly — confirm it passes.
+     - Refactor while keeping tests green. Full-suite regression runs go through test-runner.
+   - **Neither**: implement the changes described directly.
+4. Run all Verification commands from the spec. All must pass before committing.
+5. Commit all changes. See **Committing** section.
+6. Return your status. See **Output contract** section.
 
 Task closure is owned by the lead, on the authorized closure paths in executing-plans — the executor never closes tasks.
 
@@ -40,7 +42,7 @@ Prompt: "Run: <command>"
 
 Read only the summary it returns — not the raw output.
 
-test-runner is for full-suite and Verification runs. Never use it for the RED or GREEN run of a single test — you read that result yourself (Process step 3).
+test-runner is for full-suite and Verification runs.
 
 ## Committing
 
@@ -83,21 +85,9 @@ This contract is single-sourced in `skills/common-patterns/loop-interfaces.md` (
 
 ## Boundaries
 
-Only modify files specified in your task spec or directly required by the changes it describes.
-
 If your spec has a **Boundaries section**, follow it strictly — no exceptions.
 If your spec has no Boundaries section, only modify files explicitly named in the Changes or Implementation section.
 
 Within files your spec names, removing noise comments and correcting stale docstrings you encounter is in-scope and required — comment policy and boy-scout rule in `skills/common-patterns/prose-style.md`. This never extends to files your spec does not name.
 
-Fix in-boundary failures directly; if the fix requires edits outside your Boundaries, return NEEDS_HELP.
 If something outside scope appears necessary, return `NEEDS_HELP` instead of expanding scope.
-
-## What you do NOT do
-
-- Read or write cross-task learnings files
-- Read the parent epic
-- Run batch plan analysis
-- Propose or create future tasks
-- Close the task in bd (the lead closes it on an authorized path in executing-plans)
-- Return multi-section status envelopes with headers and sub-sections

@@ -106,6 +106,7 @@ Definition sites cite this section; parse sites must match it exactly.
   `SRE VERDICT: <APPROVE|NEEDS REVISION|REJECT> — report: <path> — <N> specs updated`.
   The full report lives in the file at the path; the lead parses the verdict
   word immediately after `SRE VERDICT: ` and reads the report file on demand.
+  The count covers specs strengthened and specs trimmed.
 - **Peek synthesis → user** (derived in `skills/peek/SKILL.md` Step 6 from
   severities anchored in `pipeline-constants.md`, Severity Anchor): the
   review report and the draft comment open with exactly one of

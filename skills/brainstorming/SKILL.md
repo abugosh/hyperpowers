@@ -15,7 +15,7 @@ HIGH FREEDOM - The 8-step order is fixed, but Socratic questioning within steps 
 | Step | Action | Deliverable |
 |------|--------|-------------|
 | 1 | Detect entry (doc/idea/resume); investigate first; evidence-grounded questions (AskUserQuestion); evaluate sizing gate | Understanding grounded in findings; escalation offer if gate fires |
-| 2 | Research codebase and external patterns; propose 2-3 approaches | Recommended option with trade-offs documented |
+| 2 | Research codebase and external patterns; propose 2-3 approaches; smallest delta that meets the requirements | Recommended option with trade-offs documented |
 | 3 | Present design in sections (200-300 words each); friction detection | Validated architecture; /intuition offered if friction detected |
 | 4 | Architecture Impact Check (5 structural questions) | Impact recorded in epic; /intuition offered if any YES |
 | 5 | Create bd epic with IMMUTABLE requirements | Epic with 8 top-level sections (incl. Provenance) and anti-patterns |
@@ -36,7 +36,7 @@ HIGH FREEDOM - The 8-step order is fixed, but Socratic questioning within steps 
 **Don't use for:**
 - Executing existing plans (use hyperpowers:executing-plans)
 - Fixing bugs (use hyperpowers:fixing-bugs)
-- Refactoring (use hyperpowers:refactoring-safely)
+- Standalone refactoring (use hyperpowers:refactoring-safely) — a refactor that exists to make this epic's feature change small is a prep-refactor task inside the epic (Step 6b)
 - Requirements already crystal clear and epic exists
 </when_to_use>
 
@@ -89,6 +89,8 @@ Research dispatches inherit the session model — this is design-tier investigat
 **Capture research findings** as you go: file paths/patterns from codebase, API capabilities/constraints from external sources, dead-end paths (what was explored, why abandoned).
 
 **Propose 2-3 approaches with trade-offs.** Lead with the recommended option and link the recommendation to specific findings (e.g., "matches existing pattern at path/to/file.ts").
+
+**Smallest delta that meets the immutable requirements is a selection criterion.** Tie-break: when two approaches meet the requirements and the anti-patterns, prefer the smaller diff and the fewer new concepts. A diff that works around the problem's origin rather than changing it is not the smaller one: the class of problem stays and the next epic pays for it. Name the origin now; Step 5 records it on the Origin line. When the recommended approach is small only once the current structure changes, name that structure change now; Step 6b turns it into a prep-refactor task.
 
 ---
 
@@ -174,6 +176,7 @@ Result: [N] YES. /intuition [was offered and run / was offered and deferred / wa
 
 ### Problem
 [1-2 sentences: what problem this solves, why the status quo is insufficient]
+Origin: [where the problem originates — the site, decision, or missing piece that produces it, so the design targets the cause. When the origin is out of scope: "out of scope here because <reason>; tracked in <epic/repo/ticket>, or not tracked because <reason>"]
 
 ### Research Findings
 **Codebase:**
@@ -288,7 +291,9 @@ Before creating any tasks, present a decomposition strategy to the human for app
 
 **Classification determines spec depth.** All executors run on Sonnet regardless of classification. Classification sets spec depth, not model — promotion to Opus happens only via the `Executor: opus` flag (`skills/common-patterns/pipeline-constants.md`). Simple tasks need only Goal, Why, Changes, and Verification — the spec is concise because the work is mechanical. Medium tasks require fuller specs with Context, Implementation steps, Tests, and Boundaries — the spec is detailed because the executor must make judgment calls.
 
-For refactors: define the pattern during planning so each executor task is a mechanical application of that pattern (simple spec). For new features: extract design judgment into the spec (medium spec) so execution becomes deliberate.
+For refactor epics: define the pattern during planning so each executor task is a mechanical application of that pattern (simple spec). For new features: extract design judgment into the spec (medium spec) so execution becomes deliberate.
+
+**Prep-refactor tasks.** When Step 2 found that the chosen approach is small only once the current structure changes, propose that change as its own task ahead of the feature task, carrying the prep-refactor kind (`skills/common-patterns/spec-templates.md`, Prep-refactor kind).
 
 **Hard ceiling: see `skills/common-patterns/pipeline-constants.md`. No exceptions.** Tasks estimated over the ceiling must be split.
 
@@ -335,7 +340,7 @@ bd dep add bd-[task] bd-[epic] --type parent-child
 
 A task spec may carry the `Executor: opus` promotion flag for irreducibly hard tasks — see `skills/common-patterns/pipeline-constants.md` for the full promotion policy.
 
-Set task dependencies in bd so execution order is clear: `bd dep add bd-[task-B] bd-[task-A]` (bd's default dependency type — it gates readiness) for tasks that must run in sequence.
+Create a prep-refactor's named task before the prep task so its `Kind:` line carries a real id, then set task dependencies in bd so execution order is clear: `bd dep add bd-[task-B] bd-[task-A]` (bd's default dependency type — it gates readiness) for tasks that must run in sequence.
 
 ---
 
@@ -354,9 +359,7 @@ Agent tool:
     Inputs: bd show <epic-id>, then bd show each child task.
     Write your full report to: <absolute path in the lead's session
     scratchpad, e.g. <scratchpad>/sre-batch-<epic-id>.md>.
-    You may strengthen task specs directly via bd update (preserve existing
-    sections; never insert placeholders). Do not create, close, or
-    re-classify tasks — structural suggestions go in your report.
+    Spec edits follow the skill's Authority rule.
     Return exactly the one-line verdict per the Report File Contract in
     skills/sre-task-refinement/SKILL.md:
     SRE VERDICT: <APPROVE|NEEDS REVISION|REJECT> — report: <path> — <N> specs updated
@@ -364,9 +367,7 @@ Agent tool:
 
 Do not pass a model override — the review inherits the session model.
 
-SRE refinement runs **once against the full task tree** — not per-task, not just the first task. It applies an 8-category corner-case analysis across all tasks: granularity, implementability, success criteria quality, dependency structure, safety standards, edge cases, red flags, and test meaningfulness.
-
-SRE refinement can suggest: splitting tasks that are too large, adding tasks that are missing, reordering dependencies, and strengthening success criteria. The output is a refined task tree ready for execution.
+SRE refinement runs **once against the full task tree** — not per-task, not just the first task. It applies the skill's checklist to every task.
 
 The full task tree review catches systemic gaps (e.g., missing error handling across all tasks). Skipping on "feels heavy" grounds is exactly the rationalization the rule guards against.
 
@@ -381,7 +382,7 @@ The dispatch above returns the one-line `SRE VERDICT:` template (`skills/sre-tas
 
 **Revision loop (NEEDS REVISION):**
 
-1. Spec strengthening is already applied — the SRE reviewer updates specs directly via `bd update` (its Authority rule, `skills/sre-task-refinement/SKILL.md`). Do not re-apply.
+1. Spec strengthening and trimming are already applied — the SRE reviewer updates specs directly via `bd update` (its Authority rule, `skills/sre-task-refinement/SKILL.md`). Do not re-apply.
 2. For each structural recommendation in the report file (add a task, split a task, reorder dependencies, or promote a task via the `Executor: opus` flag): either apply it with plain bd commands (`bd create` + `bd dep add` for tree changes; `bd update` adding the `Executor: opus` line to the task's spec for promotions — SRE batch review is a named promotion-recommendation source in `skills/common-patterns/pipeline-constants.md`; Step 6c's pre-create verification applies to any new task), or explicitly decline it with a recorded reason in the epic's bd notes (it surfaces in the next gate-state's Decided section).
 3. Re-dispatch the SRE batch review as a fresh subagent. The lead never marks the tree approved itself — only a fresh SRE run can return APPROVE.
 
@@ -434,7 +435,7 @@ Worked examples (skipped-research, upfront-task-tree, missing-anti-patterns) liv
 - **Investigate, share, opine, then ask** — evidence-grounded questions beat interrogation; one critical question at a time
 - **Multiple choice preferred** — Easier to answer; include recommended default
 - **Delegate research** — Use codebase-investigator and internet-researcher agents
-- **YAGNI ruthlessly** — Remove unnecessary features from all designs
+- **Smallest delta** — Step 2's criterion; every design item traces to a requirement or goes
 - **Explore alternatives** — Propose 2-3 approaches before settling
 - **Incremental validation** — Present design in sections, validate each
 - **Epic is contract** — Requirements immutable, tasks adapt
@@ -473,7 +474,7 @@ Before handing off to executing-plans:
 - [ ] Used AskUserQuestion for all clarifying questions
 - [ ] Researched codebase + external (when applicable); proposed 2-3 approaches
 - [ ] Architecture Impact Check done (Step 4); /intuition offered if 1+ YES or friction detected
-- [ ] bd epic has all 8 sections (incl. Provenance); Design Rationale has 6 subsections; every empty subsection has "None because [reason]"
+- [ ] bd epic has all 8 sections (incl. Provenance); Design Rationale has 6 subsections and Problem carries an Origin line; every empty subsection has "None because [reason]"
 - [ ] Anti-patterns include reasoning ("NO X (reason: Y)")
 - [ ] Sizing gate checked; decomposition strategy proposed and approved by human; all tasks classified (simple/medium for spec depth) and linked to epic
 - [ ] Every task spec reference verified against the codebase before creation

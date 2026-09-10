@@ -83,8 +83,8 @@ The full excuse catalog lives in `skills/common-patterns/common-rationalizations
 <understanding_rigidity>
 ## Rigidity
 
-- LOW FREEDOM (follow exactly): test-driven-development, verification-before-completion, executing-plans
-- HIGH FREEDOM (adapt principles): consider, brainstorming, managing-bd-tasks, sre-task-refinement
+- LOW FREEDOM (follow exactly): test-driven-development, verification-before-completion, executing-plans, sre-task-refinement
+- HIGH FREEDOM (adapt principles): consider, brainstorming, managing-bd-tasks
 
 Each skill declares its own `<rigidity_level>` — check it.
 </understanding_rigidity>

@@ -1,8 +1,8 @@
 # Task Spec Templates (Two-Tier)
 
-Single source of truth for the two-tier task spec format. Brainstorming,
-writing-plans, and sre-task-refinement (classification consistency checks)
-all reference this file — never restate the templates.
+Single source of truth for the two-tier task spec format and the
+prep-refactor kind. Brainstorming, writing-plans, sre-task-refinement, and
+the executor all reference this file — never restate the templates.
 
 Time bands, the hard ceiling, and the spec-depth rule are defined in
 `skills/common-patterns/pipeline-constants.md`. This file carries the
@@ -86,6 +86,22 @@ The boy-scout rule (`skills/common-patterns/prose-style.md`) applies to every
 task at both tiers: noise-comment cleanup within spec-named files is always
 in-scope. Specs need not restate it, and Boundaries sections do not need to
 re-grant it.
+
+## Prep-refactor kind
+
+A task that changes no behavior and exists so a named following task's
+change is small: make the change easy, then make the easy change. Either
+tier may carry it. The spec declares it with one standing line directly
+under `## Goal`:
+
+    Kind: prep-refactor (for bd-<id>)
+
+The line is a Boundary in itself: no behavior change. A change that needs a
+test's expected value to move, or new behavior to land, belongs to the task
+it names. There is no Tests section — there is no new behavior to test; the
+existing suite is the evidence, so Verification names the suite command,
+green before the change and green after. Consumers cite this section; none
+restates it.
 
 ## Classification examples
 

@@ -92,6 +92,8 @@ Time bands and the hard ceiling are defined in skills/common-patterns/pipeline-c
 
 **No task should exceed the hard ceiling in skills/common-patterns/pipeline-constants.md.** If a task feels larger, flag it for splitting before expanding. For irreducibly hard tasks within the ceiling, the `Executor: opus` promotion flag is available — see skills/common-patterns/pipeline-constants.md.
 
+A task that changes no behavior and exists to make a named following task's change small carries the prep-refactor kind on top of its tier — defined in `skills/common-patterns/spec-templates.md` (Prep-refactor kind).
+
 ### 2c. Verify Codebase State
 
 **CRITICAL: Never write unverified references.** Two lanes: broad structure questions (does a pattern already exist, the shape of a directory, dependency presence) → dispatch `codebase-investigator`. Exact edit sites you are about to write into a spec → read the file directly first — a direct read is ground-truth verification, not assumption. Never assume in either lane.
@@ -189,9 +191,8 @@ Agent tool:
   subagent_type: "general-purpose"
   prompt: |
     Load the skill hyperpowers:sre-task-refinement with the Skill tool and
-    run its SINGLE-TASK MODE against <task-id(s)>. You may strengthen the
-    spec via bd update (no placeholders). Return your findings and any
-    updates applied.
+    run its SINGLE-TASK MODE against <task-id(s)>. Spec edits follow the
+    skill's Authority rule. Return your findings and any updates applied.
 ```
 
 Do not pass a model override — the review inherits the session model.
@@ -452,6 +453,7 @@ Before marking each task complete in the tracker:
 - [ ] Spec uses correct two-tier template for classification
 - [ ] Spec includes Why section (both tiers)
 - [ ] Medium spec includes Boundaries section
+- [ ] Prep-refactor task carries the `Kind:` line and no Tests section (spec-templates.md)
 - [ ] Effort estimate is in minutes, per the bands in skills/common-patterns/pipeline-constants.md, not hours
 - [ ] Presented COMPLETE expansion to user (showed full text)
 - [ ] User approved expansion (via AskUserQuestion)

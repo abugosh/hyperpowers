@@ -1,44 +1,38 @@
 ---
 name: sre-task-refinement
-description: Use when you have to refine subtasks into actionable plans ensuring that all corner cases are handled and we understand all the requirements.
+description: Use when reviewing bd task specs before execution — checks that a cold executor with no context can run each spec, that the edge cases with consequences are covered, and that every item traces to a requirement; strengthens and trims specs directly.
 ---
 
 <skill_overview>
-Review bd task plans with Google Fellow SRE perspective to ensure junior engineer can execute without questions; catch edge cases, verify granularity, strengthen criteria, prevent production issues before implementation.
+Review bd task specs with a Google Fellow SRE perspective so that a cold executor — a fresh agent whose only context is the spec — can execute each one without questions: catch the edge cases that have consequences, verify granularity, strengthen weak criteria, and trim what no requirement needs.
 </skill_overview>
 
 <rigidity_level>
-LOW FREEDOM - Follow the 8-category checklist exactly. Apply all categories to every task. No skipping red flag checks. Always verify no placeholder text after updates. Reject plans with critical gaps.
+LOW FREEDOM - Rules 1-8 in critical_rules have no exceptions.
 </rigidity_level>
 
 <quick_reference>
 | Category | Key Questions | Auto-Reject If |
 |----------|---------------|----------------|
 | 1. Granularity | Task classified simple or medium per the bands in `skills/common-patterns/pipeline-constants.md`? | Task exceeds the ceiling in `skills/common-patterns/pipeline-constants.md` without a recommended split |
-| 2. Implementability | Junior can execute without questions? | Vague language, missing details |
+| 2. Implementability | Cold executor can execute without questions? | Vague language, missing details |
 | 3. Verification | Simple: 1+ measurable outcome plus the hooks line? Medium: 3+ measurable criteria? | Simple task missing a Verification section; medium task criteria can't be verified ("works well") |
 | 4. Dependencies | Correct parent-child, blocking relationships? | Circular dependencies |
 | 5. Safety Standards | Epic has an anti-patterns section? Risky tasks have task-level anti-patterns? | Epic missing anti-patterns section, or risky task missing task-level anti-patterns |
-| 6. Edge Cases | Empty input? Unicode? Concurrency? Failures? | No edge case consideration |
+| 6. Edge Cases | Which failure modes reach this task, and what happens when they do? | No edge case consideration |
 | 7. Red Flags | Placeholder text? Vague instructions? | "[detailed above]", "TODO" |
 | 8. Test Meaningfulness | Tests catch real bugs? Not tautological? | Tests only verify syntax/existence |
+| 9. Scope Proportionality | Does every implementation item and verification criterion trace to a requirement or success criterion, an anti-pattern, or a named-consequence edge case? | Never for a trim; a task whose items mostly trace to nothing is a structural finding |
 
-**Perspective**: Google Fellow SRE with 20+ years experience reviewing junior engineer designs.
-
-**Time**: Don't rush - catching one gap pre-implementation saves hours of rework.
+**Perspective**: Google Fellow SRE with 20+ years of experience. The spec's reader is a cold executor with no context beyond the spec: anything it would have to ask is missing, and anything it does not need is cost.
 
 **Modes**: Single-task mode (default) and batch mode (full task tree from brainstorming).
 </quick_reference>
 
 <when_to_use>
 Use when:
-- Reviewing bd epic/feature plans before implementation
-- Need to ensure junior engineer can execute without questions
-- Want to catch edge cases and failure modes upfront
-- Need to verify task granularity (bands defined in `skills/common-patterns/pipeline-constants.md`)
 - **Batch mode** (mainline): After brainstorming Step 6c creates the complete task tree (Step 7 calls this skill against the entire epic's task tree as a unit)
 - **Single-task mode**: Against a spec that hyperpowers:writing-plans repaired or expanded off-mainline (gap-fix tasks, mid-flight amendments, externally created tasks)
-- Before hyperpowers:executing-plans starts implementation
 
 Don't use when:
 - Task already being implemented (too late)
@@ -52,19 +46,11 @@ Don't use when:
 
 This skill is loaded and executed BY a dispatched review subagent — the lead dispatches a fresh subagent (Agent tool, blocking) whose prompt loads this skill and names the epic or task to review. The review never runs in the context that authored or repaired the plan: an author reviewing its own just-written tasks is the weakest possible comparator, and fresh-context review is the point of this skill. Batch mode arrives via brainstorming Step 7's dispatch block; single-task mode arrives via a dispatch after writing-plans repairs a spec.
 
-**Authority (the one rule — stated once here, referenced everywhere else in this skill):** You may strengthen task specs directly via `bd update` (preserve existing sections; never insert placeholders). Do not create, close, or re-classify tasks — structural suggestions (splits, new tasks, reordering) go in your report, not in bd.
-
-If you are reading this as the dispatched reviewer: the process below is yours to execute. Apply bd updates directly where the process says to (strengthening specs); every structural change is a recommendation in your report, never a direct bd action.
+**Authority (the one rule — stated once here, referenced everywhere else in this skill):** You may strengthen task specs directly via `bd update`, and you may remove or narrow an item in a spec when you name the reason: it fails the Category 9 trace, or it exceeds what the requirements ask. Preserve existing sections; never insert placeholders. Do not create, close, or re-classify tasks — structural suggestions (splits, new tasks, reclassification in either direction, reordering) go in your report, not in bd.
 
 **Single-task mode:** Return your verdict and findings as your final message — it is data for the lead, not prose for a human.
 
 **Batch mode:** Follow the Report File Contract below instead — the full report goes to a file, not the final message.
-
-## Announcement
-
-**Announce:** "I'm using hyperpowers:sre-task-refinement to review this plan with Google Fellow-level scrutiny."
-
----
 
 ## Batch Mode (Full Task Tree Review)
 
@@ -96,34 +82,27 @@ This vocabulary is registered in `skills/common-patterns/loop-interfaces.md` (Ve
 ### Process
 
 **Phase 1: Per-Task Review**
-Apply the 8-category checklist (below) to every task in the tree. Same rigor as single-task mode — no shortcuts because there are many tasks.
+Apply the 9-category checklist (below) to every task in the tree. Same rigor as single-task mode — no shortcuts because there are many tasks.
 
 **Phase 2: Cross-Task Analysis**
 After reviewing each task individually, run these systemic checks:
 
-**a. Granularity consistency**
-- Are all tasks within the bands defined in `skills/common-patterns/pipeline-constants.md`?
-- Are simple tasks classified as simple and medium tasks classified as medium, per those bands?
-- Flag any task whose spec complexity doesn't match its classification (e.g., a task with full Implementation + Tests sections classified as simple)
-
-**b. Dependency completeness**
+**a. Dependency completeness**
 - Do all ordering constraints have `bd dep` declarations?
 - Are there implicit dependencies (task B uses output of task A) without a blocking relationship?
 - Check: if task B reads a file created by task A, is there a declared dependency?
 
-**c. Systemic gaps**
+**b. Systemic gaps and systemic excess**
 - Does the same missing edge case appear across multiple tasks? (e.g., no error handling for nil inputs in every data-transformation task)
 - Is there a missing task that several tasks implicitly depend on (shared utility, migration, config change)?
 - Are Verification sections consistently strong, or does one task have measurable checks while others use vague language?
+- Does the same untraceable item repeat across tasks (a criterion no requirement sets, pasted into every Verification)? Trim it everywhere, once, with one reason.
 
-**d. Classification consistency** (canonical templates: `skills/common-patterns/spec-templates.md`)
-- Simple task spec: should have Goal, Why, Changes, Verification — nothing more
-- Medium task spec: should have Goal, Why, Context, Implementation, Tests, Verification, Boundaries
-- A task with an Implementation section and Tests section must be classified as medium
-- A task with only "exact change description" can be simple
+**c. Classification consistency** (canonical templates: `skills/common-patterns/spec-templates.md`)
+- Flag any task whose spec complexity doesn't match its classification (e.g., a task with full Implementation + Tests sections classified as simple)
 - A correctly classified simple task is not penalized for lacking a 3+ criteria list, a 3+ item checklist, or a task-level anti-patterns section — those are medium-tier requirements (Categories 3, 5, 7)
 
-**e. Coverage**
+**d. Coverage**
 - Do the tasks collectively cover every success criterion in the epic?
 - List each epic success criterion and map it to at least one task
 - Flag any criterion with no corresponding task
@@ -140,8 +119,8 @@ This is the format of the report FILE (per the Report File Contract above), not 
 ### Dependency Completeness
 [Summary: all declared / missing deps listed with recommendation]
 
-### Systemic Gaps
-[Any patterns found across multiple tasks, or "None found"]
+### Systemic Gaps and Excess
+[Any patterns found across multiple tasks — missing or over-specified — or "None found"]
 
 ### Classification Consistency
 [Any mismatches between spec complexity and simple/medium label]
@@ -158,8 +137,6 @@ This is the format of the report FILE (per the Report File Contract above), not 
 [If NEEDS REVISION or REJECT: list recommended additions or splits]
 ```
 
-**Batch mode scope:** Governed by the Authority rule above. Strengthening criteria across multiple tasks is applied directly via `bd update`. Adding a task, splitting a task, and recommending the `Executor: opus` promotion flag (see `skills/common-patterns/pipeline-constants.md`) for irreducibly hard tasks are structural suggestions — they go in your report, not in bd.
-
 ---
 
 ## Review Checklist (Apply to Every Task)
@@ -169,35 +146,24 @@ This is the format of the report FILE (per the Report File Contract above), not 
 **Check:**
 - [ ] Task classified as simple or medium per the bands in `skills/common-patterns/pipeline-constants.md`?
 - [ ] No task exceeds the hard ceiling in `skills/common-patterns/pipeline-constants.md`?
-- [ ] Simple task: spec has Goal/Why/Changes/Verification only (no full Implementation section)?
-- [ ] Medium task: spec has Goal/Why/Context/Implementation/Tests/Verification/Boundaries?
+- [ ] Spec carries exactly the tier's sections, with the prep-refactor and pure-documentation exceptions (`skills/common-patterns/spec-templates.md`)?
+- [ ] Prep-refactor kind (`Kind:` line, `skills/common-patterns/spec-templates.md`): names a task in this tree and carries no Tests section?
 - [ ] Each task independently completable?
 - [ ] Each task has a clear deliverable?
 
-**Classification guide** (bands defined in `skills/common-patterns/pipeline-constants.md`):
-- **Simple**: Mechanical changes with exact known edits. No judgment required.
-- **Medium**: Changes requiring judgment or design decisions. Reserved for irreducible complexity.
-
 **If task exceeds the ceiling in `skills/common-patterns/pipeline-constants.md`:**
-- Do not create subtasks directly — see Authority above
 - Flag the task and write a split recommendation in your report: proposed subtask titles, scope for each, and dependencies between them (see "Recommending Task Splits" below)
 
 ---
 
-### 2. Implementability (Junior Engineer Test)
+### 2. Implementability (Cold Executor Test)
 
 **Check:**
-- [ ] Can junior engineer implement without asking questions?
+- [ ] Can a cold executor — no context beyond the spec — implement without asking questions?
 - [ ] Function signatures/behaviors described, not just "implement X"?
 - [ ] Test scenarios described (what they verify, not just names)?
 - [ ] "Done" clearly defined with verifiable criteria?
 - [ ] All file paths specified or marked "TBD: new file"?
-
-**Red flags:**
-- "Implement properly" (how?)
-- "Add support" (for what exactly?)
-- "Make it work" (what does working mean?)
-- File paths missing or ambiguous
 
 ---
 
@@ -207,7 +173,7 @@ This is the format of the report FILE (per the Report File Contract above), not 
 
 **Check:**
 - [ ] **Simple task**: Has a Verification section with at least one specific, measurable outcome, plus the standing "Pre-commit hooks passing" line (canonical: `skills/common-patterns/spec-templates.md`, simple tier)?
-- [ ] **Medium task**: Has 3+ specific, measurable verification criteria?
+- [ ] **Medium task**: Has 3+ specific, measurable verification criteria? (Prep-refactor: the suite command, green before and after — `skills/common-patterns/spec-templates.md`)
 - [ ] All criteria testable/verifiable (not subjective)?
 - [ ] Includes automated verification (tests pass, clippy clean) where applicable?
 - [ ] No vague criteria like "works well" or "is implemented"?
@@ -215,13 +181,7 @@ This is the format of the report FILE (per the Report File Contract above), not 
 **Good criteria examples:**
 - ✅ Medium: "5+ unit tests pass (valid VIN, invalid checksum, various formats)"
 - ✅ Medium: "Clippy clean with no warnings"
-- ✅ Medium: "Performance: <100ms for 1000 records"
 - ✅ Simple: "`rg 'old_name' src/` returns zero" plus "Pre-commit hooks passing" (per `skills/common-patterns/spec-templates.md`)
-
-**Bad criteria examples:**
-- ❌ "Code is good quality"
-- ❌ "Works correctly"
-- ❌ "Is implemented"
 
 ---
 
@@ -248,46 +208,29 @@ bd show bd-N            # Per-task blocking/blocked-by
 **Check:**
 - [ ] Epic has an Anti-Patterns (FORBIDDEN) section?
 - [ ] If this task carries task-specific risk: does it have its own anti-patterns covering that risk (unwrap/expect, TODO without issue #, stub implementations, regex backtracking, etc.)?
-- [ ] Error handling requirements specified where relevant (use Result, avoid panic)?
-- [ ] Test requirements specific (test names, scenarios listed)?
-
-**Minimum anti-patterns (for a task carrying task-specific risk):**
-- ❌ No unwrap/expect in production code
-- ❌ No TODOs without issue numbers
-- ❌ No stub implementations (unimplemented!, todo!)
-- ❌ No regex without catastrophic backtracking check
+- [ ] Error handling requirements specified where the task touches a failure path (use Result, avoid panic)?
 
 ---
 
 ### 6. Edge Cases & Failure Modes (Fellow SRE Perspective)
 
-**Ask for each task:**
-- [ ] What happens with malformed input?
-- [ ] What happens with empty/nil/zero values?
-- [ ] What happens under high load/concurrency?
-- [ ] What happens when dependencies fail?
-- [ ] What happens with Unicode, special characters, large inputs?
-- [ ] Are these edge cases addressed in the plan?
+**Ask for each task:** malformed input, empty/nil/zero values, load and concurrency, dependency failure, Unicode and large inputs — which of these reach this task, and what happens when they do?
 
-**Add to the Context section (medium) or as Verification notes (simple):**
-- Edge case descriptions
-- Mitigation strategies
-- References to similar code handling these cases
+**Add to the Context section (medium) or as Verification notes (simple)** the edge cases that reach the task and have a consequence you can name: the case, the mitigation, and a reference to similar code that handles it. A case that cannot reach the task, or reaches it without consequence in this epic, is not added — and if the spec already carries one, it is a Category 9 trim.
 
 ---
 
 ### 7. Red Flags (AUTO-REJECT)
 
-**Check for these - if found, REJECT plan:**
+**Check for these — reject the plan for any you cannot fix under the Authority rule; a fixed one is a Changes Made entry:**
 - ❌ Any task exceeding the ceiling in `skills/common-patterns/pipeline-constants.md` without a recommended split in the report
 - ❌ Vague language: "implement properly", "add support", "make it work"
 - ❌ Verification criteria that can't be checked: "code is good", "works well"
-- ❌ Missing test specifications
+- ❌ Missing test specifications where the tier requires a Tests section (`skills/common-patterns/spec-templates.md`)
 - ❌ "We'll handle this later" or "TODO" in the plan itself
 - ❌ Epic missing anti-patterns section, or risky task missing task-level anti-patterns
-- ❌ **Medium task** Implementation section with fewer than 3 items
 - ❌ No simple/medium classification present (the classification itself carries the time band)
-- ❌ Missing error handling considerations
+- ❌ Missing error handling considerations on a task that touches a failure path
 - ❌ **CRITICAL: Placeholder text in design field** - "[detailed above]", "[as specified]", "[complete steps here]"
 
 ---
@@ -302,31 +245,16 @@ bd show bd-N            # Per-task blocking/blocked-by
 - [ ] Does this test exercise a real user scenario or failure mode?
 - [ ] Is the assertion meaningful? (`result == expected` vs `result != nil`)
 
-**Red flags (AUTO-REJECT):**
-- ❌ Tests that only verify syntax/existence ("enum has cases", "struct has fields")
-- ❌ Tautological tests (pass by definition: `expect(builder.build() != nil)` when build() can't return nil)
-- ❌ Tests that duplicate implementation (testing 1+1==2 by checking 1+1==2)
-- ❌ Tests without meaningful assertions (call code but don't verify outcomes)
-- ❌ Tests that verify mocks instead of production code
-- ❌ Round-trip tests that only use happy path (Codable without edge cases)
-- ❌ Tests named generically ("test_basic", "test_it_works")
-
 **Good test specifications:**
-- ✅ "test_empty_payload_returns_validation_error" - catches missing validation
-- ✅ "test_concurrent_writes_dont_corrupt_data" - catches race condition
+- ✅ "test_invalid_checksum_rejected" - catches missing checksum validation
 - ✅ "test_malformed_json_returns_400_not_500" - catches error handling bug
-- ✅ "test_unicode_name_preserved_after_roundtrip" - catches encoding bugs
 
 **Bad test specifications (reject or strengthen):**
 - ❌ "test_user_model_exists" - tautological, compiler catches this
-- ❌ "test_builder_returns_value" - tautological if return type non-optional
 - ❌ "test_basic_functionality" - vague, what specific bug does it catch?
-- ❌ "test_encode_decode" - only happy path, no edge cases specified
 
 **When reviewing test specifications:**
 ```markdown
-For each test in Verification, verify:
-
 Test: "test_vin_validation"
 - What bug does it catch? ⚠️ Unclear - need specific scenarios
 - Could code break while test passes? ⚠️ Unknown without specifics
@@ -335,8 +263,18 @@ STRENGTHEN TO:
 - test_valid_vin_checksum_accepted
 - test_invalid_vin_checksum_rejected (catches missing checksum validation)
 - test_lowercase_vin_normalized (catches case handling bug)
-- test_vin_with_invalid_chars_rejected (catches input validation bug)
 ```
+
+---
+
+### 9. Scope Proportionality
+
+For each implementation item and each verification criterion, name what it traces to: an epic requirement or success criterion, an immutable anti-pattern, or an edge case the spec names with a consequence in this epic. An item that traces to none of these is over-specification — trim it under the Authority rule and record it under Removed / Over-specified with the reason. Narrow rather than delete when part of the item traces: a coverage criterion where the requirement says "suite passes" is narrowed to that, and the threshold goes.
+
+This category is advisory: trims never change the verdict on their own. A task whose items mostly trace to nothing is a structural finding for the report (recommend drop or merge), and a structural finding can change it.
+
+**Check:**
+- [ ] Every item the earlier categories added in this review passes the same test?
 
 ---
 
@@ -349,30 +287,19 @@ For each task in the plan:
 bd show bd-3
 ```
 
-**Step 2: Apply all 8 checklist categories**
-- Task Granularity
-- Implementability
-- Verification Quality
-- Dependency Structure
-- Safety & Quality Standards
-- Edge Cases & Failure Modes
-- Red Flags
-- Test Meaningfulness
+**Step 2: Apply the checklist** — Categories 1 through 9, every task.
 
 **Step 3: Document findings**
 Take notes:
-- What's done well
 - What's missing
 - What's vague or ambiguous
 - Hidden failure modes not addressed
-- Better approaches or simplifications
+- Items to trim, each with its reason (Category 9)
 - Whether to recommend the `Executor: opus` promotion flag (see `skills/common-patterns/pipeline-constants.md`) for an irreducibly hard task — a suggestion to the lead, not something SRE sets directly
 
 **Step 4: Update the task**
 
-Use `bd update` to add missing information:
-
-This example strengthens a **medium** task spec — extend its existing sections, never add sections the two-tier format doesn't define (`skills/common-patterns/spec-templates.md`):
+Use `bd update` to add what is missing and remove what does not trace. This example updates a **medium** task spec — extend its existing sections, never add sections the two-tier format doesn't define (`skills/common-patterns/spec-templates.md`):
 
 ```bash
 bd update bd-3 --design "$(cat <<'EOF'
@@ -386,20 +313,11 @@ bd update bd-3 --design "$(cat <<'EOF'
 [Original Context, preserved]
 
 **Edge Case: Empty Input**
-- What happens when input is empty string?
+- Empty string reaches parse() from the CLI's default argument (R2: every input path returns a typed error)
 - MUST validate input length before processing
 
-**Edge Case: Unicode Handling**
-- What if string contains RTL or surrogate pairs?
-- Use proper Unicode-aware string methods
-
-**Performance Concern: Regex Backtracking**
-- Pattern `.*[a-z]+.*` has catastrophic backtracking risk
-- MUST test with pathological inputs (e.g., 10000 'a's)
-- Use possessive quantifiers or bounded repetition
-
 **Reference Implementation**
-- Study src/similar/module.rs for pattern to follow
+- Study src/similar/module.rs for the pattern to follow
 
 ## Implementation
 [Original Implementation, preserved]
@@ -409,11 +327,11 @@ bd update bd-3 --design "$(cat <<'EOF'
 
 ## Verification
 - [ ] Existing criteria
-- [ ] NEW: Added missing measurable criteria
+- [ ] NEW: measurable criterion replacing a vague one, with its requirement named
+[The benchmark criterion that traced to no requirement is gone; it is recorded in the report under Removed / Over-specified, not in the spec]
 
 ## Boundaries
 [Original Boundaries, preserved]
-- NEW: Specific out-of-scope note for this task's risks
 EOF
 )"
 ```
@@ -427,8 +345,6 @@ EOF
 After updating, read back with `bd show bd-N` and verify:
 - ✅ All sections contain actual content, not meta-references
 - ✅ No placeholder text like "[detailed above]", "[as specified]", "[will be added]"
-- ✅ Implementation steps fully written with actual code examples
-- ✅ Verification explicit, not referencing "criteria above"
 - ❌ If ANY placeholder text found: REJECT and rewrite with actual content
 
 ---
@@ -440,15 +356,9 @@ If a task exceeds the ceiling in `skills/common-patterns/pipeline-constants.md`,
 **Where to draw the boundary:**
 - Split along component or file boundaries, not arbitrary line/time counts — each proposed subtask must be independently completable and independently verifiable
 - Identify sequencing: does one subtask's output feed another's input? Note that as a proposed dependency, not a parallel pair
-- Each proposed subtask needs enough detail that a fresh executor could pick it up without asking questions — same bar as any task spec (`skills/common-patterns/spec-templates.md`)
+- Each proposed subtask needs enough detail that a cold executor could pick it up without asking questions — same bar as any task spec (`skills/common-patterns/spec-templates.md`)
 
-**What to include for each proposed subtask (in your report, not in bd):**
-- A working title
-- Classification (simple or medium, per `skills/common-patterns/pipeline-constants.md`)
-- Scope: what it covers and what it explicitly excludes (so proposed subtasks don't overlap)
-- Proposed dependencies on other proposed subtasks (which must land first)
-
-**Recommendation format** (in the report's Summary of Changes / Recommendations section):
+**Recommendation format** (in the report's Recommendations section; in batch mode the Batch Verdict block lists it too):
 
 ```markdown
 ### Recommended Split: bd-3 (was N min, exceeds ceiling)
@@ -465,8 +375,6 @@ If a task exceeds the ceiling in `skills/common-patterns/pipeline-constants.md`,
    - Verification: [how completion is checked]
    - Depends on: Subtask 1
 ```
-
-The lead reviews this recommendation and, if accepted, creates the actual tasks and links them as parent-child — that step is the lead's, not the SRE reviewer's.
 
 ---
 
@@ -493,21 +401,20 @@ After reviewing all tasks:
 ### Task-by-Task Review
 
 #### [Task Name] (bd-N)
-**Type**: [epic/feature/task]
 **Classification**: [simple / medium] ([✅ Within range / ❌ Too large - split recommended])
 **Status**: [✅ Ready / ⚠️ Needs Minor Improvements / ❌ Needs Major Revision]
 
 **Critical Issues** (must fix):
 - [Blocking problems]
 
-**Improvements Needed**:
-- [What to add/clarify]
-
-**Edge Cases Missing**:
-- [Failure modes not addressed]
+**Not applied (structural)**:
+- [What needs a task change the Authority rule doesn't cover]
 
 **Changes Made**:
 - [Specific improvements added via `bd update`]
+
+**Removed / Over-specified**:
+- [Item trimmed or narrowed via `bd update` — reason: what it failed to trace to (Category 9), or that it exceeds what the requirements ask; or "None — every item traces"]
 
 ---
 
@@ -516,13 +423,9 @@ After reviewing all tasks:
 ### Summary of Changes
 
 **Issues Updated**:
-- bd-3 - Added edge case handling for Unicode, regex backtracking risks
+- bd-3 - Added edge case handling for empty input (R2); removed benchmark criterion (no requirement sets a performance bound)
 - bd-5 - Recommended split into 3 subtasks (was 40 min, proposed 3x10 min)
 - bd-7 - Strengthened Verification (added test names, verification commands)
-
-### Critical Gaps Across Plan
-1. [Pattern of missing items across multiple tasks]
-2. [Systemic issues in the plan]
 
 ### Recommendations
 
@@ -539,19 +442,19 @@ After reviewing all tasks:
 - [Critical problems]
 ```
 
-**In batch mode:** This entire Output Format (task-by-task reviews) plus the Cross-Task Analysis section (from Batch Mode Output Format above) is written to the report file per the Report File Contract — not to the final message. The batch verdict is the authoritative recommendation for the full plan. The final message is the one-line `SRE VERDICT: <APPROVE|NEEDS REVISION|REJECT> — report: <path> — <N> specs updated` template only.
+**In batch mode:** this format plus the Cross-Task Analysis goes to the report file; the final message is the one-line template (Report File Contract above).
 </the_process>
 
 <examples>
 <example>
-<scenario>Developer reviews task but skips edge case analysis (Category 6)</scenario>
+<scenario>Reviewer skips edge case analysis (Category 6)</scenario>
 
 <code>
 # Review of bd-3: Implement VIN scanner
 
 ## Checklist review:
 1. Granularity: ✅ 20 min (medium)
-2. Implementability: ✅ Junior can implement
+2. Implementability: ✅ Cold executor can implement
 3. Verification: ✅ Has 5 test scenarios
 4. Dependencies: ✅ Correct
 5. Safety Standards: ✅ Anti-patterns present
@@ -568,36 +471,28 @@ Conclusion: "Task looks good, approve ✅"
 </code>
 
 <why_it_fails>
-- Skipped Category 6 (Edge Cases) assuming task was "straightforward"
-- Didn't ask: What happens with invalid checksums? Lowercase? Long inputs?
-- Missed critical production issues:
-  - False positives (no checksum validation)
-  - Data handling bugs (case sensitivity)
-  - Security vulnerability (regex DoS)
-- Junior engineer didn't know to handle these (not in task)
-- Production incidents occur after deployment
-- Hours of emergency fixes, customer impact
-- SRE review failed to prevent known failure modes
+- Skipped Category 6 assuming the task was "straightforward" — never asked what happens with an invalid checksum, lowercase input, or a long input
+- Each of those reaches the scanner from ordinary text and has a consequence: false positives, missed matches, DoS
+- The executor had no way to know: the spec was its only context
 </why_it_fails>
 
 <correction>
-**Apply Category 6 rigorously:**
+**Apply Category 6 — which cases reach this task, and what happens:**
 
 ```markdown
 ## Edge Case Analysis for bd-3: VIN Scanner
 
-Ask for EVERY task:
-- Malformed input? VIN has checksum - must validate, not just pattern match
-- Empty/nil? What if empty string passed?
-- Concurrency? Read-only scanner, no concurrency issues
-- Dependency failures? No external dependencies
-- Unicode/special chars? VIN is alphanumeric only, but what about lowercase?
-- Large inputs? Regex `.*` patterns can cause catastrophic backtracking
+- Malformed input? VIN has a checksum — a pattern match alone accepts random strings (R1: no false positives)
+- Empty/nil? Empty string reaches the scanner from empty documents; the scanner must return no match, not error
+- Concurrency? Read-only scanner, no shared state — nothing to add
+- Dependency failures? No external dependencies — nothing to add
+- Unicode/special chars? VIN is alphanumeric only, but lowercase VINs exist in the corpus
+- Large inputs? `.*` patterns backtrack catastrophically on long inputs (anti-pattern: no regex without a backtracking check)
 
 Findings:
-❌ VIN checksum validation not mentioned (will match random strings)
+❌ Checksum validation not mentioned (will match random strings)
 ❌ Case normalization not mentioned (lowercase VINs exist)
-❌ Regex backtracking risk not mentioned (DoS vulnerability)
+❌ Regex backtracking risk not mentioned (DoS)
 ```
 
 **Update task:**
@@ -605,48 +500,34 @@ Findings:
 bd update bd-3 --design "$(cat <<'EOF'
 [... original content ...]
 
-## Context (extended by SRE review)
+## Context
+[Original Context, preserved]
 
-**VIN Checksum Complexity**:
-- ISO 3779 requires transliteration table (letters → numbers)
-- Weighted sum algorithm with modulo 11
-- Reference: https://en.wikipedia.org/wiki/Vehicle_identification_number#Check_digit
-- MUST validate checksum, not just pattern - prevents false positives
+**VIN Checksum**:
+- ISO 3779 transliteration table and weighted sum modulo 11
+- MUST validate checksum, not just pattern — prevents false positives (R1)
 
 **Case Normalization**:
-- VINs can appear in lowercase
-- MUST normalize to uppercase before validation
-- Test with mixed case: "1hgbh41jxmn109186"
+- MUST normalize to uppercase before validation; test with "1hgbh41jxmn109186"
 
 **Regex Backtracking Risk**:
-- CRITICAL: Pattern `.*[A-HJ-NPR-Z0-9]{17}.*` has backtracking risk
-- Test with pathological input: 10000 'X's followed by 16-char string
-- Use possessive quantifiers or bounded repetition
-- Reference: https://www.regular-expressions.info/catastrophic.html
+- Pattern `.*[A-HJ-NPR-Z0-9]{17}.*` backtracks; use bounded repetition
 
-**Edge Cases to Test**:
-- Valid VIN with valid checksum (should match)
+## Tests
+[Original Tests, preserved]
 - Valid pattern but invalid checksum (should NOT match)
-- Lowercase VIN (should normalize and validate)
-- Ambiguous chars I/O not valid in VIN (should reject)
-- Very long input (should not DoS)
+- Lowercase VIN "1hgbh41jxmn109186" (should normalize and validate)
+- 10000 'X's followed by a 16-char string (should return within the suite's timeout, not DoS)
 EOF
 )"
 ```
 
-**What you gain:**
-- Prevented false positives (checksum validation)
-- Prevented data handling bugs (case normalization)
-- Prevented security vulnerability (regex DoS)
-- Junior engineer has complete requirements
-- Production issues caught pre-implementation
-- Proper SRE review preventing known failure modes
-- Customer trust maintained
+Concurrency and dependency failure were asked and not added: nothing reaches the task through them. That is the shape of a Category 6 pass — the questions are always asked; only the cases with a consequence go in.
 </correction>
 </example>
 
 <example>
-<scenario>Developer approves task with placeholder text (Red Flag #10)</scenario>
+<scenario>Reviewer approves a task with placeholder text (Category 7)</scenario>
 
 <code>
 # Review of bd-5: Implement License Plate Scanner
@@ -665,49 +546,28 @@ bd show bd-5:
 ## Context
 - [Will be added during implementation]
 
-# Developer's review:
+# Reviewer:
 "Looks comprehensive, has an Implementation section and Verification ✅"
 
-# During implementation:
-Junior engineer: "What are the 'implementation steps detailed above'?"
-Junior engineer: "What specific verification checks should I run?"
-Junior engineer: "What's supposed to be in Context?"
-
-# No answers in the task - junior engineer blocked
-# Have to research and add missing information
-# Implementation delayed by 2 days
+# During execution the cold executor returns:
+NEEDS_HELP: spec says "[Complete implementation steps detailed above]" — nothing is detailed above; what are the steps, what verification should I run, and what belongs in Context?
 </code>
 
 <why_it_fails>
-- Missed Red Flag #10: Placeholder text present
-- "[Complete implementation steps detailed above]" is meta-reference, not content
-- "[As specified in the Implementation section]" is circular reference
-- "[Will be added during implementation]" is deferral, not specification
-- Junior engineer can't execute - missing critical information
-- Task looks complete but actually incomplete
-- Implementation blocked until details added
-- SRE review failed to catch placeholder text
+- "[Complete implementation steps detailed above]" is a meta-reference, "[As specified in the Implementation section]" is circular, "[Will be added during implementation]" is a deferral — none is content
+- The spec is the executor's only context, so every placeholder is a question it must return to the lead
+- The task looked complete and was not; the review existed to catch exactly this
 </why_it_fails>
 
 <correction>
-**Check for placeholder text after reading:**
+**Read the design field line by line for placeholders:**
 
 ```markdown
-## Red Flag Check (Category 7)
+Line 15: "[Complete implementation steps detailed above]"  ❌ PLACEHOLDER — meta-reference
+Line 22: "[As specified in the Implementation section]"     ❌ PLACEHOLDER — circular reference
+Line 30: "[Will be added during implementation]"            ❌ PLACEHOLDER — deferral
 
-Read through bd-5 line by line:
-
-Line 15: "[Complete implementation steps detailed above]"
-❌ PLACEHOLDER - "detailed above" is meta-reference, not actual content
-
-Line 22: "[As specified in the Implementation section]"
-❌ PLACEHOLDER - Circular reference to another section, not explicit criteria
-
-Line 30: "[Will be added during implementation]"
-❌ PLACEHOLDER - Deferral to future, not actual considerations
-
-DECISION: REJECT ❌
-Reason: Contains placeholder text - task not ready for implementation
+DECISION: REJECT ❌ — contains placeholder text; not ready for implementation
 ```
 
 **Update task with actual content:**
@@ -728,7 +588,6 @@ Extends the PII/PHI scanner suite so license plate numbers are flagged alongside
   - TX: `[A-Z]{3}[0-9]{4}|[0-9]{3}[A-Z]{3}` (e.g., ABC1234 or 123ABC)
   - Generic: `[A-Z0-9]{5,8}` (fallback)
 - **False Positive Risk**: license plates are short and generic (5-8 chars). MUST require healthcare context via `has_healthcare_context()` — without that gate, the scanner will match random alphanumeric sequences like "ABC1234" wherever they appear, not just in medical records.
-- **Performance**: these regex patterns are simple with no backtracking risk; should process <1ms per chunk.
 
 ## Implementation
 1. Write failing tests in `src/scan/plugins/scanners/license_plate.rs`'s test module covering the scenarios in Tests below. Run `cargo test license_plate` and confirm RED — tests fail because `LicensePlateScanner` doesn't exist yet.
@@ -744,16 +603,10 @@ Extends the PII/PHI scanner suite so license plate numbers are flagged alongside
 - `test_valid_ny_plate_detected_in_healthcare_context`: "ABC1234" is detected when healthcare context is present
 - `test_too_short_string_rejected`: "123" is NOT detected (too short to match any pattern)
 - `test_valid_plate_not_detected_outside_healthcare_context`: "ABC1234" is NOT detected without healthcare context present — proves the false-positive gate works
-- 8+ unit tests total, covering all four patterns (CA/NY/TX/generic) plus the edge cases above
+- One test per pattern (CA/NY/TX/generic) plus the edge cases above
 
 ## Verification
-- [ ] Valid CA plate "1ABC123" detected in healthcare context
-- [ ] Valid NY plate "ABC1234" detected in healthcare context
-- [ ] Invalid plate "123" NOT detected (too short)
-- [ ] Valid plate NOT detected outside healthcare context
-- [ ] 8+ unit tests pass covering all patterns and edge cases
-- [ ] Clippy clean, no warnings
-- [ ] cargo test passes
+- [ ] `cargo test license_plate` passes
 
 ## Boundaries
 - Common US plate formats only (CA/NY/TX + generic fallback) — international plates are out of scope, noted for a future iteration
@@ -762,143 +615,86 @@ EOF
 )"
 ```
 
-**Verify no placeholder text:**
-```bash
-bd show bd-5
-# Read entire output
-# Confirm: All sections have actual content
-# Confirm: No "[detailed above]", "[as specified]", "[will be added]"
-# ✅ Task ready for implementation
-```
-
-**What you gain:**
-- Junior engineer has complete specification
-- No blocked implementation waiting for details
-- All edge cases documented upfront
-- Verification explicit and checkable
-- Context prevents common mistakes
-- No placeholder text - task truly ready
-- Professional SRE review standard maintained
+**Verify no placeholder text:** `bd show bd-5`, read the entire output, confirm every section has actual content.
 </correction>
 </example>
 
 <example>
-<scenario>Developer accepts vague verification criteria (Category 3)</scenario>
+<scenario>Reviewer strengthens vague criteria by adding everything that could be measured (Category 3 without Category 9)</scenario>
 
 <code>
 # Review of bd-7: Implement Data Encryption
 
 bd show bd-7:
-
 ## Verification
 - [ ] Encryption is implemented correctly
 - [ ] Code is good quality
 - [ ] Tests work properly
+- [ ] Coverage >90% via cargo tarpaulin
 
-# Developer's review:
-"Has 3 verification criteria ✅ Meets minimum requirement"
+# Epic requirements: R1 "files encrypted at rest with AES-256-GCM", R2 "key derived
+# from the user's passphrase", R3 "existing suite passes". Anti-patterns: NO unwrap
+# in production code.
 
-# During implementation:
-Junior engineer: "How do I know if encryption is 'correct'?"
-Junior engineer: "What makes code 'good quality'?"
-Junior engineer: "What does 'tests work properly' mean?"
-
-# Junior engineer makes best guesses:
-- Uses ECB mode (insecure, should use GCM)
-- No key rotation (bad practice)
-- Tests only happy path (misses edge cases)
-
-# Code review finds critical security issues
-# Complete rewrite required - 3 days wasted
+# Reviewer's update — five headed blocks, twenty-six criteria:
+**Encryption Implementation**: AES-256-GCM; PBKDF2 100,000 iterations; unique IV; auth tag verified
+**Code Quality**: clippy; rustfmt; no unwrap; no TODO
+**Test Coverage**: 12+ named tests including test_large_plaintext_10mb and
+  test_concurrent_encryption; coverage >90% via cargo tarpaulin
+**Documentation**: module docstring; function examples; security considerations documented
+**Security Review**: no hardcoded keys; key zeroized after use; constant-time tag comparison
 </code>
 
 <why_it_fails>
-- Category 3 check: "All criteria testable/verifiable?" ❌ FAILED
-- "Implemented correctly" - not measurable (correct by what standard?)
-- "Good quality" - subjective, not verifiable
-- "Work properly" - vague, what is proper?
-- Junior engineer can't verify criteria objectively
-- Makes incorrect assumptions filling gaps
-- Security vulnerabilities introduced
-- Wastes time on implementation that fails review
-- SRE review failed to strengthen criteria
+- Three vague criteria became twenty-six measurable ones, and most trace to nothing: no requirement sets a coverage threshold, a 10MB performance case, concurrency (the CLI encrypts one file per invocation), an iteration count, or documentation content
+- The executor spends its budget on tarpaulin and docstrings, and the review that follows checks those instead of R1-R3
+- Category 3 was applied without Category 9: measurable is necessary, not sufficient
 </why_it_fails>
 
 <correction>
-**Apply Category 3 rigorously:**
+**Strengthen each criterion to something measurable that traces:**
 
 ```markdown
-## Verification Analysis for bd-7
+## Verification analysis for bd-7
 
-Current criteria:
-- [ ] Encryption is implemented correctly
-  ❌ NOT TESTABLE - "correctly" is subjective, no standard specified
+Current: 0 testable criteria (Category 3) → strengthen; one measurable criterion that traces to nothing (Category 9) → remove. Each replacement must trace:
 
-- [ ] Code is good quality
-  ❌ NOT TESTABLE - "good quality" is opinion, not measurable
+- "Encryption is implemented correctly"
+  → AES-256-GCM with a unique IV per call and the auth tag verified on decrypt (R1)
+- "Code is good quality"
+  → `cargo clippy -- -D warnings` clean; `rg '\.unwrap\(\)' src/crypto/` returns 0 (anti-pattern: NO unwrap)
+- "Tests work properly"
+  → `cargo test crypto` passes with: roundtrip; wrong key fails auth; modified ciphertext fails auth (R1: authenticated encryption); empty plaintext (edge case: the CLI accepts an empty file; consequence: a zero-length ciphertext must still carry a tag)
 
-- [ ] Tests work properly
-  ❌ NOT TESTABLE - "properly" is vague, no definition
+Removed:
+- coverage >90% — no requirement sets a threshold; R3 says the suite passes
 
-Minimum requirement: 3+ specific, measurable, testable criteria
-Current: 0 testable criteria
-DECISION: REJECT ❌
+Not added, with reason:
+- 10MB and concurrency tests — the CLI encrypts one file per invocation; no path reaches concurrent calls
+- PBKDF2 iteration count — R2 says derived from the passphrase; the count is the executor's call within the library's default
+- documentation criteria — no requirement names docs
 ```
 
-**Update with measurable criteria:**
+**Update:**
 ```bash
 bd update bd-7 --design "$(cat <<'EOF'
 [... original content ...]
 
 ## Verification
-
-**Encryption Implementation**:
-- [ ] Uses AES-256-GCM mode (verified in code review)
-- [ ] Key derivation via PBKDF2 with 100,000 iterations (NIST recommendation)
-- [ ] Unique IV generated per encryption (crypto_random)
-- [ ] Authentication tag verified on decryption
-
-**Code Quality** (automated checks):
-- [ ] Clippy clean with no warnings: `cargo clippy -- -D warnings`
-- [ ] Rustfmt compliant: `cargo fmt --check`
-- [ ] No unwrap/expect in production: `rg "\.unwrap\(\)|\.expect\(" src/` returns 0
-- [ ] No TODOs without issue numbers: `rg "TODO" src/` returns 0
-
-**Test Coverage**:
-- [ ] 12+ unit tests pass covering:
-  - test_encrypt_decrypt_roundtrip (happy path)
-  - test_wrong_key_fails_auth (security)
-  - test_modified_ciphertext_fails_auth (security)
-  - test_empty_plaintext (edge case)
-  - test_large_plaintext_10mb (performance)
-  - test_unicode_plaintext (data handling)
-  - test_concurrent_encryption (thread safety)
-  - test_iv_uniqueness (security)
-  - [4 more specific scenarios]
-- [ ] All tests pass: `cargo test encryption`
-- [ ] Test coverage >90%: `cargo tarpaulin --packages encryption`
-
-**Documentation**:
-- [ ] Module docstring explains encryption scheme (AES-256-GCM)
-- [ ] Function docstrings include examples
-- [ ] Security considerations documented (key management, IV handling)
-
-**Security Review**:
-- [ ] No hardcoded keys or IVs (verified via grep)
-- [ ] Key zeroized after use (verified in code)
-- [ ] Constant-time comparison for auth tag (timing attack prevention)
+- [ ] AES-256-GCM with a unique IV per call; auth tag verified on decrypt (R1)
+- [ ] `cargo clippy -- -D warnings` clean
+- [ ] `rg '\.unwrap\(\)' src/crypto/` returns 0
+- [ ] `cargo test crypto` passes: roundtrip, wrong-key fails auth, modified-ciphertext fails auth, empty plaintext carries a tag
+- [ ] `cargo test` passes (R3)
 EOF
 )"
 ```
 
-**What you gain:**
-- Every criterion objectively verifiable
-- Junior engineer knows exactly what "done" means
-- Automated checks (clippy, fmt, grep) provide instant feedback
-- Specific test scenarios prevent missed edge cases
-- Security requirements explicit (GCM, PBKDF2, unique IV)
-- No ambiguity - can verify each criterion with command or code review
-- Professional SRE review standard: measurable, testable, specific
+**Report entry:**
+```markdown
+**Changes Made**: replaced three vague criteria with five measurable ones traced to R1, R3, and the unwrap anti-pattern
+**Removed / Over-specified**: coverage >90% — no requirement sets a threshold; R3 says the suite passes. The other three blocks were not added (reasons in the analysis)
+```
 </correction>
 </example>
 </examples>
@@ -906,14 +702,14 @@ EOF
 <critical_rules>
 ## Rules That Have No Exceptions
 
-1. **Apply all 8 categories to every task** → No skipping any category for any task
+1. **Apply all 9 categories to every task** → No skipping any category for any task
 2. **Reject plans with placeholder text** → "[detailed above]", "[as specified]" = instant reject
 3. **Verify no placeholder after updates** → Read back with `bd show` and confirm actual content
 4. **Flag tasks exceeding the ceiling** → Recommend a split in the report (see "Recommending Task Splits"); ceiling defined in `skills/common-patterns/pipeline-constants.md`
-5. **Strengthen vague criteria** → "Works correctly" → measurable verification commands
-6. **Add edge cases to every task** → Empty? Unicode? Concurrency? Failures?
-7. **Never skip Category 6** → Edge case analysis prevents production issues
-8. **Reject tautological tests** → Tests must catch bugs, not verify compiler-checked facts
+5. **Strengthen vague criteria** → "Works correctly" → measurable verification commands that trace
+6. **Ask the edge-case questions of every task** → Add the cases that reach it with a named consequence; trim the ones that don't
+7. **Every item traces or goes** → Your own additions are held to the same test as the author's (Category 9)
+8. **Strengthen tautological tests** → Tests must catch bugs, not verify compiler-checked facts
 
 ## Common Excuses
 
@@ -923,8 +719,10 @@ All of these mean: **STOP. Apply the full process.**
 - "Has 3 criteria, meets minimum" (Criteria must be measurable, not just 3+ items)
 - "Placeholder text is just formatting" (Placeholders mean incomplete specification)
 - "Can handle edge cases during implementation" (Must specify upfront, not defer)
-- "Junior will figure it out" (Junior should NOT need to figure out - we specify)
-- "Too detailed, feels like micromanaging" (Detail prevents questions and rework)
+- "The executor will figure it out" (A cold executor has nothing to figure it out from — we specify)
+- "Too detailed, feels like micromanaging" (Detail the executor needs is not micromanagement; detail no requirement needs is over-specification — trim it, don't keep it to be safe)
+- "More edge cases can't hurt" (Every item costs executor context and review attention; a case with no consequence in this epic is noise the executor has to weigh)
+- "Detail prevents questions" (Detail that traces prevents questions; detail that doesn't creates them — the executor asks why it is there)
 - "Taking too long to review" (One gap caught saves hours of rework)
 - "Any tests are better than none" (Tautological tests are worse - give false confidence)
 - "Tests are specified, don't need to review them" (Test quality matters more than quantity)
@@ -935,40 +733,19 @@ All of these mean: **STOP. Apply the full process.**
 Before completing SRE review:
 
 **Per task reviewed:**
-- [ ] Applied all 8 categories (Granularity, Implementability, Verification, Dependencies, Safety, Edge Cases, Red Flags, Test Meaningfulness)
+- [ ] Applied Categories 1-9
 - [ ] Checked for placeholder text in design field
-- [ ] Updated task with missing information via `bd update --design`
-- [ ] Verified updated task with `bd show` (no placeholders remain)
+- [ ] Applied strengthening and trims via `bd update --design`, then read back with `bd show` (no placeholders remain)
+- [ ] Recorded every trim under Removed / Over-specified with its reason
 - [ ] Recommended splits in the report for any task exceeding the ceiling in `skills/common-patterns/pipeline-constants.md`
-- [ ] Strengthened vague verification criteria to measurable
-- [ ] Added edge case analysis to Context (or Verification notes for a simple task)
-- [ ] Strengthened anti-patterns based on failure modes
-- [ ] Verified test specifications catch real bugs (not tautological)
 
 **Overall plan:**
-- [ ] Reviewed ALL tasks/phases/subtasks (no exceptions)
 - [ ] Verified dependency structure with `bd list --parent` + per-task `bd show`
-- [ ] Documented findings for each task
-- [ ] Created summary of changes made
-- [ ] Provided clear recommendation (APPROVE/NEEDS REVISION/REJECT)
 
 **Can't check all boxes?** Return to review process and complete missing steps.
 </verification_checklist>
 
 <integration>
-**This skill is used after:**
-- hyperpowers:brainstorming (establishes requirements and creates the full task tree; Step 7 calls this in batch mode — the mainline path)
-- hyperpowers:writing-plans (off-mainline: repairs or expands a spec that bypassed the brainstorm flow)
-
-**This skill is used before:**
-- hyperpowers:executing-plans (implements tasks)
-
-**Modes:**
-- **Single-task mode** (default): review one task at a time — for specs hyperpowers:writing-plans repaired or expanded
-- **Batch mode**: review full task tree as a unit — required from brainstorming Step 7 after the complete task tree is created; this is the mainline path
-
-**Both modes run in a dispatched fresh subagent** (see "How This Skill Is Invoked") — never inline in the context that authored or repaired the plan.
-
 **Call chains:**
 ```
 Upfront planning (batch mode, mainline):
@@ -980,40 +757,4 @@ Spec repair (single-task mode, off-mainline):
 hyperpowers:writing-plans (repairs/expands a spec) → hyperpowers:sre-task-refinement [SINGLE] → hyperpowers:executing-plans
 ```
 
-**This skill uses:**
-- bd commands (show, update, dep tree)
-- Google Fellow SRE perspective (20+ years distributed systems)
-- 8-category checklist (mandatory for every task, in both modes)
-
-**Time expectations:**
-- Single task: 3-5 minutes
-- Small epic (3-5 tasks) batch: 15-20 minutes
-- Medium epic (6-10 tasks) batch: 25-40 minutes
-- Large epic (10+ tasks) batch: 45-60 minutes
-
-**Don't rush:** Catching one critical gap pre-implementation saves hours of rework.
 </integration>
-
-<resources>
-**Review patterns:**
-- Task too large (exceeds the ceiling in `skills/common-patterns/pipeline-constants.md`) → Recommend a split into simple or medium subtasks per the bands there (see "Recommending Task Splits")
-- Vague criteria ("works correctly") → Measurable commands/checks
-- Missing edge cases → Add to Context (medium) or Verification notes (simple) with mitigations
-- Placeholder text → Rewrite with actual content
-- Tautological tests → Strengthen to catch specific bugs
-
-**Test meaningfulness questions:**
-- "What bug would this catch?" → If you can't name one, test is pointless
-- "Could code break while test passes?" → If yes, test is too weak
-- "Is this testing the mock or production code?" → Mock-testing is useless
-- "Is the assertion meaningful?" → `!= nil` is weaker than `== expectedValue`
-
-**When stuck:**
-- Unsure if task too large → Ask: Does it fit within the ceiling in `skills/common-patterns/pipeline-constants.md`? If not, recommend a split in your report.
-- Unsure if criteria measurable → Ask: Can I verify with command/code review?
-- Unsure if edge case matters → Ask: Could this fail in production?
-- Unsure if placeholder → Ask: Does this reference other content instead of providing content?
-- Unsure if test meaningful → Ask: What specific production bug does this prevent?
-
-**Key principle:** Junior engineer should be able to execute task without asking questions. If they would need to ask, specification is incomplete. Tests must catch bugs, not inflate metrics.
-</resources>
