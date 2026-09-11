@@ -69,6 +69,19 @@ These rationalizations appear across multiple contexts. When you catch yourself 
 | "Partner will review anyway" | You review first. Don't delegate your quality check. |
 | "Good enough for now" | "Now" becomes "forever". Do it right. |
 
+## Comment Shortcuts
+
+| Excuse | Reality |
+|--------|---------|
+| "It's an invariant, so the policy allows it" | The policy allows the sentence that states it, not the paragraph that proves it. |
+| "This clause is subtle, one sentence won't hurt" | Make the code say it. If you cannot name the wrong edit the comment prevents, there is no comment. |
+| "The reviewer requires evidence for every claim" | Evidence goes in the test and the commit body. A comment that argues with a reviewer is noise even when true. |
+| "Someone might 'simplify' this away, so I'll warn them" | A comment written for an imagined critic is noise. One sentence of hazard, or nothing. |
+| "The reviewer said the comment was wrong, so I corrected it" | A wrong comment is cut or deleted, never extended. |
+| "Every clause here has a hazard" | Then each gets one sentence. A hazard that needs a paragraph is an ADR. |
+| "The policy is never numeric, so volume can't be a finding" | Shape is evidence. A comment longer than its code is presumed misplaced until each sentence passes. |
+| "The spec explained it, so the code should too" | The spec is for the executor. Nothing in Why or Context is transcribed into comments. |
+
 ## TDD Shortcuts
 
 | Excuse | Reality |

@@ -51,8 +51,9 @@ than restate it.
   logic, missing error handling, broken contract, meaningful test gap.
   Resolution: the executor re-dispatch loop (executing-plans owns the
   handling); the Opus promotion ladder below applies.
-- `[convention]` — style/prose/doc surface: noise comments, docstring drift,
-  naming nits, formatting, stale cross-references. Resolution: the consuming
+- `[convention]` — style/prose/doc surface: noise comments (a `Contract:
+  comment policy` miss under the standing scope — `spec-templates.md`),
+  docstring drift, naming nits, formatting, stale cross-references. Resolution: the consuming
   pipeline's bounded carve-out — executing-plans' lead-fix valve in-epic, or
   peek's fix path at review (Peek Fix Carve-out below) — no dispatch, no
   re-review round, never promotes.
@@ -117,6 +118,10 @@ by the follow-up it requires, not by how the defect feels:
     Reading effort is not a cost: "confusing", "unclear", "harder to read",
     "surprising", and their synonyms never fill this line, and neither does
     a fact the site already states in code, a docstring, or a comment.
+    A comment-policy violation (`prose-style.md`, Comment Policy) never
+    travels through this line: in-epic it is a `Contract:` miss under the
+    standing scope; on peek it is a `[convention]` finding, fix-eligible
+    under the carve-out at whatever tier its line supports.
 
   A finding that fills neither line is Suggestion, whatever it feels like.
   Severity is a property of the code and the delta, never of what the

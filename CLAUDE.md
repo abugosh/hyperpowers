@@ -171,7 +171,7 @@ To avoid duplication, common elements are centralized in `skills/common-patterns
 - `brainstormable-unit.md` - The unit schema: seven sections, two transports (phase-doc slice, bd leaf epic), cold-session test, additive-only evolution
 - `common-anti-patterns.md` - Anti-patterns to avoid
 - `common-rationalizations.md` - Excuses that signal failure
-- `prose-style.md` - Comment policy, the boy-scout rule, the audience contract (reports written for the architect-governor reader, a top layer over an evidence layer), and the human-facing prose baseline
+- `prose-style.md` - Comment policy (default no comment; the next-maintainer reader; the channel table for proof; cut-never-extend; shape as evidence), the boy-scout rule, the audience contract (reports written for the architect-governor reader, a top layer over an evidence layer), and the human-facing prose baseline
 
 Skills reference these rather than duplicating content.
 

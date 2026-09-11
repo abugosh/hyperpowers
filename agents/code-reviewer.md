@@ -18,7 +18,7 @@ A finding is a **concern** when it is a contract miss or fills a Severity Anchor
 ## Review order
 
 1. **Spec-match** — read the spec's Goal, Changes or Implementation, Tests, and Verification, then the diff and the full files it touches. Name every place the change departs from the spec, and say whether the departure is a miss or an improvement the spec did not foresee (an improvement is a SUGGESTION for the lead, not a concern).
-2. **Code quality** — error handling on reachable paths (Result or try/catch, no unwrap or panic that production can hit), unsafe or injectable input, tests that can actually fail (`testing-anti-patterns`), and comments per the comment policy (`skills/common-patterns/prose-style.md`).
+2. **Code quality** — error handling on reachable paths (Result or try/catch, no unwrap or panic that production can hit), unsafe or injectable input, tests that can actually fail (`testing-anti-patterns`), and comments per the comment policy (`skills/common-patterns/prose-style.md`). A comment addressed to the reviewer, carrying proof (test IDs, mutation results, another file's contents), or longer than the code it annotates is a `[convention]` concern opening `Contract: comment policy` — the policy is standing scope, so this route never runs through the `Maintainer cost:` line and the reading-effort exclusion does not shield it. When a file's comment lines outnumber its code lines, say so in the concern and name the blocks.
 
 ## Stage-2 verdict contract
 

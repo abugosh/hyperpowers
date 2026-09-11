@@ -52,6 +52,17 @@ Unused-code tools run project-wide by nature (`cargo build` dead_code warnings, 
 
 Orphaned tests: for each production file in `$DELTA`, confirm the tests exercising it still reference functionality that exists — flag any test whose target function or class was removed in this diff. For markdown-only projects the same audit is stale cross-references, references to removed files or features, and outdated command examples, within `$DELTA`.
 
+### Comment shape
+
+```bash
+for f in $DELTA; do
+  c=$(grep -cE '^\s*(--|#|//|\*|/\*)' "$f"); n=$(grep -vE '^\s*(--|#|//|\*|/\*)' "$f" | grep -cvE '^\s*$')
+  echo "$f code=$n comment=$c"
+done
+```
+
+Adapt the marker to the project's languages; skip this check for markdown-only projects. Any file where comments reach or exceed code, and any single comment block longer than the code it annotates, is read against the comment policy (`skills/common-patterns/prose-style.md`) one block at a time; each block that fails is a `[convention]` gap opening `Contract: comment policy`, with the table row its content belongs in. The counts go in the verdict's Delta Checks block whatever they show.
+
 ### Epic anti-pattern check
 
 Search `$DELTA` for every prohibited pattern from the epic's Anti-Patterns section (Startup step 2).
@@ -69,7 +80,7 @@ If the project has no automated test suite, note this in your findings:
 Quality Gates: No automated test suite detected. Manual verification required.
 ```
 
-Record these four results once, in the verdict's Delta Checks block — not per task.
+Record these five results once, in the verdict's Delta Checks block — not per task.
 
 ## Review Process
 
@@ -98,7 +109,7 @@ Continue with remaining tasks.
 Apply production-grade scrutiny to the artifact. Ask, for the files read in Step 2:
 - **Error handling** — do errors on reachable paths propagate with context (Result/Option, try/catch), or unwrap, panic, and swallow?
 - **Safety** — bounds, races, injection (SQL, XSS, command), unsafe blocks without a stated invariant?
-- **Clarity** — does the code state what the next change needs to know: one responsibility per function, names that say what the thing does, comments per the comment policy (`skills/common-patterns/prose-style.md`)?
+- **Clarity** — does the code state what the next change needs to know: one responsibility per function, names that say what the thing does, comments per the comment policy (`skills/common-patterns/prose-style.md`)? A comment addressed to the reviewer, carrying proof (test IDs, mutation results, another file's contents), or longer than the code it annotates is a `[convention]` gap opening `Contract: comment policy` — standing scope, never a reading-effort claim.
 - **Production readiness** — could this cause an outage or data loss; is there enough logging to debug it?
 
 ### Step 4: Audit new tests for meaningfulness
@@ -172,6 +183,7 @@ APPROVED means: no gap stands — every contract item (task spec and standing sc
 - TODOs / stubs / unsafe patterns / ignored tests: [result]
 - Refactoring remnants / unused code / orphaned tests: [result]
 - Epic anti-patterns: [each pattern — found/not found, with evidence]
+- Comment shape: [per-file code/comment counts; blocks failing the policy, or none]
 
 ### Test Quality Audit
 - Meaningful tests: N
@@ -211,6 +223,7 @@ APPROVED means: no gap stands — every contract item (task spec and standing sc
 - TODOs / stubs / unsafe patterns / ignored tests: [result]
 - Refactoring remnants / unused code / orphaned tests: [result]
 - Epic anti-patterns: [each pattern — found/not found, with evidence]
+- Comment shape: [per-file code/comment counts; blocks failing the policy, or none]
 
 ### Test Quality Audit
 - Meaningful tests: N

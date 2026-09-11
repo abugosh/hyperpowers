@@ -178,7 +178,7 @@ If the Stage-2 code-reviewer returns PASS: verify the working branch, run `bd cl
 
 If the Stage-2 code-reviewer returns CONCERNS: the concern lines arrive class-tagged (`[capability]` or `[convention]`, one tag per line — format: `skills/common-patterns/loop-interfaces.md`). The lead owns final classification (`skills/common-patterns/pipeline-constants.md`, Finding Classification) and may retag a line; record the retag in a one-line bd note. Resolution splits by class:
 
-- **`[convention]` concerns — lead fixes them directly, now.** Edit the named sites yourself, verify by grep/read against each concern line, commit on the working branch, and record it: `bd update <task-id> --notes "Convention concerns lead-fixed: <short list> (<commit hash>)"`. No re-dispatch and no Stage-2 re-run for these lines. **Bound:** a convention fix must not change behavior. If mid-fix it turns out to require one, stop, retag the line `[capability]` (one-line bd note), and route it through the capability path below.
+- **`[convention]` concerns — lead fixes them directly, now.** Edit the named sites yourself, verify by grep/read against each concern line, commit on the working branch, and record it: `bd update <task-id> --notes "Convention concerns lead-fixed: <short list> (<commit hash>)"`. No re-dispatch and no Stage-2 re-run for these lines. **Bound:** a convention fix must not change behavior, and a convention fix to a comment cuts or deletes it — never extends it (`skills/common-patterns/prose-style.md`, Comment Policy). If mid-fix it turns out to require one, stop, retag the line `[capability]` (one-line bd note), and route it through the capability path below.
 - **`[capability]` concerns — re-dispatch** with the capability concern list only (template below). Promotion rule unchanged: if this is the task's first re-dispatch and it is not already promoted, add `Executor: opus` to the task spec and note it in bd (e.g. `bd update <task-id> --notes "Auto-promoted to opus after Stage 2 [capability] CONCERNS"`). **Round cap (`skills/common-patterns/pipeline-constants.md`): after 2 capability fix→re-review rounds on the same task without PASS, stop and escalate (section 5), carrying the concern history from every round.**
 - **Mixed verdicts:** lead-fix the `[convention]` lines first, then re-dispatch with only the `[capability]` lines.
 - **`SUGGESTION:` lines** are non-blocking: persist them to the epic's bd notes as optional follow-ups. Never act on them in-round; they never gate task closure.
@@ -227,6 +227,8 @@ Re-execute this task. The Stage-2 code review returned CONCERNS.
 Concerns to address:
 - <file:line — capability concern 1>
 - <file:line — capability concern 2>
+
+Explain the fix in the commit message body. The code carries at most a one-sentence hazard per site; nothing written to satisfy this review goes in a comment (skills/common-patterns/prose-style.md, Comment Policy).
 
 Task: <bd-task-id>
 
@@ -343,7 +345,7 @@ After all tasks return DONE and pass two-stage review:
 
    **GAPS FOUND:** Gap entries arrive class-tagged, same vocabulary as Stage 2 (`skills/common-patterns/loop-interfaces.md`); the lead owns final classification (`skills/common-patterns/pipeline-constants.md`, Finding Classification). Resolve by class:
 
-   - **`[convention]` gaps:** the lead fixes them directly under the same bounded carve-out as Stage 2 — no fix task, no executor. Edit, verify against each gap entry, commit on the working branch, and record it in the epic's bd notes (`bd update <epic-id> --notes "Convention gaps lead-fixed: <short list> (<commit hash>)"`). Same bound: if a fix turns out to require a behavior change, stop, retag it `[capability]`, and route it below.
+   - **`[convention]` gaps:** the lead fixes them directly under the same bounded carve-out as Stage 2 — no fix task, no executor. Edit, verify against each gap entry, commit on the working branch, and record it in the epic's bd notes (`bd update <epic-id> --notes "Convention gaps lead-fixed: <short list> (<commit hash>)"`). Same bounds — behavior unchanged, comments cut and never extended: if a fix turns out to require a behavior change, stop, retag it `[capability]`, and route it below.
    - **`[capability]` gaps:** create fix task(s) inline — spec body per the tier templates in `skills/common-patterns/spec-templates.md` — and link each to the epic: `bd dep add bd-<fix-task> bd-<epic-id> --type parent-child` (the completion re-check and re-review enumerate tasks via `bd list --parent`) — then dispatch executors. This is the one exception to "all tasks planned upfront." These gap-fix tasks follow the same dispatch and two-stage review loop.
 
    After ALL gaps are resolved — both classes — re-dispatch the end-of-epic reviewer. This re-review is mandatory and unchanged: convention gaps being lead-fixed does not exempt the epic from it.

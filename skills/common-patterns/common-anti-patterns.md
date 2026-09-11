@@ -77,6 +77,14 @@ Anti-patterns that apply across multiple skills. Reference this to avoid duplica
 
 ❌ No "we'll do this later"
    Either do it now or create bd issue and reference it
+
+❌ No comments written for the reviewer
+   "Pinned: drop this and C1 reds", "not defensive padding", "do not simplify"
+   — that is evidence and argument; it lives in the test, the commit body,
+   and bd notes (skills/common-patterns/prose-style.md, Comment Policy)
+
+❌ No comment that proves its own claim
+   State the hazard in a sentence. The proof has a home, and it is never the code
 ```
 
 ### Testing

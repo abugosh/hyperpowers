@@ -5,17 +5,70 @@ human-facing prose baseline. Skills reference this file — never restate it.
 
 ## Comment Policy
 
-A comment earns its place by stating what the code cannot: a constraint, an
-invariant, a non-obvious why, a hazard. Anything else is noise — a comment
-that narrates the next line, restates what the code already says, summarizes
-the change for a reviewer, or justifies the edit. Noise is a review defect:
-reviewers flag it as a `[convention]` finding
-(`skills/common-patterns/pipeline-constants.md`, Finding Classification).
+The default is no comment. A comment earns its place by stating what the
+code cannot: a constraint, an invariant, a non-obvious why, a hazard.
+Anything else is noise — a comment that narrates the next line, restates
+what the code already says, summarizes the change for a reviewer, or
+justifies the edit. Passing that test is necessary, not sufficient: the
+rules below decide what a legitimate comment may contain and how long it may
+be. When in doubt, leave it out — a file with zero comments is clean, and
+between a defensive paragraph and nothing, nothing wins.
 
-The policy is semantic, never numeric. There is no comment-count rule, no
-ratio, no per-file cap — a file with zero comments can be clean and a file
-with ten can be clean; judge each comment against the test above, not a
-quota.
+**The code first.** Before writing a comment, make the code say it: a name
+that carries the constraint, a CHECK or assertion that enforces it, a test
+whose message names it. A comment is what remains when none of those can
+hold the fact, and it exists for one reader — the editor who would
+otherwise make a specific wrong change. Name that change to yourself; if
+you cannot, there is no comment. A hazard the code already makes hard to
+break — a test reds, a constraint refuses — needs none. In a function with
+good names the usual number of comments is zero. The four categories above
+describe what a comment is about, never what earns one; "this is subtle"
+earns nothing.
+
+**The reader is the next maintainer, never the reviewer.** A comment is read
+by whoever edits that line next, cold, months later. It is never addressed
+to whoever is reviewing this change: no argument that the change is right,
+no answer to an earlier review round, no record of what an earlier version
+of the comment said, and no pre-emption of an objection nobody has raised —
+"this is not defensive padding", "do not simplify this back to X", "it is
+not theoretical". A comment that anticipates a critic is written for the
+critic, and the maintainer pays for it. Text written so the change survives
+review is noise even when every sentence of it is true.
+
+**State the hazard; never prove it.** A comment names the constraint and, if
+the code cannot show it, the one fact that makes it necessary — one or two
+sentences. The proof that the constraint holds is real content with a home
+of its own, and that home is never the code:
+
+| Content | Home |
+|---|---|
+| Which assertions fail if a clause is removed; mutation results | The test's own assertion messages; the task's bd note |
+| Why the change was made; the alternatives rejected | The commit message body |
+| A fact about another file — its guard, its index predicate, its line numbers | That file. Name the function or constraint if you must; never copy its contents or cite its lines |
+| A design decision and its reasoning | An ADR or the epic's bd notes; the comment names it |
+| Deferred work and why it waits | The tracker; the code carries the issue id at most |
+| What this comment used to say | Git history |
+
+A hazard that needs a paragraph is an ADR with a one-sentence comment
+pointing at it, never a paragraph in the code. A spec's Why and Context are
+written for the executor; nothing in them is transcribed into comments.
+
+**A wrong comment is cut, never extended.** When review finds a comment's
+claim false or overstated, the fix is to delete the comment or trim it to
+the sentence that is true. Rewriting it longer so it survives the next round
+is the defect growing; the lead-fix path never does it.
+
+**Shape is evidence.** The policy is semantic — no comment count, no ratio,
+no per-file cap, and ten good comments are clean. But a comment longer than
+the code it annotates, or a file whose comment lines outnumber its code
+lines, is presumed to carry misplaced content, and the presumption is
+rebutted one comment at a time against the rules above — never by observing
+that each comment is "about an invariant". Reviewers name the block and the
+table row its content belongs in, and file it as a `[convention]` concern
+opening `Contract: comment policy`: the policy is part of every task's
+standing scope (`skills/common-patterns/spec-templates.md`), so this is a
+contract miss and never a reading-effort claim
+(`skills/common-patterns/pipeline-constants.md`, Severity Anchor).
 
 Examples:
 
@@ -33,6 +86,26 @@ for user in users:
 # Noise — justifies the edit instead of the code
 # Changed this to a dict for O(1) lookup per code review feedback
 cache = {}
+```
+
+The same hazard, stated and then proved:
+
+```sql
+-- Legit — one sentence, the fact the code can't show
+-- A batch is tenant-wide, so batch_id alone would match every
+-- account's jobs.
+AND prior.account_id = v_account_id
+
+-- Noise — the same clause written for the reviewer. Every sentence is
+-- true, and every one has a home that is not this file.
+-- THE ACCOUNT SCOPE IS LOAD-BEARING AND IS NOT DEFENSIVE PADDING.
+-- chk_batches_shape forces account_id IS NULL on a tenant batch, so
+-- every account shares ONE batch_id. Without this clause retiring one
+-- account's job would cancel every other account's queued job, silently.
+-- Pinned: drop this clause and C1 and C2 red. It is not theoretical —
+-- test_requeue.sql already parks two accounts on one shared batch.
+-- Tracked as PROJ-123 for the tie case.
+AND prior.account_id = v_account_id
 ```
 
 ## Boy-Scout Rule

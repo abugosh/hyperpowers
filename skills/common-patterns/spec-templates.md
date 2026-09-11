@@ -87,6 +87,13 @@ task at both tiers: noise-comment cleanup within spec-named files is always
 in-scope. Specs need not restate it, and Boundaries sections do not need to
 re-grant it.
 
+The comment policy in the same file is standing scope too: every comment a
+task adds to or leaves in a spec-named file must pass it, and a reviewer
+files a failure as a `[convention]` concern opening `Contract: comment
+policy`. A spec's Why and Context are written for the executor — they
+explain the hazards so the executor honors them, and nothing in them is
+transcribed into the code.
+
 ## Prep-refactor kind
 
 A task that changes no behavior and exists so a named following task's
