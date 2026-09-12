@@ -64,7 +64,7 @@ bd show <task-id>            # Read each child task
 
 ### Report File Contract (batch mode)
 
-The dispatch prompt supplies an absolute report file path. Write the full report incrementally to that file — never hold it for a single final-message dump:
+The general rule is `skills/common-patterns/report-file-contract.md` — this section names what is specific to batch mode. The dispatch prompt supplies an absolute report file path. Write the full report incrementally to that file — never hold it for a single final-message dump. A file that already holds per-task blocks at dispatch is a re-dispatch: keep them and resume from the first task not yet reviewed.
 
 1. **Create the file at review start**, before reviewing the first task.
 2. **Append each per-task review block as it is completed** (Phase 1, one task at a time). A mid-run failure must leave partial evidence on disk, not nothing — if you stop after task 3 of 10, the file holds 3 complete task reviews.

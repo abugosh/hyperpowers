@@ -97,14 +97,20 @@ Definition sites cite this section; parse sites must match it exactly.
   lead persists to the epic's bd notes and never acts on in-round. Never the
   full structured review: the lead's context must not accumulate per-task
   review bodies.
-- **End-of-epic reviewer → lead (completion)** (defined in `agents/reviewer.md`):
-  structured verdict `APPROVED` or `GAPS FOUND` with the gap list. Gap
-  entries carry the same `[capability]`/`[convention]` tag and the same
-  `Contract:` / `Hits:` / `Maintainer cost:` qualifier as Stage 2. A
-  Suggestions section may follow the gap list; it never blocks approval.
+- **End-of-epic reviewer → lead (completion)** (defined in `agents/reviewer.md`,
+  report by file per `report-file-contract.md`): final message is exactly
+  one line — `REVIEW VERDICT: <APPROVED|GAPS FOUND> — <N> gaps — report: <path>`.
+  The structured verdict — Architect Summary, Tasks Reviewed, Evidence
+  Summary, Gaps, Delta Checks — lives in the file at the path; the lead
+  parses the verdict word immediately after `REVIEW VERDICT: ` and reads
+  the file for the gap entries. Gap entries carry the same
+  `[capability]`/`[convention]` tag and the same `Contract:` / `Hits:` /
+  `Maintainer cost:` qualifier as Stage 2. A Suggestions section may follow
+  the gap list; it never blocks approval.
 - **SRE batch reviewer → lead** (defined in `skills/sre-task-refinement/SKILL.md`,
-  batch mode Report File Contract; dispatched by brainstorming Step 7 and
-  analyzing-test-effectiveness Step 5): final message is exactly one line —
+  batch mode, report by file per `report-file-contract.md`; dispatched by
+  brainstorming Step 7 and analyzing-test-effectiveness Step 5): final
+  message is exactly one line —
   `SRE VERDICT: <APPROVE|NEEDS REVISION|REJECT> — report: <path> — <N> specs updated`.
   The full report lives in the file at the path; the lead parses the verdict
   word immediately after `SRE VERDICT: ` and reads the report file on demand.
@@ -140,4 +146,6 @@ Definition sites cite this section; parse sites must match it exactly.
   approves the table, and never appear in colleague-facing text.
 
 The vocabularies are deliberately stage-distinct — do not merge them; do
-not invent new verdict words at any site.
+not invent new verdict words at any site. Return lines that carry no verdict
+word (peek's RECON and lens lines, the intuition and test-audit lines) are
+registered in `report-file-contract.md`, not here.

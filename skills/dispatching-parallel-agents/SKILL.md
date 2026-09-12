@@ -16,7 +16,7 @@ MEDIUM FREEDOM - Follow the 6-step process (identify, create tasks, dispatch, tr
 |------|--------|---------------|
 | 1. Identify Domains | Test independence (fix A doesn't affect B) | 3+ independent domains required |
 | 2. Create Agent Tasks | Write focused prompts (scope, goal, constraints, output) | One prompt per domain |
-| 3. Dispatch Agents | Launch all agents in SINGLE message | Multiple Agent tool calls in parallel |
+| 3. Dispatch Agents | Launch all agents in SINGLE message | Multiple Agent tool calls in parallel; report-shaped returns by file |
 | 4. Triage Returns | Classify each return (complete/partial/failed), re-dispatch as needed | No mid-flight visibility — dispatch blocks until all return |
 | 5. Review Results | Read summaries, check conflicts | Manual conflict resolution |
 | 6. Verify Integration | Run full test suite | Use verification-before-completion |
@@ -166,6 +166,8 @@ Agent("Fix agent-tool-abort.test.ts failures", prompt1)
 Agent("Fix batch-completion-behavior.test.ts failures", prompt2)
 // This is sequential, not parallel!
 ```
+
+**Returns that are reports.** A fixer returns a short summary and stays inline. An agent whose return has sections — an investigation, an audit — gets a `Report path:` line and returns under `skills/common-patterns/report-file-contract.md`, so a stall leaves its partial work on disk and the re-dispatch resumes instead of restarting.
 
 **After dispatch:**
 - Mark "Dispatch agents in parallel" as completed in the tracker
@@ -506,7 +508,7 @@ npm test
 <failure_modes>
 ## Agent Returned Without Completing
 
-**Symptoms:** Summary is vague, agent wandered off-path, or it reports hitting a blocker
+**Symptoms:** Summary is vague, agent wandered off-path, it reports hitting a blocker, or its return stops mid-sentence
 
 **Causes:**
 - Prompt too vague, agent explored aimlessly
@@ -517,6 +519,7 @@ npm test
 1. If it wandered off-path: re-dispatch with a clearer, more constrained prompt
 2. If it needs context from other domain: re-dispatch sequentially with the sibling's result as context
 3. If it hit a real blocker: investigate the blocker yourself, then re-dispatch
+4. If the return was cut off: it was a report travelling inline — re-dispatch with a `Report path:` line (`skills/common-patterns/report-file-contract.md`) so the next return is one line and the work survives on disk
 
 ---
 

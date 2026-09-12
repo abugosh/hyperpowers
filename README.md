@@ -82,14 +82,14 @@ Quick access to key workflows:
 Domain-specific agents for complex tasks:
 
 - **executor** - Implements a single bd task; fresh instance dispatched per task (Sonnet by default, promotable per `skills/common-patterns/pipeline-constants.md`); reads self-contained task spec, implements, commits, returns one-liner status (DONE/BLOCKED/NEEDS_HELP) to lead
-- **reviewer** - Verifies implementation against bd epic spec; APPROVED is defined positively and every gap is a contract miss or meets the Severity Anchor's Important bar; returns the verdict led by an Architect Summary over file:line evidence
+- **reviewer** - Verifies implementation against bd epic spec; APPROVED is defined positively and every gap is a contract miss or meets the Severity Anchor's Important bar; writes the verdict, led by an Architect Summary over file:line evidence, to a report file and returns one line
 - **code-reviewer** - Reviews a task's change against its spec and production code quality; a concern is a contract miss or meets the same Important bar; the rest are suggestions
 - **codebase-investigator** - Understand current codebase state and patterns
 - **internet-researcher** - Research APIs, libraries, and current best practices
 - **test-runner** - Run tests/validations/commits without context pollution (uses Haiku)
 - **ponder** (subagent) - Single owner of all LikeC4 .c4 architecture-model operations (update, bootstrap, review); dispatched by the ponder skill
-- **peek** (subagent) - Four-mode branch review engine (RECON, CODE, ARCHITECTURE, DELIVERY); dispatched by the peek skill. RECON also gathers the MR's prior review state; lens findings carry anchored severity, class, and scope, and the skill derives a verdict (APPROVE / APPROVE WITH CHANGES / REQUEST CHANGES); the skill's lead may then resolve fix-eligible findings at the worktree behind the user's diff-approval gate (the agent itself stays read-only); every Critical and Important carries the Severity Anchor's `Hits:` or `Maintainer cost:` line, synthesis demotes a finding that cannot fill it, and behind the same gate the skill can submit a forge approval on APPROVE and APPROVE WITH CHANGES when the reviewer is not the author
-- **test-effectiveness-analyst** - Audits test effectiveness with SRE scrutiny (tautological tests, coverage gaming, weak assertions); returns a prioritized improvement plan
+- **peek** (subagent) - Four-mode branch review engine (RECON, CODE, ARCHITECTURE, DELIVERY); dispatched by the peek skill, each reporting by file. RECON also gathers the MR's prior review state; lens findings carry anchored severity, class, and scope, and the skill derives a verdict (APPROVE / APPROVE WITH CHANGES / REQUEST CHANGES); the skill's lead may then resolve fix-eligible findings at the worktree behind the user's diff-approval gate (the agent itself stays read-only); every Critical and Important carries the Severity Anchor's `Hits:` or `Maintainer cost:` line, synthesis demotes a finding that cannot fill it, and behind the same gate the skill can submit a forge approval on APPROVE and APPROVE WITH CHANGES when the reviewer is not the author
+- **test-effectiveness-analyst** - Audits test effectiveness with SRE scrutiny (tautological tests, coverage gaming, weak assertions); writes a prioritized improvement plan to a report file
 
 ### Hooks System
 

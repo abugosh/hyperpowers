@@ -327,13 +327,16 @@ After all tasks return DONE and pass two-stage review:
        Review the implementation for epic <epic-id>.
        Follow agents/reviewer.md exactly.
        Start with: bd show <epic-id>
+       Report path: <scratchpad>/epic-<epic-id>/review-<round>.md
    ```
+
+   The reviewer returns one `REVIEW VERDICT:` line (`skills/common-patterns/loop-interfaces.md`, Verdict Contracts). Parse the verdict word immediately after `REVIEW VERDICT: `, then read the verdict block under `## Implementation Review:` in the report file for the Architect Summary, the gap entries, and any Suggestions. Check the return and handle a non-compliant one per `skills/common-patterns/report-file-contract.md` — cited, not restated: re-dispatch once with the same path so the reviewer resumes from the Task Reviews already on disk, then escalate (section 5) with the partial file. A non-compliant return is channel failure and never counts against the gap-round cap below. Each gap round gets its own `<round>` number so the re-review's file does not overwrite the round it re-checks.
 
 3. Handle the verdict:
 
    **APPROVED:**
 
-   a. Verify the working branch, then persist the completion gate-state block to the epic's bd notes (format: `skills/common-patterns/loop-interfaces.md`), including any accumulated plan-impact notices. The block MUST include the machine-checkable marker line `Verdict: APPROVED (end-of-epic reviewer, <date>)` (format: `skills/common-patterns/loop-interfaces.md`). Any non-blocking `### Suggestions` section the reviewer returns goes to the epic's bd notes as optional follow-ups — never acted on in-round, same disposition as the GAPS FOUND branch.
+   a. Verify the working branch, then persist the completion gate-state block to the epic's bd notes (format: `skills/common-patterns/loop-interfaces.md`), including any accumulated plan-impact notices. The block MUST include the machine-checkable marker line `Verdict: APPROVED (end-of-epic reviewer, <date>)` (format: `skills/common-patterns/loop-interfaces.md`). Any non-blocking `### Suggestions` section in the reviewer's report file goes to the epic's bd notes as optional follow-ups — never acted on in-round, same disposition as the GAPS FOUND branch.
    b. Run the post-build Architecture Impact Check against the work just completed for this epic, per `skills/common-patterns/architecture-impact-check.md` (Post-Build Routing) — cite that file, do not restate the 5 questions here. Any YES routes per that file: dispatch `/ponder` in UPDATE mode when a model exists, or note-and-suggest in the completion report when no model exists.
    c. Present final status to the user, at architect altitude per the Audience Contract (`skills/common-patterns/prose-style.md`, The Reader — cite, don't restate):
       - **What was built:** at most 6 sentences of role-based plain language — the system change this epic delivered (components, behavior, contracts) — leaning on the reviewer's Architect Summary rather than restating the audit.
@@ -465,7 +468,7 @@ After each DONE return:
 
 Before completion:
 - [ ] `bd list --parent <epic-id> --status open` returns 0
-- [ ] End-of-epic reviewer dispatched as blocking subagent
+- [ ] End-of-epic reviewer dispatched as blocking subagent with a report path; verdict parsed from its `REVIEW VERDICT:` line and gaps read from the file's verdict block (`report-file-contract.md`)
 - [ ] APPROVED → gate-state persisted, post-build Architecture Impact Check run (per `architecture-impact-check.md`), final status presented, then STOP — no automatic call to finish-branch
 - [ ] GAPS FOUND → `[convention]` gaps lead-fixed and recorded in the epic's bd notes, `[capability]` gaps turned into linked fix tasks and dispatched, end-of-epic reviewer dispatched again to confirm
 - [ ] Gap-round cap respected (`pipeline-constants.md`): 2 reviewer re-dispatches without APPROVED → escalated (section 5), not a 3rd round

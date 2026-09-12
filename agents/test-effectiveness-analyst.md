@@ -151,17 +151,16 @@ For each module analyzed, identify missing corner case tests:
 
 ## Output Format (Return Contract)
 
-You are dispatched as a blocking subagent by hyperpowers:analyzing-test-effectiveness. Your final message IS this report — return it complete; do not summarize it away or address the end user directly. Write for the lead's next step (bd task creation).
+You are dispatched as a blocking subagent by hyperpowers:analyzing-test-effectiveness with a `Report path:` line. Write this report to that file per `skills/common-patterns/report-file-contract.md`: create the file before the first section, append each section as it completes in the order below, and write the Executive Summary last — it is the terminal section, compiled from the sections above it. A file that already holds sections is a re-dispatch: keep them and continue from the first missing one. Run the verify-before-return grep, then make your final message exactly:
+
+```
+TEST AUDIT: <N> tests — RED <r>, YELLOW <y>, GREEN <g>, <c> corner cases — report: <path>
+```
+
+Never return the report in chat; do not address the end user directly. Write for the lead's next step (bd task creation). No report path in the dispatch: return `ERROR: analyst dispatch missing report path` and stop.
 
 ```markdown
-# Test Effectiveness Analysis
-
-## Executive Summary
-- Total tests analyzed: N
-- RED (remove/replace): N (X%)
-- YELLOW (strengthen): N (X%)
-- GREEN (keep): N (X%)
-- Missing corner cases: N identified
+# Test Effectiveness Analysis: <scope>
 
 ## Critical Issues (RED - Must Address)
 
@@ -198,4 +197,11 @@ If available, run mutation testing to validate improvements:
 - Python: `mutmut run`
 
 Target: 80%+ mutation score for critical modules
+
+## Executive Summary
+- Total tests analyzed: N
+- RED (remove/replace): N (X%)
+- YELLOW (strengthen): N (X%)
+- GREEN (keep): N (X%)
+- Missing corner cases: N identified
 ```

@@ -56,16 +56,21 @@ Agent tool:
     self-check and assemble the report). Prose focus: <verbatim, or "none
     — full audit">.
     Working directory: <pwd>
-    Return the complete tension report (Step 3 format, including the
-    Architect Questions) as your final message — it is data for the lead,
-    not prose for a human. Do NOT run Step 4.
+    Report path: <scratchpad>/intuition-<date>/report.md
+    Write the tension report (Step 3 format, including the Architect
+    Questions) to the report path per
+    skills/common-patterns/report-file-contract.md — pass findings
+    appended as each pass completes, then the assembled report — and
+    return exactly one line:
+    TENSION REPORT: <N> tensions, <D> drift — report: <path>
+    It is data for the lead, not prose for a human. Do NOT run Step 4.
 ```
 
 Do not pass a model override — the analysis inherits the session model, and the codebase-investigator dispatches inside Steps 1-2 inherit the analysis subagent's model (design-tier evidence; do not downgrade).
 
-The lead presents the returned report to the architect verbatim, then runs Step 4 (Resolution Protocol) interactively. Rationale: the analytical phase is evidence-heavy — multiple investigator dispatches feeding 9 passes — and running it inline detonates the invoking session's context, especially when /intuition is reached from mid-brainstorm friction routing.
+The lead checks the return per the receiving rules in `skills/common-patterns/report-file-contract.md` (file present, `### Audit Outcome` present; one re-dispatch with the same path on a non-compliant return, resuming from the passes already on disk; then escalate with the partial file), reads the report from the file, and presents it to the architect verbatim, then runs Step 4 (Resolution Protocol) interactively. Rationale: the analytical phase is evidence-heavy — multiple investigator dispatches feeding 9 passes — and running it inline detonates the invoking session's context, especially when /intuition is reached from mid-brainstorm friction routing.
 
-If you are reading this as the dispatched analyst: Steps 0-3 below are yours to execute. Do not use AskUserQuestion; do not run Step 4.
+If you are reading this as the dispatched analyst: Steps 0-3 below are yours to execute. Do not use AskUserQuestion; do not run Step 4. Write to the report path as you go (`skills/common-patterns/report-file-contract.md`): create the file at Step 0; append each pass's raw findings under `## Pass Findings` as the pass completes (a file that already holds passes is a re-dispatch — resume from the first pass missing); then append the Step 3 report after the self-check. `### Audit Outcome` is the terminal section; the Architect Questions follow it. The final message is the one `TENSION REPORT:` line, never the report.
 
 ---
 
@@ -818,6 +823,7 @@ Before presenting the audit report:
 - [ ] Structural observations use neutral facts (counts, affected components, file paths)
 - [ ] No implementation-level detail (classes, functions, data structures)
 - [ ] Report includes module summary table and audit outcome
+- [ ] Report written to the dispatch's report path, passes appended as completed, `### Audit Outcome` present before return; final message is the one `TENSION REPORT:` line (`report-file-contract.md`)
 - [ ] ADR age check: stale ADRs (6+ months) flagged as maintenance notes (not tensions)
 - [ ] Step 4: each tension presented to architect with resolution options (accept/resolve/brainstorm/investigate/skip)
 - [ ] Step 4: ADRs created for Accept and Resolve paths

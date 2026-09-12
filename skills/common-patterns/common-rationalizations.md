@@ -60,6 +60,15 @@ These rationalizations appear across multiple contexts. When you catch yourself 
 | "Other tasks are waiting, should continue" | Current task incomplete = blocked. Finish all substeps first. |
 | "Can finish remaining steps later" | Later never comes. Complete all substeps now before closing task. |
 
+## Dispatch Shortcuts
+
+| Excuse | Reality |
+|--------|---------|
+| "The report is short enough to return inline" | A report with section headings travels by file (`report-file-contract.md`). Short reports truncate too; the file costs nothing. |
+| "The subagent put the whole report in chat, I'll use that" | A chat report is the truncation path. Read nothing from it; re-dispatch once with the same path so the agent resumes from the file. |
+| "Re-dispatch fresh, the partial file is junk" | The partial file is the evidence a resume starts from. Same path, same prompt; the agent continues from the first missing section. |
+| "The file write failed, returning inline is the fallback" | There is no fallback. Fix the write, then return the one line. |
+
 ## Quality Shortcuts
 
 | Excuse | Reality |

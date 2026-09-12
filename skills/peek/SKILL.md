@@ -4,7 +4,7 @@ description: "Use when reviewing a colleague's branch, MR, or PR ('review this b
 ---
 
 <skill_overview>
-Thin orchestrator for a fixed 8-step review flow: resolve the target, stand up a disposable worktree, dispatch the peek agent's RECON mode to establish intent, confirm that intent with the user, fan out three parallel judgment lenses (CODE, ARCHITECTURE, DELIVERY), synthesize their returns into a single aimed-vs-achieved report, offer gated fixes, a draft comment, and — when eligible — a forge approval, and always clean up the worktree. No bd epic is required — this is for reviewing someone else's branch, MR, or PR on demand.
+Thin orchestrator for a fixed 8-step review flow: resolve the target, stand up a disposable worktree, dispatch the peek agent's RECON mode to establish intent, confirm that intent with the user, fan out three parallel judgment lenses (CODE, ARCHITECTURE, DELIVERY), each writing its report to a file, synthesize those files into a single aimed-vs-achieved report, offer gated fixes, a draft comment, and — when eligible — a forge approval, and always clean up the worktree. No bd epic is required — this is for reviewing someone else's branch, MR, or PR on demand.
 
 All review protocol — mode charters, evidence rules, return contracts — lives in `agents/peek.md`. This skill never restates it; it only wires the flow.
 </skill_overview>
@@ -18,10 +18,10 @@ MEDIUM FREEDOM — the 8-step flow order and its gates (intent confirm, then Ste
 |------|--------|-----|
 | 1 | Resolve target | Parse `/peek` argument (URL / number / branch / none); detect forge + rung (`forge-detection.md`) |
 | 2 | Worktree setup | `git worktree add --detach <tmp> <ref>` (remote fetch or local ref); abort before creating anything if unresolved |
-| 3 | RECON dispatch | Agent tool, subagent_type "hyperpowers:peek", model "sonnet", blocking; returns aims, inventory, Prior Review |
+| 3 | RECON dispatch | Agent tool, subagent_type "hyperpowers:peek", model "sonnet", blocking; writes aims, inventory, Prior Review to `<run-dir>/recon.md` and returns the one RECON line (`report-file-contract.md`) |
 | 4 | Intent confirm gate | AskUserQuestion: confirm/correct/add aims, mark a surprise intended (becomes an aim), confirm/correct the Prior Review summary, opt-in suite run; HOLD on expiry |
-| 5 | Parallel lens dispatch | 3x Agent tool (CODE/ARCHITECTURE/DELIVERY), one message, no model override, blocking |
-| 6 | Synthesis | Lead dedups, applies the re-check (Critical and Important demotions, every move marked), marks fix-eligible findings `[fix-proposed]` per `pipeline-constants.md` (Peek Fix Carve-out), derives the pre-fix verdict and the Path line (loop-interfaces.md), runs the grading-word self-check (prose-style.md), assembles the report |
+| 5 | Parallel lens dispatch | 3x Agent tool (CODE/ARCHITECTURE/DELIVERY), one message, no model override, blocking, one report file each; a non-compliant lens is re-dispatched alone, once |
+| 6 | Synthesis | Lead reads the four report files, dedups, applies the re-check (Critical and Important demotions, every move marked), marks fix-eligible findings `[fix-proposed]` per `pipeline-constants.md` (Peek Fix Carve-out), derives the pre-fix verdict and the Path line (loop-interfaces.md), runs the grading-word self-check (prose-style.md), assembles the report |
 | 7 | Fix + comment gate | Elect a comment, fixes, and — on APPROVE / APPROVE WITH CHANGES at rung 1 when the identity read shows the caller is not the author — a forge approval (A); approve the exact diff, comment text, target, and approve command before anything leaves (B on a fix run, beside the comment at A otherwise); at most one comment per run, opening with the verdict, carrying the follow-up line under it (Critical: fix and re-review; Important: fix, no re-review), ending with the `<!-- peek: <sha> -->` marker; delivery order is fixes, comment, approval; every failure is reported verbatim, never retried |
 | 8 | Cleanup | `git worktree remove <tmp> --force` + prune; always runs, even on abort |
 </quick_reference>
@@ -64,6 +64,8 @@ If neither the fetch nor a local ref resolves the target, abort with a clear mes
 
 Put the tmp path under the system temp dir, unique per run. Resolve the base ref via the base-branch idiom cited from `forge-detection.md` (Base branch section). Record the worktree path — every dispatch in Steps 3-5 and the cleanup in Step 8 need it.
 
+Create the run's report directory in the session scratchpad — `<scratchpad>/peek-<run-id>/` — and record it: every dispatch in Steps 3-5 names its own file there (`recon.md`, `code.md`, `architecture.md`, `delivery.md`) per `skills/common-patterns/report-file-contract.md`, and Step 6 synthesizes from those files. The directory is session scratch and is not cleaned up by Step 8; the worktree is.
+
 Record these further facts at setup; Step 7's fix path reads all of them:
 
 - **Target kind** — remote or local, as resolved above.
@@ -84,9 +86,10 @@ Agent tool:
     Target: <branch> -> <base ref>
     Worktree path: <tmp-path>
     Forge: <gh | glab | none> at rung <1 | 2 | 3>
+    Report path: <run-dir>/recon.md
 ```
 
-Blocking (no `team_name`). RECON's return contract (Stated Aims, Change Inventory, Surprises, Intent Basis, Coverage) is defined in `agents/peek.md` — do not restate it here.
+Blocking (no `team_name`). RECON's return contract (Stated Aims, Change Inventory, Surprises, Intent Basis, Coverage) is defined in `agents/peek.md` — do not restate it here. It arrives as the file at the report path plus the one `RECON:` line; check the return per the receiving rules in `skills/common-patterns/report-file-contract.md` (file present, Coverage present) before Step 4, and read Stated Aims, Surprises, and Prior Review from the file — the line's counts are a pointer, not the input.
 
 ## Step 4: Intent Confirm Gate (Interactive)
 
@@ -104,16 +107,20 @@ One message, three Agent calls:
 
 ```
 Agent tool (single message, three calls — no team_name):
-  1. subagent_type: "hyperpowers:peek", prompt: "Mode: CODE ..."
-  2. subagent_type: "hyperpowers:peek", prompt: "Mode: ARCHITECTURE ..."
-  3. subagent_type: "hyperpowers:peek", prompt: "Mode: DELIVERY ..."
+  1. subagent_type: "hyperpowers:peek", prompt: "Mode: CODE ... Report path: <run-dir>/code.md"
+  2. subagent_type: "hyperpowers:peek", prompt: "Mode: ARCHITECTURE ... Report path: <run-dir>/architecture.md"
+  3. subagent_type: "hyperpowers:peek", prompt: "Mode: DELIVERY ... Report path: <run-dir>/delivery.md"
 ```
 
-No `model` field on any of the three — lenses inherit the session model (review depth is the product; it must not be silently downgraded).
+No `model` field on any of the three — lenses inherit the session model (review depth is the product; it must not be silently downgraded). Each lens writes its own file under the run directory — never a shared one.
+
+Each lens returns one `LENS <MODE>:` line and its file. Check every return per the receiving rules in `skills/common-patterns/report-file-contract.md` — cited, not restated. A lens whose return is non-compliant (no file, no Coverage section, a report in chat instead of a file) is re-dispatched once, alone, with the same prompt and the same path so it resumes from the sections already on disk; the two compliant lenses' files stand and are not re-run. On a second non-compliant return from the same lens, HOLD: present the partial file to the user and ask how to proceed — the lens is never dropped from synthesis silently, and its absence is never papered over by the other two.
 
 Every prompt carries: Mode, target identity (`Target: <branch> -> <base ref>`, both halves — `agents/peek.md` requires the full target identity on every dispatch), the confirmed aims, RECON's change inventory, the worktree path, forge rung, and RECON's Prior Review block verbatim (all three lenses — `agents/peek.md` lists it as a required input; a lens dispatch without it is an error per that file). DELIVERY and ARCHITECTURE additionally carry the Surprises block as corrected at Step 4. CODE additionally carries the suite-run decision from Step 4. `agents/peek.md`'s Mode Detection section defines the full required-input set per mode — cite it, never restate it; a DELIVERY or ARCHITECTURE dispatch missing Surprises is an error per that file, not something this skill improvises around.
 
 ## Step 6: Synthesis (Lead)
+
+Synthesis works from the four report files under the run directory — RECON's and the three lenses' — read in full at this step. The return lines' counts and any text a lens put in chat are never inputs.
 
 Dedup overlapping findings first: same file:line + same defect = one finding, keep the highest severity.
 
@@ -204,6 +211,7 @@ This is an always-run closer — it runs even when the user aborts mid-flow, dec
 4. **The report must open with the `Verdict:` line, carry `Path:` and `Decision:` under Overall Assessment, and include Coverage.** A synthesis that omits any of these is incomplete: the `Verdict:` line is derived, never hand-picked; `Path:` is likewise derived per `skills/common-patterns/loop-interfaces.md`, never hand-picked; and anything unreviewed must be named in Coverage, not silently dropped.
 5. **The worktree is always cleaned up.** Step 8 runs on every path, including aborts and dispatch failures.
 6. **The fix path is bounded by the Peek Fix Carve-out** (`skills/common-patterns/pipeline-constants.md`). Critical findings are never fixed at review; nothing is pushed or ref-updated without phase-B approval of the exact diff.
+7. **Every dispatch names a report file; synthesis reads files.** RECON and the three lenses each write to their own file under the run directory and return one line (`skills/common-patterns/report-file-contract.md`); a return with no file behind it is re-dispatched, never read.
 
 ## Common Excuses
 
@@ -211,6 +219,8 @@ All of these mean: **STOP. Follow the process as written.**
 
 - "The diff is small, skip RECON" — RECON runs every time; size does not exempt intent-gathering.
 - "CI is green, skip CODE" — a green suite does not substitute for the CODE lens's judgment. The same goes for skipping any lens: all three dispatch every run (Step 5); no lens is optional.
+- "The lens put its whole report in chat, that is as good as the file" — it is not: a chat report is the truncation path this contract removes, and the receiving rule reads nothing from it. Re-dispatch that lens alone with the same path; it resumes from whatever the file already holds.
+- "Two lenses came back, synthesize from those" — a missing lens is a missing charter, not a thinner report. Re-dispatch it once; on a second failure HOLD with the partial file.
 - "I can infer intent without the gate" — Step 4 is interactive by design; inferred intent is not confirmed intent.
 - "The author is senior, soften the findings" — softening includes dropping: every finding stays in the report at its true severity, whoever the author is. The finding set does not scale with seniority; only phrasing may be professional, never the finding set.
 - "No Critical makes the review look shallow" — a clean return is a complete result. Severity follows the anchor, not the reviewer's need to look rigorous; manufacturing a finding is the mirror image of softening one.
@@ -231,10 +241,10 @@ All of these mean: **STOP. Follow the process as written.**
 Before presenting the report to the user:
 - [ ] Forge and degradation rung detected and stated (Step 1)
 - [ ] Worktree created with `--detach`, base ref resolved, user's checkout untouched (Step 2)
-- [ ] RECON dispatched with the sonnet model override, blocking, and returned Stated Aims plus Prior Review before the intent gate (Step 3)
+- [ ] RECON dispatched with the sonnet model override, blocking, with a report path under the run directory; its return checked per `report-file-contract.md` and Stated Aims plus Prior Review read from the file before the intent gate (Step 3)
 - [ ] User confirmed or corrected the aims and the Prior Review summary — no provisional intent carried forward; surprises marked intended moved into the aims (Step 4)
-- [ ] All three lenses dispatched in one message, no model override, with their mode-specific required inputs (Surprises to DELIVERY and ARCHITECTURE) (Step 5)
-- [ ] Findings deduped; re-check applied with every move visible (a Critical without Trigger/Consequence demoted to Important or Suggestion by its Hits / Maintainer cost line; an Important without that line demoted to Suggestion); fix-eligibility pass run and eligible findings marked `[fix-proposed]` (or skipped because the fix path is unavailable); verdict derived per loop-interfaces.md; report opens with the `Verdict:` line and includes Aimed vs Achieved, Overall Assessment, Findings (`- (none)` is a complete Findings section), Questions for the Author, and Coverage; Overall Assessment carries `Path:` and `Decision:`; lead-added and downgraded aim/reshape moves visible; top layer passed the grading-word self-check (Step 6)
+- [ ] All three lenses dispatched in one message, no model override, each with its own report path and its mode-specific required inputs (Surprises to DELIVERY and ARCHITECTURE); every return checked per `report-file-contract.md`, any non-compliant lens re-dispatched alone once, a second failure held with the partial file (Step 5)
+- [ ] Synthesis read from the four report files, never from chat text; findings deduped; re-check applied with every move visible (a Critical without Trigger/Consequence demoted to Important or Suggestion by its Hits / Maintainer cost line; an Important without that line demoted to Suggestion); fix-eligibility pass run and eligible findings marked `[fix-proposed]` (or skipped because the fix path is unavailable); verdict derived per loop-interfaces.md; report opens with the `Verdict:` line and includes Aimed vs Achieved, Overall Assessment, Findings (`- (none)` is a complete Findings section), Questions for the Author, and Coverage; Overall Assessment carries `Path:` and `Decision:`; lead-added and downgraded aim/reshape moves visible; top layer passed the grading-word self-check (Step 6)
 - [ ] At most one comment left the run, drafted after fixes were applied or reverted, opening with the verdict, carrying the follow-up line under it (Critical: re-review; Important: no re-review), ending with the marker naming the tip the branch actually carries, posted only after explicit approval of the exact text — or handed over as copy-paste at rung 2/3 (Step 7)
 - [ ] Fixes (if elected) applied per the carve-out with green-suite evidence before any `[capability]` fix; approval (if eligible and elected) offered only after the identity read showed the caller is not the author, approved as the exact command, target, and identity line, and submitted after the comment; every outward action approved exactly before it left, every failure reported verbatim and never retried, every withdrawal stated (Step 7)
 - [ ] Worktree removed and pruned (Step 8) — including on any abort path

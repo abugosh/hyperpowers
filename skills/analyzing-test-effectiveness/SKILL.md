@@ -17,7 +17,7 @@ MEDIUM FREEDOM - Follow the 5-step orchestration (Scope, Dispatch Analyst, Prese
 | Step | Action | Output |
 |------|--------|--------|
 | 1. Scope | Confirm target suites/dirs; AskUserQuestion when ambiguous | Confirmed analysis scope |
-| 2. Dispatch Analyst | Blocking dispatch to hyperpowers:test-effectiveness-analyst | Full analysis report (Return Contract) |
+| 2. Dispatch Analyst | Blocking dispatch to hyperpowers:test-effectiveness-analyst with a report path | Report file (Return Contract) + one `TEST AUDIT:` line (`report-file-contract.md`) |
 | 3. Present Findings | Relay executive summary + counts; agree what to act on | Action decision (remove/strengthen/add) |
 | 4. Create bd Epic + Tasks | Epic + up to 4 two-tier tasks, linked with dependencies | Tracked improvement plan |
 | 5. Batch SRE Review | Fresh subagent runs sre-task-refinement against the full tree | APPROVE / NEEDS REVISION / REJECT + handoff |
@@ -73,11 +73,15 @@ Agent tool:
   prompt: |
     Analyze test effectiveness for: [confirmed scope from Step 1].
     Apply the skeptical RED/YELLOW/GREEN methodology and corner-case
-    discovery process you own. Return the complete report per your
-    Output Format (Return Contract) section: executive summary,
-    per-test justifications, missing corner cases, and the
-    improvement plan.
+    discovery process you own. Write the complete report per your
+    Output Format (Return Contract) section — per-test justifications,
+    missing corner cases, the improvement plan, then the executive
+    summary — to:
+    Report path: <scratchpad>/test-audit-<date>/report.md
+    Return exactly the one-line TEST AUDIT: template from that section.
 ```
+
+Check the return per the receiving rules in `skills/common-patterns/report-file-contract.md` — file present, `## Executive Summary` present — before Step 3. On a non-compliant return re-dispatch once with the same path (the analyst resumes from the sections on disk), then escalate to the user with the partial file.
 
 No model override — the agent's own frontmatter pin (`model: sonnet`) governs.
 
@@ -87,7 +91,7 @@ The agent file owns the methodology — if a finding needs more depth, ask the a
 
 ## Step 3: Present Findings
 
-Relay the analyst's executive summary to the user: total tests analyzed, RED/YELLOW/GREEN counts and percentages, missing corner cases, and overall assessment.
+Relay the analyst's executive summary — the report file's last section — to the user: total tests analyzed, RED/YELLOW/GREEN counts and percentages, missing corner cases, and overall assessment.
 
 Agree with the user what to act on:
 - Remove the RED tests?
@@ -301,7 +305,7 @@ Agent tool:
 
 Do not pass a model override — the review inherits the session model.
 
-Parse the verdict word from the returned `SRE VERDICT:` line, then read the full report from the file at the path it names. Non-compliant return (final message lacks a parseable `SRE VERDICT:` line, OR the report file is missing or lacks `### Batch Verdict`, OR the chat line's verdict word contradicts the report file's `### Batch Verdict`): re-dispatch ONCE (fresh subagent, same block, same path); on a second non-compliant return, persist a gate-state to the epic's bd notes and escalate via AskUserQuestion with whatever partial report exists. This re-dispatch counter is separate from NEEDS REVISION handling — channel failure vs plan quality.
+Parse the verdict word from the returned `SRE VERDICT:` line, then read the full report from the file at the path it names. Non-compliant return (final message lacks a parseable `SRE VERDICT:` line, OR the report file is missing or lacks `### Batch Verdict`, OR the chat line's verdict word contradicts the report file's `### Batch Verdict`): re-dispatch ONCE (fresh subagent, same block, same path — the reviewer resumes from the tasks already in the file, per `skills/common-patterns/report-file-contract.md`); on a second non-compliant return, persist a gate-state to the epic's bd notes and escalate via AskUserQuestion with whatever partial report exists. This re-dispatch counter is separate from NEEDS REVISION handling — channel failure vs plan quality.
 
 On APPROVE (or NEEDS REVISION resolved via the bd updates above), hand off to hyperpowers:executing-plans to implement the tasks.
 

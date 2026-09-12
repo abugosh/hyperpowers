@@ -120,6 +120,9 @@ Anti-patterns that apply across multiple skills. Reference this to avoid duplica
 
 ❌ Don't assume backwards compatibility is desired
    Ask if breaking changes are acceptable
+
+❌ Don't accept a multi-section report in a subagent's final message
+   Reports travel by file; the return is one line (report-file-contract.md)
 ```
 
 ## Refactoring Anti-Patterns
