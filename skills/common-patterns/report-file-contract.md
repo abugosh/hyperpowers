@@ -83,7 +83,12 @@ parsed for a verdict, not pasted anywhere.
 On a non-compliant return:
 
 1. Read the file as it stands — partial sections are evidence, not waste.
-2. Re-dispatch **once**: a fresh subagent, the same prompt, the same path.
+2. Stop the original first. A non-compliant return does not prove the agent
+   stopped: a watchdog stall ("Agent stalled: no progress for 600s") hands the
+   lead an error while the agent runs on and keeps writing. Stop it
+   (TaskStop); if you cannot confirm it stopped, do not re-dispatch — escalate
+   as step 3 does, so two agents never write one path. Then re-dispatch
+   **once**: a fresh subagent, the same prompt, the same path.
    The agent resumes per the writing rules above. In a fan-out, re-dispatch
    only the non-compliant member, alone; compliant members' files stand.
 3. On a second non-compliant return: stop, persist a gate-state to the

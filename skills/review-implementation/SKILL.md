@@ -33,6 +33,7 @@ Agent tool:
     Follow agents/reviewer.md exactly.
     Start with: bd show <epic-id>
     Report path: <scratchpad>/review-<epic-id>/review.md
+    Delegation: one test-runner, nothing else — review every task yourself (agents/reviewer.md Rule 6).
 ```
 
 The reviewer returns one `REVIEW VERDICT:` line and writes the verdict to the report file (`skills/common-patterns/loop-interfaces.md`, Verdict Contracts; `skills/common-patterns/report-file-contract.md` for the receiving rules — check the file and its `## Implementation Review:` block before acting, re-dispatch once on a non-compliant return with the same path, then escalate with the partial file). Read the verdict block from the file; the line's gap count is a pointer.

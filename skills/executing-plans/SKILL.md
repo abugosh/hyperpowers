@@ -328,6 +328,7 @@ After all tasks return DONE and pass two-stage review:
        Follow agents/reviewer.md exactly.
        Start with: bd show <epic-id>
        Report path: <scratchpad>/epic-<epic-id>/review-<round>.md
+       Delegation: one test-runner, nothing else — review every task yourself (agents/reviewer.md Rule 6).
    ```
 
    The reviewer returns one `REVIEW VERDICT:` line (`skills/common-patterns/loop-interfaces.md`, Verdict Contracts). Parse the verdict word immediately after `REVIEW VERDICT: `, then read the verdict block under `## Implementation Review:` in the report file for the Architect Summary, the gap entries, and any Suggestions. Check the return and handle a non-compliant one per `skills/common-patterns/report-file-contract.md` — cited, not restated: re-dispatch once with the same path so the reviewer resumes from the Task Reviews already on disk, then escalate (section 5) with the partial file. A non-compliant return is channel failure and never counts against the gap-round cap below. Each gap round gets its own `<round>` number so the re-review's file does not overwrite the round it re-checks.

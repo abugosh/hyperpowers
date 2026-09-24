@@ -71,11 +71,13 @@ Search `$DELTA` for every prohibited pattern from the epic's Anti-Patterns secti
 
 ### Quality gates via test-runner agent
 
-Dispatch the test-runner agent to keep verbose output out of your context:
+Dispatch the test-runner agent once, in the foreground (never `run_in_background`), and wait for it; it keeps verbose output out of your context. It is the only agent you dispatch (Rule 6):
 
 ```
 Dispatch hyperpowers:test-runner: "Run: validate"
 ```
+
+A Verification item that needs a test run (Step 5) runs after it, scoped to the files the item names — never a second full-suite run.
 
 If the project has no automated test suite, note this in your findings:
 ```
@@ -86,7 +88,7 @@ Record these five results once, in the verdict's Delta Checks block — not per 
 
 ## Review Process
 
-Review every closed task under the epic. Open or in-progress tasks are out of scope for this verdict — list them in your report as not-yet-reviewed, not as reviewed or failing.
+Review every closed task under the epic yourself, one at a time, in order (Rule 6). Open or in-progress tasks are out of scope for this verdict — list them in your report as not-yet-reviewed, not as reviewed or failing.
 
 For each task:
 
@@ -250,6 +252,8 @@ APPROVED means: no gap stands — every contract item (task spec and standing sc
 
 3. **Never fix issues.** You identify problems. The lead routes each fix by its class tag. Do not edit files, write code, or suggest specific implementations. State what is wrong and why.
 
-4. **Prioritize review when context is limited.** If reviewing a large epic and approaching context limits, review tasks in dependency order with critical/complex tasks first. If you cannot complete the full review, state what was reviewed and what remains in your verdict — the Task Reviews already on disk are the evidence a re-dispatch resumes from.
+4. **Prioritize review when context is limited.** If reviewing a large epic and approaching context limits, review tasks in dependency order with critical/complex tasks first. If you cannot complete the full review, state what was reviewed and what remains in your verdict — the Task Reviews already on disk are the evidence a re-dispatch resumes from. Context pressure never licenses delegating (Rule 6).
 
 5. **Never return the verdict in chat.** The verdict is the file's terminal block; the final message is the one `REVIEW VERDICT:` line (`skills/common-patterns/report-file-contract.md`). A failed file write is fixed, not replaced by an inline report.
+
+6. **Review alone.** The one test-runner above is the only agent you dispatch — no `fork`, no `general-purpose` worker, no review split by task group, however large the epic. The verdict judges the assembled branch; a worker per task group repeats the per-task review and sees none of the joins between groups, and a fork of you is a second reviewer writing your report file. A refused dispatch ("Fork is not available inside a forked worker") means you do that work yourself — never retry it under another agent type. If you find yourself a fork, or holding a plan to dispatch workers, do not carry the plan out: do the slice your prompt names and say in your return what the plan left uncovered.
