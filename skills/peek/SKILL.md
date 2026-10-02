@@ -34,7 +34,7 @@ Use for:
 
 **Don't use for:**
 - Re-verifying a completed epic against its bd spec → `hyperpowers:review-implementation`
-- Reviewing your own in-flight epic work → `executing-plans`' two-stage per-task review already covers it
+- Reviewing your own in-flight epic work → `executing-plans`' per-task review and end-of-epic reviewer already cover it
 </when_to_use>
 
 <the_process>

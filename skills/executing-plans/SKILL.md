@@ -4,7 +4,7 @@ description: Lead reads pre-planned task list, dispatches fresh blocking executo
 ---
 
 <skill_overview>
-Lead orchestrates execution of a pre-planned task list. All tasks exist in bd before execution begins. Lead dispatches a fresh executor subagent per task, runs two-stage review (lead epic-coherence check + Stage-2 code-reviewer spec-match/code quality check), and escalates to user when the plan proves invalid. Epic requirements are immutable.
+Lead orchestrates execution of a pre-planned task list. All tasks exist in bd before execution begins. Lead dispatches a fresh executor subagent per task, runs two-stage review (lead epic-coherence check + Stage-2 code-reviewer outcome check that answers the lead's questions, at full depth with code quality on pattern-setting tasks), and escalates to user when the plan proves invalid. Epic requirements are immutable.
 </skill_overview>
 
 <rigidity_level>
@@ -22,10 +22,10 @@ The lead never implements task work in the lead context. One carve-out: `[conven
 | **Pre-dispatch** | Verify spec exists and dependencies met | `bd show <task-id>` |
 | **Dispatch** | Record base SHA, then fresh blocking executor subagent per task | `git rev-parse HEAD` + Agent tool (no team_name, Sonnet unless promoted) |
 | **Stage 1** | Lead reads diff vs recorded base SHA for epic coherence (boy-scout cleanup is in-scope, not drift) | `git merge-base --is-ancestor <hash> HEAD` + `git diff <base-SHA>..HEAD` |
-| **Stage 2** | Stage-2 code-reviewer: spec-match + code quality review; findings resolve by class — `[convention]` lead-fixed, `[capability]` re-dispatched (cap: 2 rounds — `pipeline-constants.md`) | Agent tool (Sonnet unless promoted) |
+| **Stage 2** | Stage-2 code-reviewer: outcome check (spec-match, the spec's named tests run) + answers to the lead's numbered questions; full depth adds code quality on `Review: full`; findings resolve by class — `[convention]` lead-fixed, `[capability]` re-dispatched (cap: 2 rounds — `pipeline-constants.md`) | Agent tool (Sonnet; Opus at full depth) |
 | **Escalation** | Halt, summarize, recommend, wait | AskUserQuestion |
 
-**Critical:** Executor returns a one-liner (DONE:, BLOCKED:, or NEEDS_HELP:) — not a multi-section envelope. Parse the first word only. All three loop verdict vocabularies are single-sourced in `skills/common-patterns/loop-interfaces.md` (Verdict Contracts).
+**Critical:** Executor returns one verdict line (DONE:, BLOCKED:, or NEEDS_HELP:) — a DONE optionally followed by `RED:`/`FLAG:` report lines, never a multi-section envelope. Parse the first word only; report lines feed Stage 2, never control flow. All three loop verdict vocabularies are single-sourced in `skills/common-patterns/loop-interfaces.md` (Verdict Contracts).
 
 </quick_reference>
 
@@ -117,7 +117,7 @@ The Agent tool blocks until the executor returns. Parse the first word of the re
 
 ### DONE
 
-Executor committed the work. Run two-stage review:
+Executor committed the work. Hold its report lines — `RED:` and `FLAG:` after the DONE line (`skills/common-patterns/loop-interfaces.md`, Verdict Contracts) — for Stage 2; they change nothing on their own. A spec with a Tests section whose DONE carries no RED line counts as carrying `FLAG: no RED evidence`. Then run two-stage review:
 
 **Stage 1 — Lead epic-coherence check:**
 
@@ -142,22 +142,25 @@ Read the diff for what only the lead can see and the Stage-2 code-reviewer canno
 - Watering-down of any immutable requirement
 - Contradictions with other tasks — already-completed work, or assumptions that remaining tasks depend on
 
-Do not re-check whether the implementation matches the task spec line-by-line — that is Stage 2's job.
+Do not re-check whether the implementation matches the task spec line-by-line — that is Stage 2's job. Do write down what the diff raises that the diff alone cannot settle — a test you cannot tell would have failed before the change, a caller you cannot see, a value the spec leaves open. Those become Stage-2 questions.
 
 **Sanctioned, not drift:** an executor that removed noise comments or corrected stale docstrings inside a file the spec already named was following the boy-scout rule (`skills/common-patterns/prose-style.md`), which makes that cleanup mandatory and in-scope. Do not flag it as scope drift. Opening a file the spec does not name is still drift — the boy-scout rule extends what gets fixed inside an authorized file, never which files are authorized.
 
 If any check above fails: note the violation(s), re-dispatch with feedback (see Stage 1 feedback template below).
 
-**Stage 2 — Code-reviewer spec-match and code quality check:**
+**Stage 2 — Code-reviewer outcome check:**
 
-The fresh Stage-2 code-reviewer owns both spec-match and code quality — the lens Stage 1 does not cover:
+The fresh Stage-2 code-reviewer owns spec-match — the lens Stage 1 does not cover — at the depth the spec sets (`skills/common-patterns/pipeline-constants.md`, Review Depth Flag): outcome by default; full, adding code quality and the standing scope, when the spec carries `Review: full`.
+
+**Questions.** Number them. Every FLAG line gets at least one question that quotes it; Stage 1 adds its own. Ask what the reviewer can settle with evidence — "Would `<test>` fail at `<base-SHA>`?", "Which caller reaches `settings.ts:88` with an unscoped session?" — never a verdict or a reassurance: no "the lead has accepted this as forced", no "the suite is already green". A lead verdict in the prompt anchors the reviewer toward PASS, and a review is only worth dispatching if it can disagree. With no flags and nothing from Stage 1, the slot reads `none`.
 
 ```
 Agent tool:
   subagent_type: "hyperpowers:code-reviewer"
-  model: "sonnet"    # "opus" if the task spec contains the line `Executor: opus`
+  model: "sonnet"    # "opus" if the task spec contains the line `Review: full`
   prompt: |
-    Review this change.
+    Review this change. Depth: <outcome|full>
+    Base commit: <base-SHA>
 
     Task spec:
     <paste task spec here>
@@ -165,12 +168,21 @@ Agent tool:
     Changes (git diff):
     <paste git diff output here>
 
+    Executor report:
+    <paste the RED: and FLAG: lines verbatim, or "none">
+
+    Questions from the lead:
+    1. <question>
+    2. <question>
+
     This is a Stage-2 per-task review. Review per your charter
-    (agents/code-reviewer.md); the concern bar is the Severity Anchor's
-    in-epic paragraph (skills/common-patterns/pipeline-constants.md).
+    (agents/code-reviewer.md) at the depth above; the concern bar is the
+    Severity Anchor's in-epic paragraph (skills/common-patterns/pipeline-constants.md).
     Reply per your Stage-2 verdict contract
     (skills/common-patterns/loop-interfaces.md, Verdict Contracts).
 ```
+
+**Answers.** Read every `ANSWER` line before acting on the verdict. A defect the reviewer found while answering arrives as a concern line and routes like any other.
 
 Task closure is owned by the lead — the executor never closes tasks. Exactly two paths authorize closure: a Stage-2 PASS, or a convention-only CONCERNS verdict whose every concern line has been lead-fixed, verified, and recorded (below). No other path closes a task, and both require verifying the working branch (Branch Establishment rule) before `bd close <task-id>`.
 
@@ -181,7 +193,6 @@ If the Stage-2 code-reviewer returns CONCERNS: the concern lines arrive class-ta
 - **`[convention]` concerns — lead fixes them directly, now.** Edit the named sites yourself, verify by grep/read against each concern line, commit on the working branch, and record it: `bd update <task-id> --notes "Convention concerns lead-fixed: <short list> (<commit hash>)"`. No re-dispatch and no Stage-2 re-run for these lines. **Bound:** a convention fix must not change behavior, and a convention fix to a comment cuts or deletes it — never extends it (`skills/common-patterns/prose-style.md`, Comment Policy). If mid-fix it turns out to require one, stop, retag the line `[capability]` (one-line bd note), and route it through the capability path below.
 - **`[capability]` concerns — re-dispatch** with the capability concern list only (template below). Promotion rule unchanged: if this is the task's first re-dispatch and it is not already promoted, add `Executor: opus` to the task spec and note it in bd (e.g. `bd update <task-id> --notes "Auto-promoted to opus after Stage 2 [capability] CONCERNS"`). **Round cap (`skills/common-patterns/pipeline-constants.md`): after 2 capability fix→re-review rounds on the same task without PASS, stop and escalate (section 5), carrying the concern history from every round.**
 - **Mixed verdicts:** lead-fix the `[convention]` lines first, then re-dispatch with only the `[capability]` lines.
-- **`SUGGESTION:` lines** are non-blocking: persist them to the epic's bd notes as optional follow-ups. Never act on them in-round; they never gate task closure.
 
 A task is still NEVER closed with unaddressed concerns — every concern line is either lead-fixed (`[convention]`) or re-dispatched (`[capability]`).
 
@@ -371,11 +382,18 @@ Lead records base SHA (git rev-parse HEAD → a1b2c3d), then verifies bd-42: non
 blocking dependencies pending. Dispatches executor on Sonnet (spec carries no promotion flag;
 dispatch prompt includes "Task: bd-42").
 Executor returns:
-"DONE: Added error handling to auth.ts:validate() and committed as 3f9a1b2."
+"DONE: 3f9a1b2 — Added error handling to auth.ts:validate() and committed.
+RED: rejects missing token — expected status 401, received 500
+FLAG: auth.ts:52 returns 401 for an expired token too; the spec names only missing tokens"
 
 Stage 1: hash 3f9a1b2 in history ✓, tree clean ✓, git diff a1b2c3d..HEAD → no anti-pattern
 violations, requirements intact, no conflict with other completed tasks. ✓
-Stage 2: code-reviewer returns "PASS" (spec-match and quality both check out). ✓
+Stage 2 (outcome depth — the spec carries no `Review: full`), with the report lines and:
+  1. FLAG "auth.ts:52 returns 401 for an expired token too" — which callers reach validate()
+     with an expired token, and does any test pin the status they get?
+Code-reviewer returns:
+"PASS
+ANSWER 1: one caller, session.ts:30 (refresh path); auth.test.ts:88 now asserts 401 — read, not run"
 
 Lead closes bd-42 (`bd close bd-42`). Proceeds to bd-43.
 </code>
@@ -421,9 +439,9 @@ Waits for user response before proceeding.
 
 2. **No SRE per-task** — SRE batch review runs before execution begins. Never invoke SRE between tasks.
 
-3. **Parse the one-liner** — Executor returns DONE:, BLOCKED:, or NEEDS_HELP: as a one-liner. There are no multi-section status envelopes to parse.
+3. **Parse the verdict line** — Executor returns DONE:, BLOCKED:, or NEEDS_HELP: as one line; a DONE may carry `RED:`/`FLAG:` report lines after it, which feed Stage 2 and never control flow. There are no multi-section status envelopes to parse.
 
-4. **Two-stage review on every DONE** — Stage 1 (lead epic-coherence check against the recorded base SHA — commit-landed check, then diff `<base-SHA>..HEAD`) and Stage 2 (code-reviewer spec-match and code quality check) are both mandatory on every DONE. Do not skip either stage. Class-split resolution changes only what happens to findings *after* Stage 2 returns — `[convention]` lead-fixes are a resolution path, never a substitute for running Stage 2.
+4. **Two-stage review on every DONE** — Stage 1 (lead epic-coherence check against the recorded base SHA — commit-landed check, then diff `<base-SHA>..HEAD`) and Stage 2 (code-reviewer outcome check at the spec's depth, with the executor's report lines and the lead's questions) are both mandatory on every DONE. Do not skip either stage. Class-split resolution changes only what happens to findings *after* Stage 2 returns — `[convention]` lead-fixes are a resolution path, never a substitute for running Stage 2.
 
 5. **Never redesign autonomously** — On plan-level failures, halt and escalate. Present options; the user decides. Never continue without user input after escalation.
 
@@ -457,12 +475,11 @@ Before dispatching each task:
 After each DONE return:
 - [ ] Commit-landed check passed: DONE hash in history, `git status --porcelain` clean
 - [ ] Stage 1: lead read the diff (`<base-SHA>..HEAD`) against the recorded base SHA for epic coherence
-- [ ] Stage 2: code-reviewer dispatched (mandatory on every DONE, spec-match and code quality) and its verdict resolved — PASS, or CONCERNS handled per the class split below
+- [ ] Stage 2: code-reviewer dispatched (mandatory on every DONE) at the spec's depth, with the executor's report lines and a numbered question per FLAG, and its verdict resolved — PASS, or CONCERNS handled per the class split below
 - [ ] Any CONCERNS resolved by class — `[convention]` lines lead-fixed and verified, `[capability]` lines re-dispatched (never closed as-is); promotion applied only to `[capability]` failures
 - [ ] Convention lead-fixes recorded in bd notes with the commit hash (`Convention concerns lead-fixed: ...`)
 - [ ] No convention fix changed behavior — any that would have was retagged `[capability]` and dispatched
 - [ ] Stage-2 round cap respected (`pipeline-constants.md`): 2 capability fix→re-review rounds on a task without PASS → escalated (section 5), not a 3rd round
-- [ ] `SUGGESTION:` lines persisted to the epic's bd notes, not acted on in-round
 - [ ] Any BLOCKED classified before re-dispatch; promotion applied only to capability-class failures
 - [ ] Task closed in bd by the lead on an authorized path — Stage 2 PASS, or, for a convention-only CONCERNS verdict, every concern line lead-fixed, verified, and recorded
 - [ ] Working branch verified before task closure
@@ -480,11 +497,11 @@ Before completion:
 
 <integration>
 
-**Calls:** agents/executor.md (blocking subagent, Sonnet unless promoted, per task) · agents/code-reviewer.md (Sonnet unless promoted, per task) · agents/reviewer.md (blocking subagent, once at end)
+**Calls:** agents/executor.md (blocking subagent, Sonnet unless promoted, per task) · agents/code-reviewer.md (per task; Sonnet at outcome depth, Opus at full) · agents/reviewer.md (blocking subagent, Opus, once at end)
 
 **Called by:** User via /hyperpowers:execute-plan · after brainstorming produces the task tree
 
-**Flow:** Startup → Establish branch → Pre-dispatch verification → Record base SHA → Dispatch executor (blocks) → Parse one-liner → Two-stage review → Next task → ... → End-of-epic reviewer gate → Architecture check → Present + STOP (manual validation) → user → /hyperpowers:finish-branch
+**Flow:** Startup → Establish branch → Pre-dispatch verification → Record base SHA → Dispatch executor (blocks) → Parse verdict line + report lines → Two-stage review → Next task → ... → End-of-epic reviewer gate → Architecture check → Present + STOP (manual validation) → user → /hyperpowers:finish-branch
 
 **bd command reference:** See [bd commands](../common-patterns/bd-commands.md)
 

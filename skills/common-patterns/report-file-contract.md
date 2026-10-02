@@ -29,8 +29,9 @@ The return lines that carry a verdict word are registered in
 verdicts, and introduce no verdict vocabulary. Counts on a return line are
 what the file holds — a lead reads them as a pointer, never as the finding.
 
-Short returns stay inline: the executor's one-liner, the Stage-2
-code-reviewer's verdict line plus concern lines, the test-runner's summary,
+Short returns stay inline: the executor's verdict line plus its report
+lines, the Stage-2 code-reviewer's verdict line plus concern and answer
+lines, the test-runner's summary,
 and the prose summaries of codebase-investigator and internet-researcher.
 Adding a dispatch to the table above is a contract change: name its terminal
 section and its return line here, then cite this file from its agent or

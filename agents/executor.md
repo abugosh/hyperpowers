@@ -21,7 +21,7 @@ Write comments per the comment policy in `skills/common-patterns/prose-style.md`
    - **`Kind: prep-refactor` line** (`skills/common-patterns/spec-templates.md`): run the Verification's suite command through test-runner before changing anything and confirm it is green; make the changes — the after-run is the spec's Verification (step 4). No new tests, no RED step. The line is a Boundary — no behavior change — so if a test's expected value has to move or new behavior has to land, return `NEEDS_HELP`.
    - **Tests section**: follow TDD:
      - If the repo has no test framework configured, return `NEEDS_HELP` — do not skip to implementing without tests, do not install a framework.
-     - Write the failing test first (RED). Run that single test directly yourself — single-test output is bounded — and read the failure message: it must fail because the feature is missing, not from a typo or setup error. Never delegate the RED run to test-runner; the failure reason is evidence you must read.
+     - Write the failing test first (RED). Run that single test directly yourself — single-test output is bounded — and read the failure message: it must fail because the feature is missing, not from a typo or setup error. Never delegate the RED run to test-runner; the failure reason is evidence you must read, and your DONE report carries it (Output contract).
      - Implement the minimal code to pass (GREEN). Run the single test directly — confirm it passes.
      - Refactor while keeping tests green. Full-suite regression runs go through test-runner.
    - **Neither**: implement the changes described directly.
@@ -67,9 +67,21 @@ Never bypass a failing check to get a commit through: no `--no-verify`, no editi
 
 Your final message must be exactly one of:
 
-**DONE:** `DONE: <commit-hash> — <summary>`
+**DONE:** `DONE: <commit-hash> — <summary>`, then any report lines (below)
 - The hash is the final commit's short hash (`git log -1 --format=%h`), in fixed position immediately after `DONE: `. The summary is 1-2 sentences: what was implemented and committed.
 - Example: "DONE: 3f9a1b2 — Added error handling to auth.ts:validate() and committed."
+
+Report lines follow the DONE line, one per line, each opening with one of two words:
+- `RED: <test> — <the failure message you read>` — one per test you wrote in the RED step. Required when your spec has a Tests section. A test you wrote after its code gets a FLAG line instead: a RED line for a failure you did not watch is a false report.
+- `FLAG: <what and where>` — one per thing the lead should look at: something you did other than what the spec says (a test written after its code included), a check your spec or this process requires that you did not run, or a judgment call you are not confident in. Say why, and for a judgment call name the alternative.
+
+Every FLAG gets a question at review: it is how the call you were least sure of gets a second look. A run with nothing to flag writes no FLAG line.
+
+```
+DONE: 3f9a1b2 — Added the scope check to settings.ts:validate() and committed.
+RED: rejects unknown key — expected status 403, received 200
+FLAG: settings.ts:88 reads the scope from the session, not the request; the spec names neither
+```
 
 **BLOCKED:** `BLOCKED: <what failed, what was attempted, the specific error>`
 - Include: what failed, error output, what you tried to resolve it
@@ -81,7 +93,7 @@ Your final message must be exactly one of:
 - If any commits landed before you stopped, name their hashes in the message.
 - Example: "NEEDS_HELP: Task says modify auth.ts:45 but that line is a comment. Should I modify line 52 (the actual function signature) instead?"
 
-No prose preamble. No section headers. No "## Status:" envelope. Just the one-liner.
+No prose preamble. No section headers. No "## Status:" envelope. Just the one line — after a DONE, the report lines and nothing else.
 
 This contract is single-sourced in `skills/common-patterns/loop-interfaces.md` (Verdict Contracts).
 

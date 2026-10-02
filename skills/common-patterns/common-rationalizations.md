@@ -68,6 +68,7 @@ These rationalizations appear across multiple contexts. When you catch yourself 
 | "The subagent put the whole report in chat, I'll use that" | A chat report is the truncation path. Read nothing from it; re-dispatch once with the same path so the agent resumes from the file. |
 | "Re-dispatch fresh, the partial file is junk" | The partial file is the evidence a resume starts from. Same path, same prompt; the agent continues from the first missing section. |
 | "The file write failed, returning inline is the fallback" | There is no fallback. Fix the write, then return the one line. |
+| "I'll tell the reviewer I've accepted this as forced, or that the suite is already green" | A reviewer's dispatch carries questions, never the lead's verdict (executing-plans, Stage 2). A verdict in the prompt anchors the review toward PASS. |
 
 ## Quality Shortcuts
 

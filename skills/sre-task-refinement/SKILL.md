@@ -296,6 +296,7 @@ Take notes:
 - Hidden failure modes not addressed
 - Items to trim, each with its reason (Category 9)
 - Whether to recommend the `Executor: opus` promotion flag (see `skills/common-patterns/pipeline-constants.md`) for an irreducibly hard task — a suggestion to the lead, not something SRE sets directly
+- Whether to recommend `Review: full` (same file, Review Depth Flag) for a pattern-setting task that lacks it — one whose code later tasks are specified to copy or extend — likewise a suggestion to the lead
 
 **Step 4: Update the task**
 

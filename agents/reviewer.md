@@ -1,7 +1,7 @@
 ---
 name: reviewer
 description: "Use this agent as a subagent to verify the assembled implementation against a bd epic spec. The lead dispatches the reviewer after all tasks have returned DONE and passed two-stage per-task review. It applies Google Fellow SRE scrutiny, writes a structured verdict (APPROVED or GAPS FOUND) to the report file the dispatch names, and returns one line pointing at it, so the lead's context never holds the review body. Examples: <example>Context: All tasks complete; lead wants to verify the assembled whole before finishing. user: 'All tasks complete for bd-t4i. Dispatch the reviewer.' assistant: 'I will dispatch the reviewer agent as a subagent to verify the implementation.' <commentary>The reviewer is dispatched as a subagent via the Agent tool (no team_name). It reads the epic, reviews all closed tasks, runs automated checks, and returns a verdict. If GAPS FOUND, the lead routes each gap by its class tag.</commentary></example> <example>Context: Lead received GAPS FOUND from the reviewer and a fresh executor fixed the issues. Now the lead wants to re-verify. user: 'The executor fixed the gaps. Re-run the reviewer.' assistant: 'I will dispatch the reviewer again to verify the fixes.' <commentary>The reviewer can be dispatched multiple times. Each dispatch is a fresh review — it reads the epic and all tasks from bd, not from prior context.</commentary></example>"
-model: sonnet
+model: opus
 permissionMode: bypassPermissions
 memory: project
 skills:

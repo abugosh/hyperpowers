@@ -81,22 +81,30 @@ Definition sites cite this section; parse sites must match it exactly.
 - **Executor → lead** (defined in `agents/executor.md`, parsed by
   executing-plans): final message is exactly one of `DONE: <commit-hash> —
   <summary>`, `BLOCKED: <what failed, attempted, error>`, `NEEDS_HELP:
-  <question, attempted, needed>`. One line, no envelope. The lead parses
-  the first word, then reads the DONE commit hash from its fixed position
-  immediately after `DONE: `. BLOCKED and NEEDS_HELP name any landed
-  commit hashes in prose when partial commits exist.
+  <question, attempted, needed>`. One verdict line, no envelope. A DONE
+  line may be followed by report lines, each opening with one of two
+  words: `RED: <test> — <failure message as read>` (one per test written
+  in the RED step; required when the spec has a Tests section) and
+  `FLAG: <what and where>`. Report lines
+  never feed control flow: the lead parses the first word, reads the DONE
+  commit hash from its fixed position immediately after `DONE: `, and
+  carries the report lines into the Stage-2 dispatch. Any other text after
+  a DONE line is read as a FLAG line, never re-dispatched for format.
+  BLOCKED and NEEDS_HELP stay one line and name any landed commit hashes
+  in prose when partial commits exist.
 - **Stage-2 code-reviewer → lead** (stated in `agents/code-reviewer.md`,
-  dispatched by executing-plans): leading verdict line `PASS` or
-  `CONCERNS: <one-line summary>`, followed by the concern list only — one
+  dispatched by executing-plans at the depth `pipeline-constants.md` sets —
+  Review Depth Flag): leading verdict line `PASS` or
+  `CONCERNS: <one-line summary>`, followed by the concern list — one
   line per concern: `[capability|convention] <file>:<line> — <what and
   why>` — exactly one class tag per line, definitions in
   `pipeline-constants.md` (Finding Classification). Its why opens with
   `Contract:`, `Hits:`, or `Maintainer cost:` — which one, per
-  `pipeline-constants.md` (Severity Anchor, in-epic paragraph). May be followed
-  by non-blocking `SUGGESTION: <file>:<line> — <note>` lines, which the
-  lead persists to the epic's bd notes and never acts on in-round. Never the
-  full structured review: the lead's context must not accumulate per-task
-  review bodies.
+  `pipeline-constants.md` (Severity Anchor, in-epic paragraph). Then one
+  `ANSWER <n>: <answer> — <evidence>` line per numbered question in the
+  dispatch, in order; an answer that finds a defect also files it as a
+  concern line. No SUGGESTION lines, and never the full structured review:
+  the lead's context must not accumulate per-task review bodies.
 - **End-of-epic reviewer → lead (completion)** (defined in `agents/reviewer.md`,
   report by file per `report-file-contract.md`): final message is exactly
   one line — `REVIEW VERDICT: <APPROVED|GAPS FOUND> — <N> gaps — report: <path>`.

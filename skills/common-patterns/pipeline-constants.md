@@ -138,10 +138,12 @@ by the follow-up it requires, not by how the defect feels:
 In-epic (the end-of-epic reviewer and the Stage-2 code-reviewer), a gap
 or concern is either a contract miss — its line opens `Contract:` and
 names the item missed — or a finding that fills one of the two Important
-lines above; everything else is a Suggestion. The contract
-at Stage 2 is the task spec and the standing scope every spec carries
-(`spec-templates.md`, Standing scope); at the end-of-epic gate it adds
-the epic's requirements, success criteria, and anti-patterns. In-epic
+lines above; everything else is a Suggestion at the end-of-epic gate and
+goes unreported at Stage 2. The contract at Stage 2 is the task spec, plus
+at full depth (Review Depth Flag below) the standing scope every spec
+carries (`spec-templates.md`, Standing scope); at the end-of-epic gate it
+is the task specs and the standing scope plus the epic's requirements,
+success criteria, and anti-patterns. In-epic
 there is no Critical tier — a defect that would be Critical elsewhere is
 a gap by the line it fills — and no follow-up split: the lead routes
 every gap or concern by its class tag (Finding Classification).
@@ -196,6 +198,26 @@ Default executor model is Sonnet. A task spec containing the line
    (see Finding Classification above). `[convention]` concerns never
    promote. executing-plans owns this classification; this entry defers
    to it.
+
+## Review Depth Flag
+
+Stage 2 (executing-plans) reviews every DONE at one of two depths; what
+each examines is defined in `agents/code-reviewer.md`:
+- **Outcome** (default, Sonnet) — the change against its task spec, plus
+  answers to the lead's questions.
+- **Full** (Opus) — outcome, plus the code-quality pass and the standing
+  scope.
+
+A task spec containing the line "Review: full" is reviewed at full depth.
+The planner sets it at spec time on a pattern-setting task — one whose code
+later tasks in the tree are specified to copy or extend, where a defect is
+copied into every later task before the end-of-epic reviewer sees it. SRE
+batch review may recommend it.
+
+Depth decides what the reviewer examines, never what counts as a concern:
+the bar is the Severity Anchor's in-epic paragraph at both depths.
+`Review: full` sets review depth only and `Executor: opus` sets the
+executor's model only; neither implies the other.
 
 ## Complete Task Tree (Handoff Contract)
 

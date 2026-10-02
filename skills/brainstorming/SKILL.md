@@ -338,7 +338,7 @@ bd dep add bd-[task] bd-[epic] --type parent-child
 
 **Classification guide:** time bands, definitions, and examples are in `skills/common-patterns/pipeline-constants.md` and `skills/common-patterns/spec-templates.md` — cite, never restate.
 
-A task spec may carry the `Executor: opus` promotion flag for irreducibly hard tasks — see `skills/common-patterns/pipeline-constants.md` for the full promotion policy.
+A task spec may carry the `Executor: opus` promotion flag for irreducibly hard tasks — see `skills/common-patterns/pipeline-constants.md` for the full promotion policy. A pattern-setting task — one whose code later tasks in the tree are specified to copy or extend — carries `Review: full` (same file, Review Depth Flag).
 
 Create a prep-refactor's named task before the prep task so its `Kind:` line carries a real id, then set task dependencies in bd so execution order is clear: `bd dep add bd-[task-B] bd-[task-A]` (bd's default dependency type — it gates readiness) for tasks that must run in sequence.
 
@@ -383,7 +383,7 @@ The dispatch above returns the one-line `SRE VERDICT:` template (`skills/sre-tas
 **Revision loop (NEEDS REVISION):**
 
 1. Spec strengthening and trimming are already applied — the SRE reviewer updates specs directly via `bd update` (its Authority rule, `skills/sre-task-refinement/SKILL.md`). Do not re-apply.
-2. For each structural recommendation in the report file (add a task, split a task, reorder dependencies, or promote a task via the `Executor: opus` flag): either apply it with plain bd commands (`bd create` + `bd dep add` for tree changes; `bd update` adding the `Executor: opus` line to the task's spec for promotions — SRE batch review is a named promotion-recommendation source in `skills/common-patterns/pipeline-constants.md`; Step 6c's pre-create verification applies to any new task), or explicitly decline it with a recorded reason in the epic's bd notes (it surfaces in the next gate-state's Decided section).
+2. For each structural recommendation in the report file (add a task, split a task, reorder dependencies, promote a task via the `Executor: opus` flag, or mark it `Review: full`): either apply it with plain bd commands (`bd create` + `bd dep add` for tree changes; `bd update` adding the `Executor: opus` or `Review: full` line to the task's spec — SRE batch review is a named recommendation source for both flags in `skills/common-patterns/pipeline-constants.md`; Step 6c's pre-create verification applies to any new task), or explicitly decline it with a recorded reason in the epic's bd notes (it surfaces in the next gate-state's Decided section).
 3. Re-dispatch the SRE batch review as a fresh subagent. The lead never marks the tree approved itself — only a fresh SRE run can return APPROVE.
 
 ---
@@ -417,7 +417,7 @@ The executing-plans skill will:
 2. Dispatch a fresh executor subagent per task on Sonnet (or Opus where the spec carries Executor: opus)
 3. The executor reads the self-contained task spec, implements, commits, and returns
    a one-liner status (DONE, BLOCKED, or NEEDS_HELP)
-4. After each task: lead runs a two-stage review (Stage 1: lead epic-coherence check; Stage 2: reviewer spec-match + code quality),
+4. After each task: lead runs a two-stage review (Stage 1: lead epic-coherence check; Stage 2: code-reviewer outcome check answering the lead's questions, full code-quality review on pattern-setting tasks),
    then dispatches fresh executor for next task
 5. When all tasks complete, a reviewer agent verifies the assembled whole against the epic spec
 
