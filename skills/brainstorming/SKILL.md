@@ -297,6 +297,8 @@ For refactor epics: define the pattern during planning so each executor task is 
 
 **Prep-refactor tasks.** When Step 2 found that the chosen approach is small only once the current structure changes, propose that change as its own task ahead of the feature task, carrying the prep-refactor kind (`skills/common-patterns/spec-templates.md`, Prep-refactor kind).
 
+**Prose artifacts.** When the epic's deliverables are skills, agent prompts, or common patterns, the build is author-editor per `hyperpowers:writing-skills`: no task tree is created beyond the epic design, Steps 7 and 8 do not run, and the epic's bd notes record that choice as a BUILD MODEL block.
+
 **Hard ceiling: see `skills/common-patterns/pipeline-constants.md`. No exceptions.** Tasks estimated over the ceiling must be split.
 
 Do not create any tasks until the human approves the strategy. When pausing at this gate, emit the gate-state block — including any accumulated plan-impact notices — and persist it to the epic's bd notes (format: `skills/common-patterns/loop-interfaces.md`) — the approval must be answerable in durable prose whenever the user returns.

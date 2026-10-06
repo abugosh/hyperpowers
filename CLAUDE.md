@@ -274,13 +274,16 @@ This is a markdown plugin — skills, commands, and agent prompts are documentat
 ./hooks/test/contract-test.sh
 ```
 
-### Testing Skills
+### Changing the plugin
 
-When creating or modifying skills, use the `writing-skills` skill which applies TDD to documentation:
+Skills, agents, and common patterns are authored, not generated: the method is `skills/writing-skills/SKILL.md` (evidence first, the lead authors for the agent that will read the file, an editor pass, a ledger, the diff handed to the user). This repo's delivery shape for one of those changes:
 
-1. Test skill with subagents BEFORE writing final version
-2. Iterate until the skill is bulletproof against rationalization
-3. Document what failure modes you tested
+1. A bd task for a single-site fix, or a brainstormed epic when the change adds or moves a rule across files; either way the build is author-editor and the owning issue's notes carry the `LEDGER (<date>)` block the skill defines
+2. One home per rule: a new cross-skill rule is a `skills/common-patterns/*.md` file (constants in `pipeline-constants.md`, verdict vocabularies in `loop-interfaces.md`), and every consumer cites it by path
+3. Catalog rows in `skills/common-patterns/common-rationalizations.md` and `common-anti-patterns.md` for the excuses the change invites, each earned by an observation
+4. A pointer in this file, and README wording where a skill or agent description changed
+5. The version bump below, then `./hooks/test/contract-test.sh` even when hooks are untouched
+6. The diff handed to the user; commit only on their word, subject `feat(bd-xxxx): <what> (vX.Y.0)` or `fix(bd-xxxx): <what> (vX.Y.Z)`; the user's approval of the diff is the close-out gate, and `bd close` names it
 
 ### Publishing
 
@@ -366,8 +369,8 @@ Priority: Continue adding collaboration workflows (incident response, merge conf
 
 From writing-skills skill:
 
-1. Test skills with subagents before finalizing
-2. Iterate until bulletproof against rationalization
+1. No edit without a recorded observation, quoted verbatim in the ledger
+2. Author the text for the agent that will read it; run a behavior check only when a rule's behavior is genuinely uncertain, at most once per changed behavior
 3. Follow the skill structure pattern (Overview, Process, Rationalizations, Red Flags, Integration)
 4. Reference common-patterns instead of duplicating content
 5. Be explicit about whether skill is rigid (must follow exactly) or flexible (adapt principles)

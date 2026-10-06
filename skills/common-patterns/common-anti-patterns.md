@@ -137,6 +137,13 @@ Anti-patterns that apply across multiple skills. Reference this to avoid duplica
    - Bugs outside an epic, review follow-ups, resolve-tension work → forge issue
    - Proposed at a gate with title and body; filed only on approval
    - A decline is recorded, never silent
+
+❌ Don't add or change a rule in a skill or agent prompt without a recorded observation
+   The lead authors from evidence; a hypothesis is a question for the user
+   (skills/writing-skills/SKILL.md)
+   - Subagents: a fresh-agent editor pass, one live use or fixture when
+     behavior is uncertain, the A/B probe when removing a guard
+   - A sentence an observation falsified is cut, never qualified
 ```
 
 ## Refactoring Anti-Patterns

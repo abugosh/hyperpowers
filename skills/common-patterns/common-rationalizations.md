@@ -132,6 +132,17 @@ These rationalizations appear across multiple contexts. When you catch yourself 
 
 **All of these mean: STOP. Follow the requirements exactly.**
 
+## Skill Authoring Shortcuts
+
+| Excuse | Reality |
+|--------|---------|
+| "Agents probably do X here, I'll add a rule" | A hypothesis. Ask the user; edit when the failure is recorded (`skills/writing-skills/SKILL.md`). |
+| "A quick subagent run will tell me if the wording works" | It shows the wording renders once. Read it as the agent would, then author. |
+| "The fixture passed, so the fix works" | A pass proves rendering, not a field rate. Long-session failures rarely reproduce short. |
+| "I'll add an exception clause for the case that broke" | Cut the sentence the case falsified. One rule, no branch. |
+| "I'll restate the rule here so the reader needn't follow the link" | That is the drift. Cite the home by path. |
+| "I'll commit this and show the diff after" | The diff is the hand-off. The user edits first; commit on their word. |
+
 ## Why This Matters
 
 Rationalizations are how good processes fail:

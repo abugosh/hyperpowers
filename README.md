@@ -51,7 +51,7 @@ Reusable workflows for common development tasks:
 
 **Collaboration & Process:**
 - **dispatching-parallel-agents** - Investigate independent failures concurrently
-- **writing-skills** - TDD for process documentation itself
+- **writing-skills** - Evidence-first author-editor method for skills, agent prompts, and common patterns
 
 **Infrastructure & Customization:**
 - **building-hooks** - Create custom hooks for automating quality checks and workflow enhancements
@@ -209,8 +209,8 @@ If you're extending your own fork:
 
 1. Create a new directory in `skills/`
 2. Add a `SKILL.md` file with the workflow
-3. Follow the TDD approach in `writing-skills` skill
-4. Test with subagents before deployment
+3. Follow the author-editor method in the `writing-skills` skill: start from a recorded observation, write for the agent that will read the file, run an editor pass
+4. Run a live use or fixture only where a rule's behavior is genuinely uncertain
 
 ## License
 

@@ -1,76 +1,57 @@
-## Testing All Skill Types
+## Behavior Checks and the A/B Method
 
-Different skill types need different test approaches:
+The process in `SKILL.md` runs a behavior check only when a rule's behavior
+is genuinely uncertain after reading, at most once per changed behavior.
+This file says what that check looks like for each skill type, what makes
+rule text hold up under pressure, and how a guard is removed.
 
-### Discipline-Enforcing Skills (rules/requirements)
+## What a Check Looks Like, by Skill Type
 
-**Examples:** TDD, hyperpowers:verification-before-completion, hyperpowers:designing-before-coding
+### Discipline-enforcing skills (rules and requirements)
 
-**Test with:**
-- Academic questions: Do they understand the rules?
-- Pressure scenarios: Do they comply under stress?
-- Multiple pressures combined: time + sunk cost + exhaustion
-- Identify rationalizations and add explicit counters
+**Examples:** TDD, hyperpowers:verification-before-completion
 
-**Success criteria:** Agent follows rule under maximum pressure
+**Check:** one pressure scenario combining two or three pressures (time,
+sunk cost, authority, exhaustion), the agent reading the file from the
+working tree. Record its exact words. A pass shows the rule renders the
+behavior once under that pressure.
 
-### Technique Skills (how-to guides)
+### Technique skills (how-to guides)
 
-**Examples:** condition-based-waiting, hyperpowers:root-cause-tracing, defensive-programming
+**Examples:** hyperpowers:root-cause-tracing, condition-based-waiting
 
-**Test with:**
-- Application scenarios: Can they apply the technique correctly?
-- Variation scenarios: Do they handle edge cases?
-- Missing information tests: Do instructions have gaps?
+**Check:** one application to a scenario the file does not use as its
+example. A gap in the instructions shows as a step the agent had to invent.
 
-**Success criteria:** Agent successfully applies technique to new scenario
+### Pattern skills (mental models)
 
-### Pattern Skills (mental models)
+**Examples:** reducing-complexity, information-hiding
 
-**Examples:** reducing-complexity, information-hiding concepts
+**Check:** one recognition case and one counter-example. The agent should
+apply the pattern to the first and decline it for the second.
 
-**Test with:**
-- Recognition scenarios: Do they recognize when pattern applies?
-- Application scenarios: Can they use the mental model?
-- Counter-examples: Do they know when NOT to apply?
+### Reference skills (documentation, APIs)
 
-**Success criteria:** Agent correctly identifies when/how to apply pattern
+**Examples:** API documentation, command references
 
-### Reference Skills (documentation/APIs)
+**Check:** one retrieval task. The agent should find the entry and use it
+correctly; a wrong flag or a missed section is the finding.
 
-**Examples:** API documentation, command references, library guides
+**Every type:** the agent reads the file by path from the working tree, not
+through the Skill tool, whose installed copy is stale on a branch. Record
+the return verbatim.
 
-**Test with:**
-- Retrieval scenarios: Can they find the right information?
-- Application scenarios: Can they use what they found correctly?
-- Gap testing: Are common use cases covered?
+## Writing Rule Text That Holds
 
-**Success criteria:** Agent finds and correctly applies reference information
+Discipline skills are read by agents under pressure, and agents find
+loopholes. The counters below are authoring guidance; each counter you add
+is earned by an observation, not by anticipation.
 
-## Common Rationalizations for Skipping Testing
+**Why these work:** see [../persuasion-principles.md](../persuasion-principles.md)
+(Cialdini, 2021; Meincke et al., 2025) on authority, commitment, scarcity,
+social proof, and unity.
 
-| Excuse | Reality |
-|--------|---------|
-| "Skill is obviously clear" | Clear to you ≠ clear to other agents. Test it. |
-| "It's just a reference" | References can have gaps, unclear sections. Test retrieval. |
-| "Testing is overkill" | Untested skills have issues. Always. 15 min testing saves hours. |
-| "I'll test if problems emerge" | Problems = agents can't use skill. Test BEFORE deploying. |
-| "Too tedious to test" | Testing is less tedious than debugging bad skill in production. |
-| "I'm confident it's good" | Overconfidence guarantees issues. Test anyway. |
-| "Academic review is enough" | Reading ≠ using. Test application scenarios. |
-| "No time to test" | Deploying untested skill wastes more time fixing it later. |
-
-**All of these mean: Test before deploying. No exceptions.**
-
-## Bulletproofing Skills Against Rationalization
-
-Skills that enforce discipline (like TDD) need to resist rationalization. Agents are smart and will find loopholes when under pressure.
-
-**Psychology note:** Understanding WHY persuasion techniques work helps you apply them systematically. See persuasion-principles.md for research foundation (Cialdini, 2021; Meincke et al., 2025) on authority, commitment, scarcity, social proof, and unity principles.
-
-### Close Every Loophole Explicitly
-
-Don't just state the rule - forbid specific workarounds:
+### Close the loophole you saw, explicitly
 
 <Bad>
 ```markdown
@@ -85,84 +66,50 @@ Write code before test? Delete it. Start over.
 **No exceptions:**
 - Don't keep it as "reference"
 - Don't "adapt" it while writing tests
-- Don't look at it
 - Delete means delete
 ```
 </Good>
 
-### Address "Spirit vs Letter" Arguments
+Each bullet above was a loophole an agent took in its own words.
 
-Add foundational principle early:
+### Spirit versus letter
 
-```markdown
-**Violating the letter of the rules is violating the spirit of the rules.**
-```
+State early: **Violating the letter of the rules is violating the spirit of
+the rules.** It closes a class of "I'm following the spirit" readings.
 
-This cuts off entire class of "I'm following the spirit" rationalizations.
+### The rationalization table
 
-### Build Rationalization Table
-
-Capture rationalizations from baseline testing (see Testing section below). Every excuse agents make goes in the table:
+One row per excuse an agent has used, with the reality beside it:
 
 ```markdown
 | Excuse | Reality |
 |--------|---------|
 | "Too simple to test" | Simple code breaks. Test takes 30 seconds. |
-| "I'll test after" | Tests passing immediately prove nothing. |
 | "Instruction was specific so I can skip the workflow" | Specific instructions = WHAT, not HOW. Route through the workflow. |
 ```
 
-(That third example is the counter class proven load-bearing by A/B flip against
-current lead-tier models — RW6b P8. Use counters your own baselines earn.)
+The second row is a counter class an A/B flip proved load-bearing against
+lead-tier models (RW6b P8). Use counters your own observations earn.
 
-### Create Red Flags List
+### Red flags
 
-Make it easy for agents to self-check when rationalizing:
+A short list the agent can match itself against:
 
 ```markdown
 ## Red Flags - STOP and Start Over
 
 - Code before test
 - "I already manually tested it"
-- "It's about spirit not ritual"
 - "This is different because..."
-- "Instruction was specific, so the workflow doesn't apply"
-
-**All of these mean: Delete code. Start over with TDD.**
 ```
 
-### Update CSO for Violation Symptoms
+### Description carries the symptom
 
-Add to description: symptoms of when you're ABOUT to violate the rule:
+The `description` names the moment the rule is about to be broken:
 
 ```yaml
 description: use when implementing any feature or bugfix, before writing implementation code
 ```
-
-## RED-GREEN-REFACTOR for Skills
-
-Follow the TDD cycle:
-
-### RED: Write Failing Test (Baseline)
-
-Run pressure scenario with subagent WITHOUT the skill. Document exact behavior:
-- What choices did they make?
-- What rationalizations did they use (verbatim)?
-- Which pressures triggered violations?
-
-This is "watch the test fail" - you must see what agents naturally do before writing the skill.
-
-### GREEN: Write Minimal Skill
-
-Write skill that addresses those specific rationalizations. Don't add extra content for hypothetical cases.
-
-Run same scenarios WITH skill. Agent should now comply.
-
-### REFACTOR: Close Loopholes
-
-Agent found new rationalization? Add explicit counter. Re-test until bulletproof.
-
-Pressure types that reliably work: time, sunk cost, authority, exhaustion — combine 2-3 per scenario.
 
 ## Re-Baselining and Pruning (A/B Method)
 
@@ -189,5 +136,8 @@ epic's bd notes):
   independent review), not more counter prose. Do not add doctrine a clean
   RED cannot motivate.
 - **Prunes are edits too:** a prune requires its A-COMPLIES baseline the same
-  way an addition requires its failing test.
+  way an addition requires its observation.
 
+Removing a guard on an agent interface (the executor cluster named in
+`docs/arch/adr/adr-003.md`) uses this method against live dispatches at the
+guard's model tier; nothing else sanctions that removal.
