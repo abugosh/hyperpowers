@@ -123,6 +123,12 @@ Anti-patterns that apply across multiple skills. Reference this to avoid duplica
 
 ❌ Don't accept a multi-section report in a subagent's final message
    Reports travel by file; the return is one line (report-file-contract.md)
+
+❌ Don't file a follow-up ticket as the exit for real-but-awkward work
+   Tickets are the operator's call (loop-interfaces.md, Opt disposition)
+   - Price the work: files, tests, size, the scope line it crosses
+   - Ask: bring in / defer / drop — never propose the defer yourself
+   - A run that ends in new tickets is the exception
 ```
 
 ## Refactoring Anti-Patterns

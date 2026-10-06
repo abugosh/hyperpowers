@@ -348,12 +348,12 @@ After all tasks return DONE and pass two-stage review:
 
    **APPROVED:**
 
-   a. Verify the working branch, then persist the completion gate-state block to the epic's bd notes (format: `skills/common-patterns/loop-interfaces.md`), including any accumulated plan-impact notices. The block MUST include the machine-checkable marker line `Verdict: APPROVED (end-of-epic reviewer, <date>)` (format: `skills/common-patterns/loop-interfaces.md`). Any non-blocking `### Suggestions` section in the reviewer's report file goes to the epic's bd notes as optional follow-ups — never acted on in-round, same disposition as the GAPS FOUND branch.
+   a. Verify the working branch, then persist the completion gate-state block to the epic's bd notes (format: `skills/common-patterns/loop-interfaces.md`), including any accumulated plan-impact notices. The block MUST include the machine-checkable marker line `Verdict: APPROVED (end-of-epic reviewer, <date>)` (format: `skills/common-patterns/loop-interfaces.md`). Any non-blocking `### Suggestions` section in the reviewer's report file goes to the epic's bd notes as optional follow-ups — never acted on in-round, same disposition as the GAPS FOUND branch — and is surfaced under **Needs you** (step c) as decisions.
    b. Run the post-build Architecture Impact Check against the work just completed for this epic, per `skills/common-patterns/architecture-impact-check.md` (Post-Build Routing) — cite that file, do not restate the 5 questions here. Any YES routes per that file: dispatch `/ponder` in UPDATE mode when a model exists, or note-and-suggest in the completion report when no model exists.
    c. Present final status to the user, at architect altitude per the Audience Contract (`skills/common-patterns/prose-style.md`, The Reader — cite, don't restate):
       - **What was built:** at most 6 sentences of role-based plain language — the system change this epic delivered (components, behavior, contracts) — leaning on the reviewer's Architect Summary rather than restating the audit.
       - **Decided during build:** judgment calls the lead made that the architect didn't see — retags, convention lead-fixes, promotions, Suggestions filed to bd notes — as plain descriptions; commit hashes may appear as trailing evidence, never as the narrative.
-      - **Needs you:** the manual-validation focus — what to exercise and why — plus any decisions left on file.
+      - **Needs you:** the manual-validation focus — what to exercise and why — plus any decisions left on file. The reviewer's Suggestions filed in step a are decisions, not a record: list each with what it would take, and ask whether it comes in before finish-branch, becomes a ticket, or is dropped. The lead files no ticket on its own.
       No internal vocabulary (stage labels, class tags as narrative) belongs in this presentation; class tags may still appear in trailing evidence.
    d. **STOP here.** Do not automatically call finishing-a-development-branch. The user needs time to test the implementation manually in their environment, verify edge cases automated tests don't cover, and confirm the feature works as expected in context. Closing the epic removes context the user may need during manual validation — let them explicitly trigger closure when ready.
    e. The epic remains open. The user runs `/hyperpowers:finish-branch` when ready.
@@ -490,7 +490,7 @@ Before completion:
 - [ ] APPROVED → gate-state persisted, post-build Architecture Impact Check run (per `architecture-impact-check.md`), final status presented, then STOP — no automatic call to finish-branch
 - [ ] GAPS FOUND → `[convention]` gaps lead-fixed and recorded in the epic's bd notes, `[capability]` gaps turned into linked fix tasks and dispatched, end-of-epic reviewer dispatched again to confirm
 - [ ] Gap-round cap respected (`pipeline-constants.md`): 2 reviewer re-dispatches without APPROVED → escalated (section 5), not a 3rd round
-- [ ] Reviewer Suggestions (either verdict) persisted to the epic's bd notes as optional follow-ups
+- [ ] Reviewer Suggestions (either verdict) persisted to the epic's bd notes as optional follow-ups and listed under Needs you as bring-in / ticket / drop decisions — no ticket filed by the lead
 - [ ] Working branch verified before gate-state persist and any final commits
 
 </verification_checklist>

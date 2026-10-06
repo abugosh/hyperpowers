@@ -59,6 +59,8 @@ These rationalizations appear across multiple contexts. When you catch yourself 
 | "Made progress on the task, can move on" | Progress ≠ complete. All substeps must finish. 2/6 steps = 33%, not done. |
 | "Other tasks are waiting, should continue" | Current task incomplete = blocked. Finish all substeps first. |
 | "Can finish remaining steps later" | Later never comes. Complete all substeps now before closing task. |
+| "It's real but out of scope, file a follow-up" | A ticket is the operator's decision, never the loop's default. Price the work and ask: bring in, defer, or drop. |
+| "The epic's Boundaries said not to touch this" | A closed epic's Boundary was a scoping choice, not a prohibition. Only an Anti-Pattern refutes; a Boundary is gate context. |
 
 ## Dispatch Shortcuts
 

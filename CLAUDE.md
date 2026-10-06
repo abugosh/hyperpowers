@@ -210,7 +210,7 @@ For reviewing someone else's branch, MR, or PR with no bd spec involved: **Peek*
 
 ### Review Response (Receiving Reviews)
 
-For triaging and responding to review feedback on your own MR/PR: `/hyperpowers:opt` ingests incoming MR/PR review threads (or a pasted review, or a peek comment), triages every finding against project reality with an explicit disposition (fix now / file follow-up / decline with reasoning / needs reviewer input), escalates accepted defects to a root-cause check and class sweep, applies tiered fixes at the kept worktree, and drafts gated colleague-facing replies — lead-only, no bd epic required.
+For triaging and responding to review feedback on your own MR/PR: `/hyperpowers:opt` ingests incoming MR/PR review threads (or a pasted review, or a peek comment), triages every finding against project reality with an explicit disposition (fix now / file follow-up / decline with reasoning / needs reviewer input; file follow-up is operator-only — the loop prices real-but-out-of-scope work as a scope decision and the user chooses bring in, defer, or drop), escalates accepted defects to a root-cause check and class sweep, applies tiered fixes at the kept worktree, and drafts gated colleague-facing replies — lead-only, no bd epic required.
 
 ### Architecture (Empirical, Brand-based)
 

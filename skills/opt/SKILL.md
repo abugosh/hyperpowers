@@ -20,9 +20,9 @@ MEDIUM-LOW FREEDOM — the step order, the disposition vocabulary, the escalatio
 |------|--------|-----|
 | 1 | Resolve & ingest | Parse argument (URL / number / branch / none); detect forge + rung (`forge-detection.md`); read threads WITH resolution state; record target state, worktree path, and pre-run tip; unresolved threads are the work queue |
 | 2 | Normalize | One finding record per claim: source thread, reviewer, claim, location, class + severity (`pipeline-constants.md`) |
-| 3 | Verify against reality | Code, conventions, ADRs, source epic's design and anti-patterns; codebase-investigator for structure; every finding exits confirmed / refuted / contested with evidence |
+| 3 | Verify against reality | Code, conventions, ADRs, source epic's design and anti-patterns (its Boundaries are gate context, never refutation); codebase-investigator for structure; every finding exits confirmed / refuted / contested with evidence |
 | 4 | Escalation check | Accepted `[capability]` defects only: origin-or-symptom (root-cause-tracing) + class sweep for sibling sites (debugging-with-tools Rule 4). Proposes; never acts |
-| 5 | Batch disposition gate | ONE table, AskUserQuestion: FIX NOW / FILE FOLLOW-UP / DECLINE / NEEDS REVIEWER INPUT. Gate-state persisted on timeout |
+| 5 | Batch disposition gate | ONE table, AskUserQuestion: the lead proposes FIX NOW / DECLINE / NEEDS REVIEWER INPUT; FILE FOLLOW-UP is operator-only — scope decision rows carry a cost line, no proposal, and are asked one by one (bring in / defer / drop). Gate-state persisted on timeout |
 | 6 | Execute (tiered) | Carve-out-eligible fixes lead-fixed at the worktree (bar: `pipeline-constants.md`); confirmed defects failing-test-first; approved class fixes across swept sites; FILE FOLLOW-UP → fresh bd issues |
 | 7 | Replies + outward gate | Per-thread drafts in colleague prose; ONE gate covers posting AND pushing; re-check target state; wrap-up report |
 </quick_reference>
@@ -98,7 +98,7 @@ No finding is accepted because a reviewer wrote it. Findings whose correctness i
 - **The code** at the worktree — read the cited site and its callers, not just the diff hunk.
 - **Project conventions** — CLAUDE.md, sibling implementations, the surrounding file's existing style.
 - **Architecture decisions** — `docs/arch/adr/` when it exists. A finding that contradicts a recorded decision is a DECLINE candidate with the strongest evidence there is.
-- **The source epic's design and anti-patterns** — when the branch is identifiable (an `epic/<id>` branch name, or `bd:` trailers in the branch's commits), `bd show <epic-id>` and read its Design and Anti-Patterns. A reviewer suggesting exactly what the epic forbids is the single most common false finding this step catches.
+- **The source epic's design and anti-patterns** — when the branch is identifiable (an `epic/<id>` branch name, or `bd:` trailers in the branch's commits), `bd show <epic-id>` and read its Design and Anti-Patterns. A reviewer suggesting exactly what the epic forbids is the single most common false finding this step catches. The epic's Boundaries and out-of-scope lines are not Anti-Patterns: an Anti-Pattern says the design must never do this and carries its reason; a Boundary says this epic chose not to do it. The epic is closed, so a Boundary refutes nothing and defers nothing — verify the finding against the code as if the line did not exist, and note the Boundary on the row as context for the gate, where crossing it is the architect's call.
 
 Dispatch `hyperpowers:codebase-investigator` for structure questions ("does anything else call this?", "is this pattern used elsewhere?"). With three or more independent questions, dispatch them in parallel per `hyperpowers:dispatching-parallel-agents`.
 
@@ -133,11 +133,13 @@ One table, one gate. Every finding in the queue appears exactly once:
 Dispositions come from exactly four words, registered in `skills/common-patterns/loop-interfaces.md`. No fifth word is invented here or anywhere else:
 
 - **FIX NOW** — fixed on this branch, in this run.
-- **FILE FOLLOW-UP** — real, not now: a fresh bd issue carries it. The source epic is closed by the time an MR draws review, so follow-ups never reopen it.
+- **FILE FOLLOW-UP** — real, not now: a fresh bd issue carries it. The source epic is closed by the time an MR draws review, so follow-ups never reopen it. **Operator-only.** The lead never proposes this word (registry: `skills/common-patterns/loop-interfaces.md`); the architect writes it at a scope decision row, and the merged-or-closed-target rule (Step 7) is the one place it is written for them.
 - **DECLINE** — not doing it, **and the row carries the written reasoning**. Declining a finding the evidence refutes is the correct outcome, and the reasoning is what makes it a professional answer rather than a refusal.
 - **NEEDS REVIEWER INPUT** — the disagreement or ambiguity needs the reviewer before anything is decided. Step 7 replies with the question.
 
-Present the table via AskUserQuestion, following `skills/common-patterns/question-format.md` for form and gate discipline: propose a disposition for every row, and let the architect accept the batch or override rows. Findings that are contested, or that carry a Critical severity, may take an individual follow-up question after the batch round — those are the rows where a single wrong default costs the most.
+**Scope decision rows.** A confirmed finding the lead would once have called "real, not now" — the fix reaches files the branch never touched, crosses a Boundary of the closed epic, or is simply larger than the branch — gets no proposed disposition. Its cell reads `scope decision — <cost of fixing it now: files, tests, rough size>; <the line it crosses, if any>`. A ticket is work pushed onto a future session, and a review that spawns tickets is the exception, not the shape of a normal run. Whether the work comes in, waits, or dies is the architect's decision; the lead's job is to price it.
+
+Present the table via AskUserQuestion, following `skills/common-patterns/question-format.md` for form and gate discipline: propose a disposition for every proposable row, and let the architect accept the batch or override rows. Then ask each scope decision row on its own, after the batch round, with three options: bring it in (FIX NOW), defer it to a ticket (FILE FOLLOW-UP), or drop it (DECLINE, reasoning recorded). When the branch is open and the cost line names bounded work, FIX NOW is the recommended option; otherwise recommend nothing and let the cost line speak. Findings that are contested, or that carry a Critical severity, may take an individual question in the same round — those are the rows where a single wrong default costs the most.
 
 **On timeout.** An expired question box is not an answer. Re-ask in durable prose and HOLD, emitting a Gate-State Block per `skills/common-patterns/loop-interfaces.md`. When a bd epic is identifiable for the branch, persist that block to its notes (`bd update <epic-id> --notes`) even though the epic is closed — a closed epic is still the branch's durable home, and a fresh session reconstructs the gate from bd alone. When no epic is identifiable, the block lives in the session transcript only; say so explicitly at the gate, so the architect knows the state is not recoverable from bd.
 
@@ -151,7 +153,7 @@ Work only the dispositions the architect approved. Nothing here is pushed or pos
 
 **Tier 3 — approved class fixes.** Only the sibling sites the architect approved at the gate, each through the Tier 2 path. A class fix with no test at each site is a claim, not a fix.
 
-**FILE FOLLOW-UP.** Fresh bd issues in the standard form (`skills/common-patterns/bd-commands.md`): `bd create "<title>" --type bug|task --description "<one-line summary>" --design "<the finding and its evidence>"`. Class-level work that needs design rather than mechanical repetition routes to `/hyperpowers:brainstorm` instead of becoming a task nobody can execute. bd issues exist for FILE FOLLOW-UP dispositions and for nothing else in this loop — a FIX NOW does not get a tracking issue, and a DECLINE never does.
+**FILE FOLLOW-UP.** Fresh bd issues in the standard form (`skills/common-patterns/bd-commands.md`): `bd create "<title>" --type bug|task --description "<one-line summary>" --design "<the finding and its evidence>"`. Class-level work that needs design rather than mechanical repetition routes to `/hyperpowers:brainstorm` instead of becoming a task nobody can execute. bd issues exist for FILE FOLLOW-UP dispositions the architect chose at Step 5 (or the merged-target rule forced) and for nothing else in this loop — a FIX NOW does not get a tracking issue, and a DECLINE never does.
 
 Run `hyperpowers:verification-before-completion` before any claim that something is fixed. The reply drafted in Step 7 states what changed; that statement must already be evidence.
 
@@ -197,7 +199,8 @@ anything still open. No file:line, no internal vocabulary.]
 SHAs for fixes and issue ids for follow-ups]
 
 ### Filed
-[bd issues created, with ids; "- (none)" when empty]
+[bd issues created, with ids — each one a defer the architect chose at Step 5
+or the merged-target rule forced; "- (none)" when empty, which is the normal run]
 
 ### Pending
 [Awaiting-reviewer threads carried from Step 1, and threads left open on
@@ -215,7 +218,7 @@ NEEDS REVIEWER INPUT; "- (none)" when empty]
 4. **`[convention]` findings never escalate.** No root-cause pass, no sweep, no bd issue. Proportionality is a rule here, not a preference.
 5. **The escalation check proposes; the architect decides scope.** Sweep results are evidence in the Step 5 table. Widening a fix without approval is scope taken, not scope granted.
 6. **DECLINE is a first-class outcome and always carries written reasoning.** A refuted finding gets declined with its evidence. Silently complying with a wrong finding damages the code and teaches the reviewer nothing.
-7. **bd issues exist only for FILE FOLLOW-UP.** Not for fixes made, not for declines, not for tracking the run.
+7. **bd issues exist only for FILE FOLLOW-UP, and FILE FOLLOW-UP is the architect's word.** The lead never proposes it; a finding it cannot propose FIX NOW or DECLINE for is a scope decision the architect takes with the cost in front of them — bring in, defer, drop. Not for fixes made, not for declines, not for tracking the run. A review that ends in new tickets is the exception.
 8. **Resolved threads are settled; reviewer threads are the reviewer's to resolve.** Never re-triage a resolved thread, never resolve one yourself.
 9. **Colleague-facing text carries zero plugin vocabulary.** Replies and commit messages name changes, not classes, severities, dispositions, or steps.
 10. **Never rewrite the branch under review.** Additive commits only; no amend, squash, rebase, or force-push.
@@ -230,6 +233,9 @@ All of these mean: **STOP. Follow the process as written.**
 - "The sweep found four more sites, fix them all while I'm here" — the opposite failure. Sweep results are evidence for the gate, not authority to widen the diff.
 - "It's a one-word fix, push it and reply now" — the gate does not scale with diff size. A one-word push nobody approved is still an unapproved push.
 - "Every finding should get a bd issue for traceability" — ceremony inflation. The MR thread is the trace; issues exist for FILE FOLLOW-UP only.
+- "The epic said this was out of scope, so file it" — a closed epic's Boundary was a scoping choice, not a prohibition. Verify the finding on the code, put the Boundary on the row, and let the architect decide whether to cross it now. Only an Anti-Pattern refutes.
+- "Keep the MR focused, ticket the rest" — scope is the architect's to give or hold. Price the work on the row and ask; a ticket nobody chose is work pushed onto a future session.
+- "It's real but bigger than this branch" — that sentence is the cost line, not a disposition. Write what it would take and leave the cell to the architect.
 - "Declining looks combative, just make the change" — a decline with evidence is a professional answer; a silent bad change is a defect with a reviewer's name on it.
 - "I disagree, so decline it" — disagreement without evidence is NEEDS REVIEWER INPUT, not DECLINE. DECLINE requires something checked.
 - "The review is one comment, this is too much process" — a one-finding run is one row in one table and one gate. The loop scales down; skipping steps is not how.
@@ -245,7 +251,7 @@ Before presenting the wrap-up report:
 - [ ] Every review claim has its own finding record with class and severity assigned (Step 2)
 - [ ] Every finding exits Step 3 confirmed, refuted, or contested — with evidence, and none accepted on the reviewer's authority alone
 - [ ] Every accepted `[capability]` defect carries an origin-or-symptom answer and a class-sweep result; no `[convention]` finding was escalated (Step 4)
-- [ ] One disposition table covered every finding exactly once, each with one of the four registered words; every DECLINE carries written reasoning; gate-state persisted on any timeout (Step 5)
+- [ ] One disposition table covered every finding exactly once, each ending in one of the four registered words once the architect decided; the lead proposed no FILE FOLLOW-UP — every scope decision row carried a cost line and was asked individually; every DECLINE carries written reasoning; gate-state persisted on any timeout (Step 5)
 - [ ] Fixes executed in tier: carve-out-eligible fixes verified and suite-checked, confirmed defects test-first, class fixes only across approved sites; bd issues created for FILE FOLLOW-UP only (Step 6)
 - [ ] Commit messages and reply drafts carry no internal vocabulary (Step 6, Step 7)
 - [ ] Target state re-checked before pushing; nothing pushed to a merged or closed target, or to one whose state was never confirmed (Step 7)

@@ -150,8 +150,15 @@ Definition sites cite this section; parse sites must match it exactly.
   gate; proposed by the lead, decided by the user): every incoming review
   finding carries exactly one of `FIX NOW`, `FILE FOLLOW-UP`, `DECLINE`,
   `NEEDS REVIEWER INPUT` in the disposition table. `DECLINE` lines always
-  carry written reasoning. Dispositions are proposals until the user
-  approves the table, and never appear in colleague-facing text.
+  carry written reasoning. `FILE FOLLOW-UP` is operator-only: the lead
+  proposes the other three and never this one. A confirmed finding the lead
+  can honestly propose neither `FIX NOW` nor `DECLINE` for enters the table
+  as a scope decision — no proposal, the cost of fixing it now in its
+  place — and the user chooses bring in (`FIX NOW`), defer
+  (`FILE FOLLOW-UP`), or drop (`DECLINE`). The one lead-written
+  `FILE FOLLOW-UP` is the merged or closed target, where the skill forces
+  it. Dispositions are proposals until the user approves the table, and
+  never appear in colleague-facing text.
 
 The vocabularies are deliberately stage-distinct — do not merge them; do
 not invent new verdict words at any site. Return lines that carry no verdict
