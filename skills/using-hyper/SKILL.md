@@ -50,7 +50,7 @@ HIGH FREEDOM - The meta-process (check for skills, use Skill tool, announce usag
 | Writing implementation code (inside any flow) | hyperpowers:test-driven-development + hyperpowers:testing-anti-patterns |
 | Refactoring existing code | hyperpowers:refactoring-diagnosis → hyperpowers:refactoring-design → hyperpowers:refactoring-safely |
 | bd tasks exist without complete specs | hyperpowers:writing-plans |
-| bd surgery: split, merge, re-dep, archive | hyperpowers:managing-bd-tasks |
+| bd surgery: split, merge, re-dep | hyperpowers:managing-bd-tasks |
 | Running tests / validations / commits | hyperpowers:test-runner agent (keeps verbose output out of context) |
 | About to claim done / fixed / passing | hyperpowers:verification-before-completion |
 | Structural friction; architecture unease | hyperpowers:intuition |
@@ -66,6 +66,7 @@ A matching row is a mandate, not a suggestion: you MUST load and follow that cha
 <session_start_duties>
 ## At session start (beads repos)
 
+- **Where work is tracked.** A forge issue (GitLab or GitHub — `skills/common-patterns/forge-detection.md`, Issues) is the ask: it lives as long as the ask does. A bd epic is the execution of one ask — born at brainstorm, closed at finish-branch; one ask may decompose into several epics through preordain, each citing the same issue in Provenance. Nothing that outlives an epic goes in bd, and bd never holds a backlog: a bug found outside an epic, a review follow-up, or resolve-tension work is a forge issue, proposed at a gate and filed only on the user's approval. An epic may exist with no backing issue; its Provenance says so. This bullet is the rule's one home — every other site cites it, none restates it.
 - Run `bd ready` / `bd list --status=in_progress` before starting new work. If an epic sits in_progress with no commits or bd updates for days, surface it to the user first — stalled lanes are acceptable only when the stall is visible on return.
 - In multi-service work, shared plan documents (typically in a planning repo) may sit ABOVE bd: they carry cross-service requirements and contracts while bd remains the per-repo execution tracker. Both layers are legitimate at their own level — brainstorming can ingest a plan-doc slice, and per-repo learnings flow back up as plan-impact notices (`skills/common-patterns/loop-interfaces.md`). When no plan docs exist, nothing asks for them.
 </session_start_duties>

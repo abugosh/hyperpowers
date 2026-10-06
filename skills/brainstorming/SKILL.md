@@ -51,6 +51,7 @@ HIGH FREEDOM - The 8-step order is fixed, but Socratic questioning within steps 
 **Entry detection (automatic — never interrogate about mode):**
 - The user provided an upstream plan document (a path into a planning-repo checkout, or a pasted slice) → run **Ingestion** below, then question only what it leaves open.
 - No document → **idea-first** entry, fully supported: proceed directly to investigation and questioning. Nothing ever asks for a doc that doesn't exist.
+- The user named a forge issue (`#N` or a URL) → read it (`skills/common-patterns/forge-detection.md`, Issues); its title and body are the ask, and the epic's Provenance cites it on the Issue line. An epic needs no issue — nothing asks for one that doesn't exist.
 - Resuming an epic whose design carries a Provenance section → verify the cited planning-repo file's current state first; if it changed since the recorded SHA, surface a provenance drift flag (signal policy: `skills/common-patterns/loop-interfaces.md`) before continuing. On any resume, also read the epic's bd notes for the latest GATE STATE block and pick up from the state it records.
 
 **Ingestion (document provided):**
@@ -171,12 +172,13 @@ Result: [N] YES. /intuition [was offered and run / was offered and deferred / wa
 
 ## Provenance
 [Source: <planning-repo file> @ <commit SHA>, ingested <date> — or "<path> + <date>, unversioned" for untracked input — or "None because idea-first entry with no governing plan document"]
+[Issue: #<N> <title> (<forge>) — the ask this epic executes, which finishing-a-development-branch closes (skills/common-patterns/forge-detection.md, Issues); several epics may cite one issue — or "Issue: none because <reason>"]
 
 ## Design Rationale
 
 ### Problem
 [1-2 sentences: what problem this solves, why the status quo is insufficient]
-Origin: [where the problem originates — the site, decision, or missing piece that produces it, so the design targets the cause. When the origin is out of scope: "out of scope here because <reason>; tracked in <epic/repo/ticket>, or not tracked because <reason>"]
+Origin: [where the problem originates — the site, decision, or missing piece that produces it, so the design targets the cause. When the origin is out of scope: "out of scope here because <reason>; tracked in <forge issue #N or sibling epic bd-id>, or not tracked because <reason>"]
 
 ### Research Findings
 **Codebase:**

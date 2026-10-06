@@ -27,7 +27,7 @@ Reusable workflows for common development tasks:
 **Bug Fixing & Debugging:**
 - **debugging-with-tools** - Systematic investigation using debuggers, internet research, and agents
 - **root-cause-tracing** - Trace backward through call stack to find original trigger
-- **fixing-bugs** - Complete workflow from bug discovery to closure with bd tracking
+- **fixing-bugs** - Complete workflow from bug discovery to commit; tracked by the owning epic or a gated forge issue, never a bd issue
 
 **Refactoring & Maintenance:**
 - **refactoring-diagnosis** - Identify code/design smells and refactor targets
@@ -47,7 +47,7 @@ Reusable workflows for common development tasks:
 - **analyzing-test-effectiveness** - Audit test quality with SRE scrutiny — finds tautological tests, coverage gaming, and missing corner cases
 
 **Task & Project Management:**
-- **managing-bd-tasks** - Advanced bd operations: splitting tasks, merging duplicates, dependencies, metrics
+- **managing-bd-tasks** - Advanced bd operations on an epic in flight: splitting tasks, merging duplicates, dependencies, recovery
 
 **Collaboration & Process:**
 - **dispatching-parallel-agents** - Investigate independent failures concurrently
@@ -157,6 +157,8 @@ The `using-hyper` skill automatically loads at the start of each conversation an
 2. Follow mandatory workflows (brainstorming before coding, TDD, verification)
 3. Track checklist items in the repo's task tracker (bd when the repo uses beads; TodoWrite otherwise)
 4. Announce which skills you're using
+
+**Where work is tracked:** a forge issue (GitLab or GitHub) is the ask; a bd epic is the execution of one ask. bd never holds a backlog — anything that outlives an epic (a bug found outside one, a review follow-up, resolve-tension work) is a forge issue, proposed at a gate and filed only on your approval. The rule lives in `skills/using-hyper/SKILL.md`; the commands in `skills/common-patterns/forge-detection.md` (Issues).
 
 ### Example Workflow
 

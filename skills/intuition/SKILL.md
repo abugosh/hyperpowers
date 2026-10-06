@@ -683,7 +683,7 @@ AskUserQuestion:
     - label: "Accept"
       description: "Create ADR documenting why this tension is acceptable. No code changes."
     - label: "Resolve"
-      description: "Create ADR documenting the decision + bd ticket to restructure."
+      description: "Create ADR documenting the decision + forge issue for the restructuring work."
     - label: "Brainstorm"
       description: "This tension is complex — hand off to /brainstorm with tension as context."
     - label: "Investigate"
@@ -703,10 +703,9 @@ Create an ADR using the template from `skills/common-patterns/adr-template.md`:
 - Write to `docs/arch/adr/adr-NNN.md`
 
 ### Resolve
-Create an ADR + bd ticket:
+Create an ADR + forge issue:
 - ADR: documents the structural decision (what the model will look like after the work is done)
-- bd ticket: describes the restructuring work needed to resolve the tension
-- `bd create "[Resolve tension: description]" --type task --priority 2 --description "[one-line tension summary]" --design "[ADR reference, specific modules to change, expected outcome]"`
+- Forge issue: the restructuring work needed to resolve the tension — title `Resolve tension: <description>`; body carries the ADR reference, the specific modules to change, and the expected outcome. Show that title and body, then file on approval per `skills/common-patterns/forge-detection.md` (Issues) and record `#<N>` under the ADR's Consequences. The Resolve answer chose the path; the filing waits on the text. Work that outlives this audit lives in the forge, never in bd (`skills/using-hyper/SKILL.md`, Where work is tracked).
 - If this is the first boundary being created and no model exists: trigger **Model Bootstrapping** (see below)
 
 ### Brainstorm
@@ -732,7 +731,7 @@ When Pass 9 identifies a mechanism bypass for a Pass 8 cascade, present them tog
 **Presentation:** Show the Pass 9 tension (which includes the linked Pass 8 cascade evidence) as a single resolution item. The architect sees both the bypass and its downstream cascade in one view.
 
 **Resolution semantics:**
-- **Resolving the bypass** (Pass 9) resolves the cascade (Pass 8) — the cascade is a symptom of the bypass. One ADR + one bd ticket addresses both.
+- **Resolving the bypass** (Pass 9) resolves the cascade (Pass 8) — the cascade is a symptom of the bypass. One ADR + one forge issue addresses both.
 - **Accepting the bypass** also accepts the cascade — if the bypass is intentional, its downstream workarounds are accepted consequences.
 - **Brainstorming the bypass** includes the cascade as context — the brainstorm addresses the root cause, not individual workarounds.
 
@@ -827,7 +826,7 @@ Before presenting the audit report:
 - [ ] ADR age check: stale ADRs (6+ months) flagged as maintenance notes (not tensions)
 - [ ] Step 4: each tension presented to architect with resolution options (accept/resolve/brainstorm/investigate/skip)
 - [ ] Step 4: ADRs created for Accept and Resolve paths
-- [ ] Step 4: bd tickets created for Resolve path
+- [ ] Step 4: forge issues filed for Resolve path, title and body shown first
 - [ ] Step 4: ponder subagent dispatched in bootstrap mode if first Resolve on audit without architecture model
 - [ ] Step 3: architect questions presented (Meadows leverage, Meadows fixes-that-fail, Alexander wholeness, Rao legibility) — or omitted if zero tensions
 - [ ] Step 3: architect questions contain no recommendation language (self-check applies)
@@ -854,7 +853,7 @@ ARCHITECTURE CYCLE:
   /intuition → find tensions → Step 4 resolve → update model
 
 RESOLUTION (Step 4 per-tension):
-  tension → accept (ADR) / resolve (ADR + bd ticket) / brainstorm (complex) / investigate (deeper evidence) / skip (defer)
+  tension → accept (ADR) / resolve (ADR + forge issue) / brainstorm (complex) / investigate (deeper evidence) / skip (defer)
 
 MODEL BOOTSTRAPPING (first Resolve on audit without architecture model):
   resolve tension → dispatch /ponder bootstrap → model created → future audits load the model
@@ -885,14 +884,14 @@ HANDOFF (all tensions resolved/accepted):
 - Tension report (presented to architect, not persisted)
 - Drift report (presented to architect, not persisted)
 - ADR files (created during Step 4 resolution — Accept or Resolve paths)
-- bd tickets (created during Step 4 Resolve path)
+- Forge issues (filed during Step 4 Resolve path)
 - Architecture model files (created via ponder agent bootstrap mode — first Resolve on audit without architecture model)
 </integration>
 
 <resources>
 **Detailed guides:**
 - [ADR template and examples](../common-patterns/adr-template.md)
-- [bd command reference](../common-patterns/bd-commands.md)
+- [Forge detection and issues](../common-patterns/forge-detection.md)
 - [Common anti-patterns](../common-patterns/common-anti-patterns.md)
 - [Common rationalizations](../common-patterns/common-rationalizations.md)
 

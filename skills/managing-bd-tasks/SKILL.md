@@ -1,6 +1,6 @@
 ---
 name: managing-bd-tasks
-description: Use for advanced bd operations - splitting tasks mid-flight, merging duplicates, changing dependencies, archiving epics, querying metrics, cross-epic dependencies
+description: Use for advanced bd operations on an epic in flight - splitting tasks mid-flight, merging duplicates, changing dependencies, bulk status updates, recovering from mistakes
 ---
 
 <skill_overview>
@@ -277,111 +277,7 @@ bd dep list bd-10 --direction=up   # what depends on bd-10
 
 ---
 
-## Operation 4: Archiving Completed Epics
-
-**When:** Epic complete, want to hide from default views but keep history.
-
-```bash
-# Verify all tasks closed
-bd list --parent bd-1 --status open -n 0
-# Output: [empty] = all closed
-
-# Archive epic
-bd close bd-1 --reason "Archived - completed Oct 2025"
-
-# Won't show in open listings
-bd list --status open -n 0  # bd-1 won't appear
-
-# Still accessible
-bd show bd-1  # Still shows full epic
-```
-
-**Use archived for:** Completed epics, shipped features, historical reference
-**Use open/in-progress for:** Active work
-**Use closed with note for:** Cancelled work (explain why)
-
----
-
-## Operation 5: Querying for Metrics
-
-### Velocity
-
-```bash
-# Closed since a date
-bd list --status closed --closed-after 2025-10-01 -n 0 --json | jq length
-
-# Closed within an epic
-bd list --parent bd-1 --status closed -n 0 --json | jq length
-```
-
-**Note:** `bd list` defaults to 50 results and silently truncates — every counting recipe needs `-n 0`.
-
-### Blocked vs Ready
-
-```bash
-# Ready to work on
-bd ready -n 0 --json | jq length   # bd ready defaults to -n 10 — counting needs -n 0
-
-# Blocked
-bd blocked --json | jq length
-
-# All open tasks
-bd list --status open -n 0 --json | jq length
-```
-
-### Epic Progress
-
-```bash
-# Show epic's children (all statuses)
-bd list --parent bd-1 --all -n 0
-
-# Total tasks in epic
-bd list --parent bd-1 --all -n 0 --json | jq length
-
-# Completed tasks
-bd list --parent bd-1 --status closed -n 0 --json | jq length
-
-# Percentage = (completed / total) * 100
-```
-
-**For detailed metrics guidance:** See [resources/metrics-guide.md](resources/metrics-guide.md)
-
----
-
-## Operation 6: Cross-Epic Dependencies
-
-**When:** Task in one epic depends on task in different epic.
-
-**Example:**
-```
-Epic bd-1: User Management
-  - bd-10: User CRUD API
-
-Epic bd-2: Order Management
-  - bd-20: Order creation (needs user API)
-```
-
-```bash
-# Add cross-epic dependency
-bd dep add bd-20 bd-10
-# bd-20 (in bd-2) depends on bd-10 (in bd-1)
-
-# Check dependencies
-bd dep list bd-20   # shows the bd-10 dependency
-
-# Check ready tasks
-bd ready
-# Won't show bd-20 until bd-10 closed
-```
-
-**Best practices:**
-- Document cross-epic dependencies clearly
-- Consider if epics should be merged
-- Coordinate if different people own epics
-
----
-
-## Operation 7: Bulk Status Updates
+## Operation 4: Bulk Status Updates
 
 **When:** Need to update multiple tasks.
 
@@ -413,7 +309,7 @@ bd list --parent bd-1 --status open -n 0 --json | jq -r '.[] | select(.title | s
 
 ---
 
-## Operation 8: Recovering from Mistakes
+## Operation 5: Recovering from Mistakes
 
 ### Accidentally closed task
 
@@ -726,7 +622,7 @@ All of these mean: **STOP. Follow the operation properly.**
 
 - "Task too complex to split" (Every task can be broken down)
 - "Just close duplicate" (Merge first, preserve information)
-- "Won't track this in bd" (All work tracked, no exceptions)
+- "Won't track this in bd" (Every task of an epic in flight is in bd, no exceptions; work that outlives the epic is a forge issue — `skills/using-hyper/SKILL.md`, Where work is tracked)
 - "bd is out of date, update later" (Later never comes, update now)
 - "This dependency doesn't matter" (Dependencies prevent blocking, they matter)
 - "Too much overhead to split" (More overhead to fail huge task)
@@ -761,7 +657,6 @@ After advanced bd operations:
 - [ ] Duplicate information merged (not lost)
 - [ ] Changes documented in task designs
 - [ ] Ready tasks are actually unblocked
-- [ ] Metrics queries return sensible numbers
 - [ ] No orphaned tasks (all part of epics)
 
 **Can't check all boxes?** Review operation and fix issues.
@@ -783,7 +678,6 @@ After advanced bd operations:
 
 <resources>
 **Detailed guides:**
-- [Metrics guide (cycle time, WIP limits)](resources/metrics-guide.md)
 - [Task naming conventions](resources/task-naming-guide.md)
 
 **When stuck:**

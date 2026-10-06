@@ -175,13 +175,16 @@ bd list --parent bd-1  # List child tasks
 
 **Create MR:**
 
+Forge commands follow `skills/common-patterns/forge-detection.md` (detection and ladder; the closing-keyword contract is under Issues). The GitLab form is shown; on GitHub, `gh pr create --title "..." --body "..."` takes the same description. The `Closes #<issue>` line is written when the epic's Provenance carries an `Issue:` line and omitted otherwise — nothing else is conditional. When several epics serve one issue, the user reopens it after the first merge.
+
 ```bash
 git push -u origin <feature-branch>
 
 glab mr create --title "feat: <epic-name>" --description "$(cat <<'EOF'
 ## Epic
 
-Closes bd-<N>: <Epic Title>
+bd-<N>: <Epic Title>
+Closes #<issue>
 
 ## Summary
 <2-3 bullets from epic implementation>

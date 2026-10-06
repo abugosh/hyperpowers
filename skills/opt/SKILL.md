@@ -23,7 +23,7 @@ MEDIUM-LOW FREEDOM — the step order, the disposition vocabulary, the escalatio
 | 3 | Verify against reality | Code, conventions, ADRs, source epic's design and anti-patterns (its Boundaries are gate context, never refutation); codebase-investigator for structure; every finding exits confirmed / refuted / contested with evidence |
 | 4 | Escalation check | Accepted `[capability]` defects only: origin-or-symptom (root-cause-tracing) + class sweep for sibling sites (debugging-with-tools Rule 4). Proposes; never acts |
 | 5 | Batch disposition gate | ONE table, AskUserQuestion: the lead proposes FIX NOW / DECLINE / NEEDS REVIEWER INPUT; FILE FOLLOW-UP is operator-only — scope decision rows carry a cost line, no proposal, and are asked one by one (bring in / defer / drop). Gate-state persisted on timeout |
-| 6 | Execute (tiered) | Carve-out-eligible fixes lead-fixed at the worktree (bar: `pipeline-constants.md`); confirmed defects failing-test-first; approved class fixes across swept sites; FILE FOLLOW-UP → fresh bd issues |
+| 6 | Execute (tiered) | Carve-out-eligible fixes lead-fixed at the worktree (bar: `pipeline-constants.md`); confirmed defects failing-test-first; approved class fixes across swept sites; FILE FOLLOW-UP → forge issues, drafted here and filed at the Step 7 gate |
 | 7 | Replies + outward gate | Per-thread drafts in colleague prose; ONE gate covers posting AND pushing; re-check target state; wrap-up report |
 </quick_reference>
 
@@ -133,7 +133,7 @@ One table, one gate. Every finding in the queue appears exactly once:
 Dispositions come from exactly four words, registered in `skills/common-patterns/loop-interfaces.md`. No fifth word is invented here or anywhere else:
 
 - **FIX NOW** — fixed on this branch, in this run.
-- **FILE FOLLOW-UP** — real, not now: a fresh bd issue carries it. The source epic is closed by the time an MR draws review, so follow-ups never reopen it. **Operator-only.** The lead never proposes this word (registry: `skills/common-patterns/loop-interfaces.md`); the architect writes it at a scope decision row, and the merged-or-closed-target rule (Step 7) is the one place it is written for them.
+- **FILE FOLLOW-UP** — real, not now: a forge issue carries it (`skills/common-patterns/forge-detection.md`, Issues). The source epic is closed by the time an MR draws review, so follow-ups never reopen it. **Operator-only.** The lead never proposes this word (registry: `skills/common-patterns/loop-interfaces.md`); the architect writes it at a scope decision row, and the merged-or-closed-target rule (Step 7) is the one place it is written for them.
 - **DECLINE** — not doing it, **and the row carries the written reasoning**. Declining a finding the evidence refutes is the correct outcome, and the reasoning is what makes it a professional answer rather than a refusal.
 - **NEEDS REVIEWER INPUT** — the disagreement or ambiguity needs the reviewer before anything is decided. Step 7 replies with the question.
 
@@ -153,7 +153,7 @@ Work only the dispositions the architect approved. Nothing here is pushed or pos
 
 **Tier 3 — approved class fixes.** Only the sibling sites the architect approved at the gate, each through the Tier 2 path. A class fix with no test at each site is a claim, not a fix.
 
-**FILE FOLLOW-UP.** Fresh bd issues in the standard form (`skills/common-patterns/bd-commands.md`): `bd create "<title>" --type bug|task --description "<one-line summary>" --design "<the finding and its evidence>"`. Class-level work that needs design rather than mechanical repetition routes to `/hyperpowers:brainstorm` instead of becoming a task nobody can execute. bd issues exist for FILE FOLLOW-UP dispositions the architect chose at Step 5 (or the merged-target rule forced) and for nothing else in this loop — a FIX NOW does not get a tracking issue, and a DECLINE never does.
+**FILE FOLLOW-UP.** One forge issue per deferred finding, per `skills/common-patterns/forge-detection.md` (Issues): the title is the finding's one-line claim; the body is the finding, its evidence, and the MR/PR reference. Filing is a forge write, so this step drafts the title and body and Step 7's gate sends them with everything else. Class-level work that needs design rather than mechanical repetition routes to `/hyperpowers:brainstorm` instead of becoming an issue nobody can execute. Forge issues exist for FILE FOLLOW-UP dispositions the architect chose at Step 5 (or the merged-target rule forced) and for nothing else in this loop — a FIX NOW does not get a tracking issue, and a DECLINE never does. Nothing here goes in bd: the source epic is closed and bd holds no backlog (`skills/using-hyper/SKILL.md`, Where work is tracked).
 
 Run `hyperpowers:verification-before-completion` before any claim that something is fixed. The reply drafted in Step 7 states what changed; that statement must already be evidence.
 
@@ -170,15 +170,16 @@ Run `hyperpowers:verification-before-completion` before any claim that something
 
 Reply prose follows `skills/common-patterns/prose-style.md` (human-facing baseline): lead with the outcome, no praise-padding, no hedging, and no internal vocabulary of any kind — not class tags, not severity words, not disposition words, not the names of these steps. The reviewer never sees this machinery and should never learn it exists.
 
-**Re-check the target state** before anything leaves. Re-read it the way Step 1 did; when Step 1 recorded `unknown` because no forge read was available, the re-check is the gate question named there — the architect confirms the target is still open, and an unanswered question is not a confirmation. If the MR/PR became merged or closed since Step 1, or its state is still unconfirmed, no commits are pushed on any path: every fix that was applied becomes a FILE FOLLOW-UP bd issue instead, the replies drop their commit SHAs, and the gate below covers replies alone.
+**Re-check the target state** before anything leaves. Re-read it the way Step 1 did; when Step 1 recorded `unknown` because no forge read was available, the re-check is the gate question named there — the architect confirms the target is still open, and an unanswered question is not a confirmation. If the MR/PR became merged or closed since Step 1, or its state is still unconfirmed, no commits are pushed on any path: every fix that was applied becomes a FILE FOLLOW-UP forge issue instead, the replies drop their commit SHAs, and the gate below covers replies alone.
 
 **The outward gate — one approval covering both.** Show the architect, together, before anything leaves the worktree:
 
 1. The exact reply text for every thread.
 2. The full diff of what will be pushed: `git -C <worktree> diff <pre-run-tip>..HEAD`, against the tip recorded in Step 1.
 3. The named target — the branch, the remote, and the MR/PR the replies land on.
+4. The exact title and body of every forge issue a FILE FOLLOW-UP will file.
 
-Nothing outward precedes this gate: no reply posted, no commit pushed, not even the "obvious" one. On approval, push first, then post — a reply naming a SHA the branch does not carry is worse than a late reply:
+Nothing outward precedes this gate: no reply posted, no commit pushed, not even the "obvious" one. On approval, file the follow-up issues first and put their numbers into the deferred replies, then push, then post — a reply naming a SHA the branch does not carry, or an issue that does not exist, is worse than a late reply:
 
 - Push: `git -C <worktree> push origin HEAD:<branch>`. Never force-push. On a rejected or non-fast-forward push, report git's output verbatim, do not retry by overwriting and do not rebase; hold the SHA-carrying replies and take the architect's call, because those replies are now claims about commits the branch does not have.
 - Post: one reply into each source thread, using the **Thread reply** write commands in `skills/common-patterns/forge-detection.md` — never that file's top-level comment form, which opens a conversation the reviewer's thread never sees and which, on GitHub, overwrites the previous reply instead of adding one. Its caveats govern the fallbacks per forge: C10 for the reply forms themselves — a rejected GitLab reply may go out as a top-level comment after all (C2: `note create` first, the legacy form second), while a rejected GitHub reply is handed over as copy-paste per C10, never pushed through the overwriting top-level form. At rung 2 or 3, hand the reply text over as copy-paste instead of posting.
@@ -199,7 +200,7 @@ anything still open. No file:line, no internal vocabulary.]
 SHAs for fixes and issue ids for follow-ups]
 
 ### Filed
-[bd issues created, with ids — each one a defer the architect chose at Step 5
+[forge issues filed, with numbers — each one a defer the architect chose at Step 5
 or the merged-target rule forced; "- (none)" when empty, which is the normal run]
 
 ### Pending
@@ -215,10 +216,10 @@ NEEDS REVIEWER INPUT; "- (none)" when empty]
 1. **No finding is accepted at face value.** Step 3 runs on every finding whose correctness is not self-evident — including findings from a senior reviewer, and including structured findings carrying a peek marker. A claim is a hypothesis until the code says otherwise.
 2. **Nothing outward before the Step 7 gate.** No reply posted, no commit pushed, until the architect approves the exact text and the exact diff in one approval.
 3. **Accepted `[capability]` defects always get the escalation check.** Origin-or-symptom, then class sweep. Fixing only the flagged line is the whack-a-mole this skill exists to prevent.
-4. **`[convention]` findings never escalate.** No root-cause pass, no sweep, no bd issue. Proportionality is a rule here, not a preference.
+4. **`[convention]` findings never escalate.** No root-cause pass, no sweep, no forge issue. Proportionality is a rule here, not a preference.
 5. **The escalation check proposes; the architect decides scope.** Sweep results are evidence in the Step 5 table. Widening a fix without approval is scope taken, not scope granted.
 6. **DECLINE is a first-class outcome and always carries written reasoning.** A refuted finding gets declined with its evidence. Silently complying with a wrong finding damages the code and teaches the reviewer nothing.
-7. **bd issues exist only for FILE FOLLOW-UP, and FILE FOLLOW-UP is the architect's word.** The lead never proposes it; a finding it cannot propose FIX NOW or DECLINE for is a scope decision the architect takes with the cost in front of them — bring in, defer, drop. Not for fixes made, not for declines, not for tracking the run. A review that ends in new tickets is the exception.
+7. **Forge issues exist only for FILE FOLLOW-UP, and FILE FOLLOW-UP is the architect's word.** The lead never proposes it; a finding it cannot propose FIX NOW or DECLINE for is a scope decision the architect takes with the cost in front of them — bring in, defer, drop. Not for fixes made, not for declines, not for tracking the run. A review that ends in new tickets is the exception.
 8. **Resolved threads are settled; reviewer threads are the reviewer's to resolve.** Never re-triage a resolved thread, never resolve one yourself.
 9. **Colleague-facing text carries zero plugin vocabulary.** Replies and commit messages name changes, not classes, severities, dispositions, or steps.
 10. **Never rewrite the branch under review.** Additive commits only; no amend, squash, rebase, or force-push.
@@ -232,7 +233,7 @@ All of these mean: **STOP. Follow the process as written.**
 - "Just fix what they asked, don't go looking for more" — that is the escalation check being skipped by name. A confirmed defect gets the origin question and the sweep; the architect then decides how far the fix travels.
 - "The sweep found four more sites, fix them all while I'm here" — the opposite failure. Sweep results are evidence for the gate, not authority to widen the diff.
 - "It's a one-word fix, push it and reply now" — the gate does not scale with diff size. A one-word push nobody approved is still an unapproved push.
-- "Every finding should get a bd issue for traceability" — ceremony inflation. The MR thread is the trace; issues exist for FILE FOLLOW-UP only.
+- "Every finding should get a forge issue for traceability" — ceremony inflation. The MR thread is the trace; issues exist for FILE FOLLOW-UP only.
 - "The epic said this was out of scope, so file it" — a closed epic's Boundary was a scoping choice, not a prohibition. Verify the finding on the code, put the Boundary on the row, and let the architect decide whether to cross it now. Only an Anti-Pattern refutes.
 - "Keep the MR focused, ticket the rest" — scope is the architect's to give or hold. Price the work on the row and ask; a ticket nobody chose is work pushed onto a future session.
 - "It's real but bigger than this branch" — that sentence is the cost line, not a disposition. Write what it would take and leave the cell to the architect.
@@ -252,7 +253,7 @@ Before presenting the wrap-up report:
 - [ ] Every finding exits Step 3 confirmed, refuted, or contested — with evidence, and none accepted on the reviewer's authority alone
 - [ ] Every accepted `[capability]` defect carries an origin-or-symptom answer and a class-sweep result; no `[convention]` finding was escalated (Step 4)
 - [ ] One disposition table covered every finding exactly once, each ending in one of the four registered words once the architect decided; the lead proposed no FILE FOLLOW-UP — every scope decision row carried a cost line and was asked individually; every DECLINE carries written reasoning; gate-state persisted on any timeout (Step 5)
-- [ ] Fixes executed in tier: carve-out-eligible fixes verified and suite-checked, confirmed defects test-first, class fixes only across approved sites; bd issues created for FILE FOLLOW-UP only (Step 6)
+- [ ] Fixes executed in tier: carve-out-eligible fixes verified and suite-checked, confirmed defects test-first, class fixes only across approved sites; forge issues drafted for FILE FOLLOW-UP only (Step 6) and filed at the Step 7 gate
 - [ ] Commit messages and reply drafts carry no internal vocabulary (Step 6, Step 7)
 - [ ] Target state re-checked before pushing; nothing pushed to a merged or closed target, or to one whose state was never confirmed (Step 7)
 - [ ] One outward gate approved the exact replies, the exact diff, and the target before anything was pushed or posted; threads left for the reviewer to resolve (Step 7)

@@ -153,4 +153,4 @@ bd ready  # Shows only unblocked tasks
 bd list --status in_progress -n 0
 ```
 
-Native date filters exist for time-windowed queries: --created-after, --closed-after, --closed-before (see the managing-bd-tasks metrics guide).
+Native date filters exist for time-windowed queries: --created-after, --closed-after, --closed-before.

@@ -1,14 +1,14 @@
 ---
 name: fixing-bugs
-description: Use when encountering a bug - complete workflow from discovery through debugging, bd issue, test-driven fix, verification, and closure
+description: Use when encountering a bug - complete workflow from discovery through tracking (owning epic or forge issue), debugging, test-driven fix, verification, and closure
 ---
 
 <skill_overview>
-Bug fixing is a complete workflow: reproduce, track in bd, debug systematically, write test, fix, verify, close. Every bug gets a bd issue and regression test.
+Bug fixing is a complete workflow: reproduce, know where the bug is tracked, debug systematically, write test, fix, verify, commit. Every bug is tracked in the forge issue tracker or owned by an epic, and every bug gets a regression test.
 </skill_overview>
 
 <rigidity_level>
-LOW FREEDOM - Follow exact workflow: create bd issue → debug with tools → write failing test → fix → verify → close.
+LOW FREEDOM - Follow exact workflow: establish tracking → debug with tools → write failing test → fix → verify → commit.
 
 Never skip tracking or regression test. Use debugging-with-tools for investigation, test-driven-development for fix.
 </rigidity_level>
@@ -17,15 +17,15 @@ Never skip tracking or regression test. Use debugging-with-tools for investigati
 
 | Step | Action | Command/Skill |
 |------|--------|---------------|
-| **1. Track** | Create bd bug issue | `bd create "Bug: [description]" --type bug` |
+| **1. Track** | Know where the bug is tracked | Owning epic, existing forge issue, or a gated issue proposal (`skills/common-patterns/forge-detection.md`, Issues) |
 | **2. Debug** | Systematic investigation | Use `debugging-with-tools` skill |
 | **3. Test (RED)** | Write failing test reproducing bug | Use `test-driven-development` skill |
 | **4. Fix (GREEN)** | Implement fix | Minimal code to pass test |
 | **5. Verify** | Run full test suite | Use `verification-before-completion` skill |
-| **6. Classify** | Classify status and close | `bd close bd-123` |
+| **6. Classify** | Classify status and commit | `Closes #<N>` in the commit body when an issue exists |
 
-**FORBIDDEN:** Fix without bd issue, fix without regression test
-**REQUIRED:** Every bug gets tracked, tested, verified before closing
+**FORBIDDEN:** Fix without knowing where the bug is tracked, fix without regression test
+**REQUIRED:** Every bug gets tracked, tested, verified before committing
 
 </quick_reference>
 
@@ -36,7 +36,7 @@ After implementing a fix, classify its status:
 
 | Status | Definition | Next Action |
 |--------|------------|-------------|
-| **FIXED** | Root cause addressed, regression test passes, full suite passes | Close bd issue |
+| **FIXED** | Root cause addressed, regression test passes, full suite passes | Commit with `Closes #<N>` |
 | **PARTIALLY_FIXED** | Some aspects addressed, others remain | Document what's left, keep issue open |
 | **NOT_ADDRESSED** | Fix doesn't address the actual bug | Return to debugging phase |
 | **CANNOT_DETERMINE** | Insufficient info to verify fix | Gather more reproduction data |
@@ -56,40 +56,40 @@ After implementing a fix, classify its status:
 - Regression from recent change
 - Production issue (non-emergency)
 
-**Production emergencies:** Abbreviated workflow OK (hotfix first), but still create bd issue and add regression tests afterward.
+**Production emergencies:** Abbreviated workflow OK (hotfix first), but still establish tracking (Step 1) and add regression tests afterward.
+
+**Too big for one sitting:** a fix that needs more than one task's worth of change is an epic, not a bug fix — route to `/hyperpowers:brainstorm` with the forge issue as the ask; the epic's Provenance cites `#<N>`.
 </when_to_use>
 
 <the_process>
 
-## 1. Create bd Bug Issue
+## 1. Know Where the Bug Is Tracked
 
-**Track from the start:**
+The tracking boundary has one home — `skills/using-hyper/SKILL.md`, session-start duties, "Where work is tracked": a forge issue is the ask; a bd epic is the execution of one ask. A bug is tracked in exactly one of three places, decided before any code changes. bd is never one of them.
 
-```bash
-bd create "Bug: [Clear description]" --type bug --priority 1 \
-  --description "[Observed impact — what breaks and for whom]"
-# Returns: bd-123
+**Inside an epic.** The bug is in code an in-flight epic owns, or surfaced while executing one of its tasks. The epic is the tracking: executing-plans handles it in the current task or as a reviewer gap-fix task. Record nothing else; Steps 2-6 still govern the fix itself.
+
+**Outside an epic, issue exists.** The user named a forge issue, or an issue read (`skills/common-patterns/forge-detection.md`, Issues) finds one. Record `#<N>` for the commit body.
+
+**Outside an epic, no issue.** Propose one at a gate — the exact title and body, shown before anything is filed:
+
+```
+Issue proposal (not yet filed):
+  Title: Bug: [clear description]
+  Body:
+    ## Observed
+    [what breaks and for whom]
+    ## Reproduction
+    1. [step]
+    2. [step]
+    ## Expected / Actual
+    [what should happen / what happens]
+    ## Environment
+    [version, OS]
+File it? (approve / decline / already tracked at <ref>)
 ```
 
-**Document:**
-```bash
-bd update bd-123 --design "
-## Bug Description
-[What's wrong]
-
-## Reproduction Steps
-1. Step one
-2. Step two
-
-## Expected Behavior
-[What should happen]
-
-## Actual Behavior
-[What actually happens]
-
-## Environment
-[Version, OS, etc.]"
-```
+On approval, create it per forge-detection's Issues section and record `#<N>`. On decline, record `Tracking: declined by user` for the commit body — the bug proceeds untracked by decision, never by omission. At rung 3 (no forge reachable) the proposal is the copy-paste text and the record reads `Tracking: not filed, no forge`.
 
 ## 2. Debug Systematically
 
@@ -105,14 +105,7 @@ Use Skill tool: hyperpowers:debugging-with-tools
 - Use codebase-investigator to understand context
 - Guide to root cause (not symptom)
 
-**Update bd issue with findings:**
-```bash
-bd update bd-123 --design "[previous content]
-
-## Investigation
-[Root cause found via debugging]
-[Tools used: debugger, internet search, etc.]"
-```
+**Keep the findings:** the root cause and the tools that found it go in the commit body (Step 6) and in the regression test's name and assertion — never in a tracker write.
 
 ## 3. Write Failing Test (RED Phase)
 
@@ -122,7 +115,7 @@ Write test that reproduces the bug:
 
 ```python
 def test_rejects_empty_email():
-    """Regression test for bd-123: Empty email accepted"""
+    """Regression test for #123: Empty email accepted"""
     with pytest.raises(ValidationError):
         create_user(email="")  # Should fail, currently passes
 ```
@@ -171,51 +164,34 @@ pytest tests/test_user.py::test_rejects_empty_email
 - No new warnings or errors
 - Pre-commit hooks pass
 
-## 6. Classify and Close
+## 6. Classify and Commit
 
-**REQUIRED: Classify fix status before closing:**
-
-```bash
-bd update bd-123 --design "[previous content]
-
-## Fix Status: FIXED
-**Evidence:**
-- Root cause: [explanation of what caused the bug]
-- Regression test: tests/test_user.py::test_rejects_empty_email PASSES
-- Full suite: 145/145 tests pass
-- Fix verified: [specific verification that bug is resolved]
-
-## Fix Implemented
-[Description of fix]
-[File changed: src/auth/user.py:23]
-
-## Regression Test
-[Test added: tests/test_user.py::test_rejects_empty_email]"
-
-bd close bd-123
-```
+**REQUIRED: Classify fix status before committing** (table above). The evidence for the status is the commit body, not a tracker write.
 
 **If status is not FIXED:**
-- **PARTIALLY_FIXED** → Document remaining work, create follow-up bd issue, keep original open
-- **NOT_ADDRESSED** → Return to Step 2 (debugging), do not close
-- **CANNOT_DETERMINE** → Gather more reproduction info before closing
+- **PARTIALLY_FIXED** → Commit what is fixed with its evidence; the forge issue stays open, and the remaining work is reported to the user in one line. File nothing — a follow-up ticket is the operator's decision (`skills/common-patterns/common-anti-patterns.md`, ticket-as-exit entry)
+- **NOT_ADDRESSED** → Return to Step 2 (debugging), do not commit as a fix
+- **CANNOT_DETERMINE** → Gather more reproduction info before committing
 
-**Commit with bd reference:**
+**Commit:**
 ```bash
-git commit -m "fix(bd-123): Reject empty email in user creation
+git commit -m "fix: Reject empty email in user creation
 
-Adds validation to prevent empty strings.
-Regression test: test_rejects_empty_email
+Root cause: no validation on the email field at src/auth/user.py:23.
+Regression test: tests/test_user.py::test_rejects_empty_email
+Full suite: 145/145 pass
 
-Closes bd-123"
+Closes #123"
 ```
+
+The `Closes #<N>` line appears only when Step 1 recorded an issue; the forge closes the issue when the MR/PR merges into the default branch (`skills/common-patterns/forge-detection.md`, Closing keywords). When Step 1 recorded a decline or an unfiled proposal, the body carries that `Tracking:` line instead. Inside an epic, the executor's `bd: <task-id>` trailer is the record and no Closes line is written.
 
 </the_process>
 
 <examples>
 
 <example>
-<scenario>Developer fixes bug without creating bd issue or regression test</scenario>
+<scenario>Developer fixes bug without tracking or regression test</scenario>
 
 <code>
 Developer notices: Empty email accepted in user creation
@@ -229,12 +205,12 @@ def create_user(email: str):
 
 Commits: "fix: validate email"
 
-[No bd issue, no regression test]
+[No issue, no epic, no regression test]
 </code>
 
 <why_it_fails>
 **No tracking:**
-- Work not tracked in bd (can't see what was fixed)
+- Work tracked nowhere — no issue, no epic — so nobody can see what was fixed
 - No link between commit and bug
 - Can't verify fix meets requirements
 
@@ -254,10 +230,10 @@ Commits: "fix: validate email"
 **Complete workflow:**
 
 ```bash
-# 1. Track
-bd create "Bug: Empty email accepted" --type bug \
-  --description "Signup accepts empty/whitespace emails, corrupting user records"
-# Returns: bd-123
+# 1. Track — no epic owns signup; propose an issue at the gate, user approves
+glab issue create -t "Bug: Empty email accepted" \
+  -d "Signup accepts empty/whitespace emails, corrupting user records"
+# Prints: https://gitlab.com/org/repo/-/issues/123  → #123
 
 # 2. Debug (use debugging-with-tools)
 # Investigation reveals: Email validation missing entirely
@@ -283,9 +259,12 @@ def create_user(email: str):
 # 5. Verify
 pytest  # All tests pass now, including regression tests
 
-# 6. Close
-bd close bd-123
-git commit -m "fix(bd-123): Reject empty/whitespace email"
+# 6. Commit
+git commit -m "fix: Reject empty/whitespace email
+
+Regression tests: test_rejects_empty_email, test_rejects_whitespace_email
+
+Closes #123"
 ```
 
 **Result:** Bug fixed, tracked, tested, won't regress.
@@ -464,11 +443,11 @@ void registrationRequiresEmail() {
 
 ## Rules That Have No Exceptions
 
-1. **Every bug gets a bd issue** → Track from discovery to closure
-   - Create bd issue before fixing
-   - Document reproduction steps
-   - Update with investigation findings
-   - Close only after verified
+1. **Every bug is tracked — by the epic that owns it or in the forge — or the user declined tracking on record** → Decide before fixing
+   - Owning epic, existing issue, or a gated issue proposal (Step 1)
+   - Reproduction steps live in the issue body and the regression test
+   - Never a bd issue: bd holds epics in flight, not bugs (`skills/using-hyper/SKILL.md`, Where work is tracked)
+   - `Closes #<N>` in the commit only after verified
 
 2. **Use debugging-with-tools skill** → Systematic investigation required
    - Never guess at fixes
@@ -491,7 +470,7 @@ void registrationRequiresEmail() {
 ## Common Excuses
 
 All of these mean: Stop, follow complete workflow:
-- "Quick fix, no need for bd issue"
+- "Quick fix, no need to track it"
 - "Obvious bug, no need to debug"
 - "I'll add test later"
 - "Test passes, must be fixed"
@@ -502,16 +481,15 @@ All of these mean: Stop, follow complete workflow:
 <verification_checklist>
 
 Before claiming bug fixed:
-- [ ] bd issue created with reproduction steps
+- [ ] Tracking decided: owning epic, existing issue, filed issue (approved at the gate), or decline on record
 - [ ] Used debugging-with-tools to find root cause
 - [ ] Wrote test that reproduces bug (RED phase)
 - [ ] Verified test FAILS before fix
 - [ ] Implemented fix addressing root cause
 - [ ] Verified test PASSES after fix
 - [ ] Ran full test suite (all pass)
-- [ ] Updated bd issue with fix details
-- [ ] Closed bd issue
-- [ ] Committed with bd reference
+- [ ] Commit body carries root cause, regression test, suite result
+- [ ] `Closes #<N>` present when an issue exists; `Tracking:` line otherwise
 
 </verification_checklist>
 
@@ -538,7 +516,7 @@ Before claiming bug fixed:
 
 **When stuck:**
 - Don't understand bug → Use debugging-with-tools skill
-- Tempted to skip tracking → Create bd issue first, always
+- Tempted to skip tracking → Step 1 first, always; a decline is a decision, skipping is not
 - Test passes immediately → Not testing the bug, rewrite test
 - Fix doesn't work → Return to debugging-with-tools, find actual root cause
 

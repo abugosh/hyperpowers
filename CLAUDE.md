@@ -136,6 +136,8 @@ Many skills integrate with `bd` (a task management tool). The workflows expect:
 - **Dependencies** - Task relationships (blocking, parent-child)
 - **Status tracking** - Open, in-progress, done, ready
 
+**Where work is tracked.** A forge issue is the ask; a bd epic is the execution of one ask; bd never holds a backlog. The rule's one home is `skills/using-hyper/SKILL.md` (session-start duties) and the issue commands are in `skills/common-patterns/forge-detection.md` (Issues) — cite them, never restate.
+
 Common bd commands:
 ```bash
 bd list --type epic --status open       # Find open epics
@@ -239,12 +241,12 @@ The `test-driven-development` skill enforces this rigorously.
 
 Complete workflow for fixing bugs systematically:
 
-1. **Create bd Bug Issue** - Track the bug with reproduction steps
+1. **Know Where the Bug Is Tracked** - The owning epic, an existing forge issue, or a forge issue proposed at a gate (never a bd issue)
 2. **Debugging with Tools** - Use debuggers, internet-researcher, codebase-investigator to find root cause
 3. **Write Failing Test** (RED phase) - Reproduce the bug in a test
 4. **Implement Fix** (GREEN phase) - Minimal fix addressing root cause
 5. **Verify** - Run full test suite via test-runner agent, check for regressions
-6. **Close bd Issue** - Document fix and close
+6. **Classify and Commit** - Evidence in the commit body; `Closes #<N>` when a forge issue exists
 
 **Key Skills:**
 - `debugging-with-tools` - Systematic investigation using debuggers, internet research, and agents
@@ -330,7 +332,7 @@ Known coverage gaps:
 - ✅ Greenfield feature development (idea → design → implementation → PR)
 - ✅ Bug fixing and debugging workflows (systematic investigation, root cause tracing)
 - ✅ Refactoring workflows (test-preserving transformations)
-- ✅ Advanced task management (splitting, merging, dependencies, metrics)
+- ✅ Advanced task management (splitting, merging, dependencies, recovery)
 - ✅ Quality culture (TDD, verification, SRE review)
 - ✅ Clean bd integration
 - ✅ MR/branch review (peek)

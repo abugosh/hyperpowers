@@ -13,7 +13,7 @@ Anti-patterns that apply across multiple skills. Reference this to avoid duplica
 ❌ No todo!(), unimplemented!(), or panic!() in production
    Implement all code paths properly
 
-❌ No #[ignore] on tests without bd issue number
+❌ No #[ignore] on tests without a forge issue reference
    Fix or track broken tests
 
 ❌ No unsafe blocks without documentation
@@ -32,7 +32,7 @@ Anti-patterns that apply across multiple skills. Reference this to avoid duplica
 ❌ No fatalError() in production code
    Handle errors gracefully
 
-❌ No disabled tests without bd issue number
+❌ No disabled tests without a forge issue reference
    Fix or track broken tests
 
 ❌ Use proper array bounds checking
@@ -45,13 +45,13 @@ Anti-patterns that apply across multiple skills. Reference this to avoid duplica
 ### TypeScript
 
 ```
-❌ No @ts-ignore or @ts-expect-error without bd issue number
+❌ No @ts-ignore or @ts-expect-error without a forge issue reference
    Fix type issues properly
 
 ❌ No any types without justification
    Use proper typing
 
-❌ No .skip() on tests without bd issue number
+❌ No .skip() on tests without a forge issue reference
    Fix or track broken tests
 
 ❌ No throw in async code without proper handling
@@ -63,8 +63,9 @@ Anti-patterns that apply across multiple skills. Reference this to avoid duplica
 ### Code Quality
 
 ```
-❌ No TODOs or FIXMEs without bd issue numbers
-   Track work in bd, not in code comments
+❌ No TODOs or FIXMEs without a forge issue reference
+   Track work in the forge issue tracker, not in code comments
+   (skills/common-patterns/forge-detection.md, Issues; bd holds epics in flight, never a backlog)
 
 ❌ No stub implementations
    Empty functions, placeholder returns forbidden
@@ -76,7 +77,7 @@ Anti-patterns that apply across multiple skills. Reference this to avoid duplica
    Remove console.log, println!, print() before committing
 
 ❌ No "we'll do this later"
-   Either do it now or create bd issue and reference it
+   Either do it now or propose a forge issue at a gate and reference it
 
 ❌ No comments written for the reviewer
    "Pinned: drop this and C1 reds", "not defensive padding", "do not simplify"
@@ -129,6 +130,13 @@ Anti-patterns that apply across multiple skills. Reference this to avoid duplica
    - Price the work: files, tests, size, the scope line it crosses
    - Ask: bring in / defer / drop — never propose the defer yourself
    - A run that ends in new tickets is the exception
+
+❌ Don't file work that outlives the epic in bd
+   bd holds the epic in flight; the forge issue is the ask
+   (skills/using-hyper/SKILL.md, Where work is tracked)
+   - Bugs outside an epic, review follow-ups, resolve-tension work → forge issue
+   - Proposed at a gate with title and body; filed only on approval
+   - A decline is recorded, never silent
 ```
 
 ## Refactoring Anti-Patterns
@@ -160,9 +168,9 @@ After refactoring, old code is dead code. Delete it.
    - Delete or update these tests
 
 ❌ No deprecation markers without timeline
-   Either remove now or create bd issue with removal date
+   Either remove now or propose a forge issue with a removal date
    - @deprecated without action = "keep forever"
-   - Every @deprecated needs: bd issue + removal date
+   - Every @deprecated needs: forge issue reference + removal date
    - If no external consumers, just delete it now
 
 ❌ No "V2" without removing V1

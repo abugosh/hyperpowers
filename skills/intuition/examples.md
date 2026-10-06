@@ -118,7 +118,7 @@ None.
 
 2 tensions require architect resolution. Options for each tension:
 - Accept the tension (create ADR documenting the acceptance)
-- Create ADR + bd ticket to restructure
+- Create ADR + forge issue to restructure
 - Investigate further (dispatch codebase-investigator for deeper analysis)
 </code>
 
@@ -263,7 +263,7 @@ None (no ADRs to drift from).
 
 3 tensions require architect resolution. Options for each tension:
 - Accept the tension (create ADR documenting the acceptance)
-- Create ADR + bd ticket to restructure
+- Create ADR + forge issue to restructure
 - Investigate further (dispatch codebase-investigator for deeper analysis)
 </code>
 

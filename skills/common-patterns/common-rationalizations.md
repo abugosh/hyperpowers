@@ -60,6 +60,8 @@ These rationalizations appear across multiple contexts. When you catch yourself 
 | "Other tasks are waiting, should continue" | Current task incomplete = blocked. Finish all substeps first. |
 | "Can finish remaining steps later" | Later never comes. Complete all substeps now before closing task. |
 | "It's real but out of scope, file a follow-up" | A ticket is the operator's decision, never the loop's default. Price the work and ask: bring in, defer, or drop. |
+| "I'll file a bd issue so it's tracked" | bd holds epics in flight, never a backlog. Work that outlives the epic is a forge issue, proposed at a gate and filed on approval (`skills/using-hyper/SKILL.md`, Where work is tracked). |
+| "The user said fix it, no need to ask about an issue" | Creating a forge issue is an outward write; the proposal is shown first and a decline is recorded. Filing without asking and skipping silently are both wrong. |
 | "The epic's Boundaries said not to touch this" | A closed epic's Boundary was a scoping choice, not a prohibition. Only an Anti-Pattern refutes; a Boundary is gate context. |
 
 ## Dispatch Shortcuts

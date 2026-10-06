@@ -7,8 +7,9 @@ restate or reinvent them locally.
 
 ## Purpose
 
-Any skill that needs MR/PR metadata, wants to post a comment, or wants to
-submit an approval (e.g. peek) does host detection once, using the idiom
+Any skill that needs MR/PR metadata, wants to post a comment, wants to
+submit an approval (e.g. peek), or needs to read or file a forge issue
+(fixing-bugs, opt, intuition) does host detection once, using the idiom
 below, then follows the degradation ladder to decide what's actually
 available. This keeps forge commands in one place so they don't drift
 between skills.
@@ -319,14 +320,81 @@ Self-approval and refusals, per forge:
   reviewer re-reviews or the review is dismissed, outliving the session.
   Consumers stay comment-only for that verdict.
 
+## Issues
+
+A forge issue is the ask: the record of a piece of work that lives as long as
+the work does, which is where anything that outlives a bd epic belongs
+(`skills/using-hyper/SKILL.md`, session-start duties). This section is the
+single source for reading and creating one. Consumers — fixing-bugs, opt,
+intuition, brainstorming's Provenance line, finishing-a-development-branch —
+cite it; none restates a command.
+
+Detection is the idiom above, and the degradation ladder applies with
+"issue" in place of "MR/PR": at rung 3 the proposed title and body become
+copy-paste text for the user to file by hand, and the consumer records that
+no issue was filed.
+
+### Read
+
+```bash
+# GitLab: JSON issue object — `iid` (the number callers cite as #N), `title`,
+# `description`, `state` (`opened` or `closed`), `web_url`. -F json needs
+# glab >= v1.37.0; --jq is native from v1.100.0 (pipe through jq before that).
+glab issue view <iid> -F json
+
+# GitHub: `number` (the #N), `title`, `body`, `state` (`OPEN` or `CLOSED`),
+# `url`. --json needs gh >= v1.9.0; --jq is native.
+gh issue view <number> --json number,title,body,state,url
+```
+
+### Create
+
+Creating an issue is a write under the rule that opens Write commands: only
+after explicit user approval at the consumer's gate. The consumer shows the
+exact title and body first; the user approves, declines, or names where the
+work is already tracked. A decline is recorded where the consumer says (fixing-bugs: a `Tracking:`
+line in the commit body), so the work proceeds untracked by decision, never
+by omission.
+
+```bash
+# GitLab: title and description together make the call non-interactive — no
+# editor, no confirmation prompt (-y is unnecessary but harmless). When stdout
+# is not a TTY the issue URL is printed alone.
+glab issue create -t "<title>" -d "<body>"
+
+# GitHub: title and body are both required off a TTY; --body-file <path> (or
+# `-` for stdin) substitutes for --body on gh >= v1.8.0. Prints the issue URL
+# alone. There is no --json on create.
+gh issue create --title "<title>" --body "<body>"
+```
+
+On both forges the issue number is the last path segment of the printed URL
+(`${url##*/}`). Record it as `#<N>` wherever the consumer keeps it.
+
+### Closing keywords
+
+`Closes #<N>` in an MR/PR description closes issue N when the MR/PR merges
+into the default branch, on both forges. GitHub also accepts `Fixes` and
+`Resolves` and the cross-repo form `owner/repo#N`; GitLab accepts
+`group/project#N`. A GitLab project can turn this off — Settings >
+Repository > Branch defaults > "Auto-close referenced issues on default
+branch" (API `autoclose_referenced_issues`) — and the regex itself is the
+instance-level `issue_closing_pattern`. A merge that did not close its issue
+is one of those two settings, not a consumer bug: say so, never retry.
+finishing-a-development-branch writes the line from the epic's Provenance
+and nothing else; when several epics serve one issue, the user reopens it
+after the first merge.
+
 ## Unverified caveats
 
 Doc-verified against official docs 2026-07-24 (C1-C5), 2026-08-26 (C6-C9;
-gh v2.98.0, glab v1.115.0), 2026-09-02 (C10), and 2026-09-08 (C11-C16;
+gh v2.98.0, glab v1.115.0), 2026-09-02 (C10), 2026-09-08 (C11-C16;
 approve and identity commands, doc-verified from the gh and glab manuals and
-CLI source, no CLI installed on the authoring machine); NOT runtime-verified
-(no `glab`/`gh` installed on the authoring machine). Each line names what one
-live run would settle.
+CLI source, no CLI installed on the authoring machine), and 2026-10-06
+(C17-C19; the Issues section — glab v1.117.0 `issue create`/`issue view`
+help read on the authoring machine, behavior from CLI source; gh from the
+manual and source at v2.102.0). Nothing below is runtime-verified. Each line
+names what one live run would settle.
 
 | ID | Caveat | Fallback |
 |----|--------|----------|
@@ -346,6 +414,9 @@ live run would settle.
 | C14 | GitLab returns a bare 401 for every ineligible approve, so "already approved" and "not allowed" are indistinguishable by status | Before approving, read `/approvals` (Review state) and withdraw when the caller's login is already listed; on 401, report "not approved — GitLab gives one status for every refusal". Settled by: approve twice on a test MR and record both responses |
 | C15 | A repeat `gh pr review --approve` by the same login creating a second APPROVED review is observed, not documented | Before approving, read `reviews[]` (Review state — `commit.oid` is the reviewed SHA; `latestReviews` carries none) and withdraw when the caller's login already shows APPROVED at the reviewed tip. Settled by: approve twice on a test PR and count the reviews |
 | C16 | Whether `glab mr approve` accepts the URL and `!iid` argument forms on every installed version is unconfirmed (both are in current source and absent from the manual) | Pass the plain iid (GitLab) or number (GitHub). Settled by: run each with a URL argument on the installed version |
+| C17 | `gh issue create --title --body` and `gh issue view --json` are doc- and source-verified (create.go requires both flags off a TTY and prints only the URL) but not run; whether a token scoped to one org changes the printed URL shape is unconfirmed | Take the number from the last path segment of the last stdout line that starts with `http`; on anything else report the output verbatim and treat the issue as not filed. Settled by: one create on a test repo, captured with stdout redirected |
+| C18 | `glab issue create -t -d` printing the URL alone when stdout is not a TTY is source-verified (`issueutils.DisplayIssue`, `iostreams/logger.go`) but not run; a TTY prints `#<iid> <title> (<age>)` on the line above the URL | Same fallback as C17: last stdout line starting with `http`. Settled by: one create with stdout redirected to a file |
+| C19 | `glab issue view -F json` carrying `iid` is source-verified (client-go `gitlab.Issue`) but not run | Read `.iid`; when absent, parse the number from `web_url`. Settled by: one `glab issue view <iid> -F json` on the installed version |
 
 ## Base branch
 
