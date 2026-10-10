@@ -153,7 +153,7 @@ restated.
 Applies to anything a human reads: review reports presented to the user,
 MR/PR comments, epic summaries, commit message bodies. Consumers: executor,
 code-reviewer, reviewer, peek, executing-plans, opt, ponder, intuition,
-verification-before-completion, loop-interfaces, spec-templates. The
+fact-or-fiction, verification-before-completion, loop-interfaces, spec-templates. The
 baseline governs tone; the Audience Contract above governs reader and
 altitude.
 

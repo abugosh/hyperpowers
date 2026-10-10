@@ -54,6 +54,7 @@ HIGH FREEDOM - The meta-process (check for skills, use Skill tool, announce usag
 | Running tests / validations / commits | hyperpowers:test-runner agent (keeps verbose output out of context) |
 | About to claim done / fixed / passing | hyperpowers:verification-before-completion |
 | Structural friction; architecture unease | hyperpowers:intuition |
+| Design feels more complicated than it should; a Hickey read of the code | hyperpowers:fact-or-fiction |
 | Architecture model (.c4) create/update/review | hyperpowers:ponder |
 | Auditing test quality | hyperpowers:analyzing-test-effectiveness |
 | 3+ independent failures to investigate | hyperpowers:dispatching-parallel-agents |

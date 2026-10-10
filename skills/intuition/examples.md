@@ -36,10 +36,10 @@ Pass 4 (Hidden Dependencies) finds:
   Order Store is accessed directly by Pricing Engine (imports order_store module)
   but model shows no edge between them.
 
-Pass 1 (Complection) finds nothing.
+Pass 1 (Concern Concentration) finds nothing.
 Pass 2 (Interface Analysis) finds nothing.
 Pass 5 (Structural Dependency Direction) finds nothing.
-Pass 6 (State/Identity) finds nothing.
+Pass 6 (Shared Mutable State) finds nothing.
 Pass 7 (Rate-of-Change Mismatch) finds nothing.
 Pass 8 (Workaround Cascade) finds nothing.
 Pass 9 (Mechanism Bypass) skipped — no cascades from Pass 8.
@@ -176,7 +176,7 @@ Pass 5 (Structural Dependency Direction):
   depends on higher abstraction.
 
 Pass 7 (Rate-of-Change Mismatch):
-  Analyzed 45 commits (excluded 3 bulk, 2 generated-only, 1 manifest-only).
+  Analyzed 45 commits (excluded 3 bulk, 2 generated-only, 1 manifest-only); dropped as ritual: none.
   api/ changed 30 times, utils/ changed 2 times — but they share no boundary,
   no tension. core/ and storage/ both changed ~15 times — no mismatch within
   any shared boundary.
@@ -454,7 +454,7 @@ Claude presents:
 
 ## Tension: Critical Orchestrator Overload
 **Components/Modules:** Order Orchestrator
-**Analysis pass:** Complection Scan
+**Analysis pass:** Concern Concentration
 **Pull 1:** Split Orchestrator into domain-specific coordinators --
   Gain: each coordinator handles one workflow. Cost: more components.
 **Pull 2:** Keep single Orchestrator -- Gain: single coordination point.
@@ -506,7 +506,7 @@ Corrected output:
 
 ## Tension: Orchestrator Scope Growth
 **Components/Modules:** Order Orchestrator
-**Analysis pass:** Complection Scan
+**Analysis pass:** Concern Concentration
 **Pull 1:** Split into domain-specific coordinators -- Gain: each coordinator
   handles one workflow. Cost: more components and interfaces.
 **Pull 2:** Keep single Orchestrator -- Gain: single coordination point.

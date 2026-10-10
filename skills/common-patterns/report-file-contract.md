@@ -22,6 +22,7 @@ file. Today that is:
 | end-of-epic reviewer (`agents/reviewer.md`) | `## Implementation Review:` | `REVIEW VERDICT: <APPROVED\|GAPS FOUND> — <N> gaps — report: <path>` |
 | SRE batch reviewer (`skills/sre-task-refinement/SKILL.md`) | `### Batch Verdict` | `SRE VERDICT: <APPROVE\|NEEDS REVISION\|REJECT> — report: <path> — <N> specs updated` |
 | intuition analyst (`skills/intuition/SKILL.md`, Steps 0-3) | `### Audit Outcome` | `TENSION REPORT: <N> tensions, <D> drift — report: <path>` |
+| fact-or-fiction critic (`skills/fact-or-fiction/SKILL.md`, Steps 1-4) | `### Critique Outcome` | `CRITIQUE: <N> findings (<P> problem, <I> incidental) — report: <path>` |
 | test-effectiveness analyst (`agents/test-effectiveness-analyst.md`) | `## Executive Summary` (written last, from the sections above it) | `TEST AUDIT: <N> tests — RED <r>, YELLOW <y>, GREEN <g>, <c> corner cases — report: <path>` |
 
 The return lines that carry a verdict word are registered in

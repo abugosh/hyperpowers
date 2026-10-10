@@ -326,8 +326,8 @@ A forge issue is the ask: the record of a piece of work that lives as long as
 the work does, which is where anything that outlives a bd epic belongs
 (`skills/using-hyper/SKILL.md`, session-start duties). This section is the
 single source for reading and creating one. Consumers — fixing-bugs, opt,
-intuition, brainstorming's Provenance line, finishing-a-development-branch —
-cite it; none restates a command.
+intuition, fact-or-fiction, brainstorming's Provenance line,
+finishing-a-development-branch — cite it; none restates a command.
 
 Detection is the idiom above, and the degradation ladder applies with
 "issue" in place of "MR/PR": at rung 3 the proposed title and body become

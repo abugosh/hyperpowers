@@ -174,6 +174,7 @@ To avoid duplication, common elements are centralized in `skills/common-patterns
 - `common-anti-patterns.md` - Anti-patterns to avoid
 - `common-rationalizations.md` - Excuses that signal failure
 - `report-file-contract.md` - How a subagent hands back a multi-section report: lead-supplied path, sections appended as completed, a terminal section, one return line, resume on re-dispatch; the consumer table names every dispatch under it
+- `change-history.md` - Reading git history as change evidence: history-depth thresholds, the noise filter, the one-pass churn count; cited by intuition (rate-of-change) and fact-or-fiction (hotspots)
 - `prose-style.md` - Comment policy (default no comment; the next-maintainer reader; the channel table for proof; cut-never-extend; shape as evidence), the boy-scout rule, the audience contract (reports written for the architect-governor reader, a top layer over an evidence layer), and the human-facing prose baseline
 
 Skills reference these rather than duplicating content.
@@ -216,12 +217,13 @@ For triaging and responding to review feedback on your own MR/PR: `/hyperpowers:
 
 ### Architecture (Empirical, Brand-based)
 
-Architecture uses Brand's empirical approach — observe actual change rates through git history rather than predicting forces upfront:
+Architecture uses Brand's empirical approach — observe actual change rates through git history rather than predicting forces upfront — with one opinionated read of the design alongside it (fact-or-fiction):
 
 1. **Brainstorm** (`/hyperpowers:brainstorm`) - Primary entry point for new work. Includes Architecture Impact Check (5 structural questions) and design-time friction detection that routes to /intuition when structural uncertainty arises
 2. **Build** - Implement the feature (executing-plans)
-3. **Intuition** (`/hyperpowers:intuition`) - Intermittent diagnostic. Runs 9 structured analysis passes to find tensions (complection, coupling, dependency direction, rate-of-change mismatches, workaround cascades, mechanism bypass). Resolution protocol guides per-tension decisions (accept via ADR, resolve via ADR + ticket, brainstorm for complex cases, investigate for deeper evidence)
-4. **Ponder** (`/hyperpowers:ponder`) - Architecture model ownership. Dispatches ponder subagent for all .c4 file operations (update, bootstrap, review). Called by executing-plans completion (architecture checklist), review-implementation re-verification, and Intuition (model bootstrapping)
+3. **Intuition** (`/hyperpowers:intuition`) - Intermittent diagnostic. Runs 9 structured analysis passes to find tensions (concern concentration, coupling, dependency direction, shared mutable state, rate-of-change mismatches, workaround cascades, mechanism bypass) from structural evidence, never from judging whether the design is simple. Before its resolution protocol it offers a fact-or-fiction read. Resolution protocol guides per-tension decisions (accept via ADR, resolve via ADR + ticket, brainstorm for complex cases, investigate for deeper evidence)
+4. **Fact-or-fiction** (`/hyperpowers:fact-or-fiction`) - Opinionated Hickey critique. Reads what the code means (data shapes, names, nouns) where change is frequent — hotspots from git history standalone, intuition's evidence when chained — names incidental complexity, ranks findings by cost (how tangled times how often changes pay for it), and leans. Runs alone, or as intuition's second read before its resolution protocol; the critique is not persisted, forge issues are filed on approval
+5. **Ponder** (`/hyperpowers:ponder`) - Architecture model ownership. Dispatches ponder subagent for all .c4 file operations (update, bootstrap, review). Called by executing-plans completion (architecture checklist), review-implementation re-verification, and Intuition (model bootstrapping)
 
 The architecture model (LikeC4 `.c4` files in `docs/arch/`) represents current codebase reality. ADR trail IS the architectural strategy.
 

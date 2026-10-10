@@ -1,10 +1,10 @@
 ---
 name: intuition
-description: "Brand-informed empirical audit of architecture — finds complection, coupling, shearing layer mismatches, workaround cascades, mechanism bypass, and drift through structured observation of codebase and model"
+description: "Brand-informed empirical audit of architecture — finds concern concentration, coupling, shared mutable state, shearing layer mismatches, workaround cascades, mechanism bypass, and drift through structured observation of codebase and model"
 ---
 
 <skill_overview>
-Examine an architecture model (if one exists) and codebase for complection, hidden coupling, temporal coupling, structural dependency violations, state/identity conflation, rate-of-change mismatches, workaround cascades, and mechanism bypass using Hickey's simplicity framework and Brand's empirical observation. Produce a structured tension report that surfaces both pulls of every tension without resolving them. The architect reads the report and decides.
+Examine an architecture model (if one exists) and codebase for concern concentration, hidden coupling, temporal coupling, structural dependency violations, shared mutable state, rate-of-change mismatches, workaround cascades, and mechanism bypass through Brand's empirical observation: every finding comes from structural evidence — the dependency graph, request paths, git history, compensating code — never from judging whether the design is simple. Produce a structured tension report that surfaces both pulls of every tension without resolving them. The architect reads the report and decides.
 
 When no architecture model exists, run a codebase-only audit to find tensions in raw code structure. Dynamic view drift (model view vs actual code path) is checked via /ponder REVIEW.
 </skill_overview>
@@ -20,7 +20,7 @@ RIGID - Same 9 analysis passes every time (Passes 1-9), same output format, same
 | 1 | Gather evidence (codebase-investigator) | Module structure, imports, co-change data; request paths and undeclared flows |
 | 2 | Run 9 analysis passes | Raw tension findings (Passes 1-9) |
 | 3 | Self-check + present | Tension report (no recommendations) |
-| 4 | Resolution protocol (interactive) | Per-tension resolution: accept / resolve / brainstorm / investigate |
+| 4 | Offer a fact-or-fiction read; resolution protocol (interactive) | Per-tension resolution: accept / resolve / brainstorm / investigate |
 
 **Key:** Steps 0-3 are ANALYTICAL. No AskUserQuestion during analysis. Load, analyze, report.
 **Key:** Step 4 is INTERACTIVE. Walk through each tension with the architect.
@@ -39,6 +39,7 @@ RIGID - Same 9 analysis passes every time (Passes 1-9), same output format, same
 - Inner-loop feature work (use hyperpowers:brainstorming)
 - Bug fixes (use hyperpowers:fixing-bugs)
 - Refactoring (use hyperpowers:refactoring-safely)
+- An opinionated read of whether the design is simple — what is braided, values or places, which complexity is incidental (use hyperpowers:fact-or-fiction)
 </when_to_use>
 
 <the_process>
@@ -76,7 +77,7 @@ If you are reading this as the dispatched analyst: Steps 0-3 below are yours to 
 
 ## Step 0 -- Prepare Audit
 
-**Announce:** "I'm using the intuition skill to examine your architecture for complection, coupling, and structural tensions."
+**Announce:** "I'm using the intuition skill to examine your architecture for coupling, concentration, and change-rate tensions."
 
 ### Optional: Prose Focus
 
@@ -223,9 +224,9 @@ Run each pass using whatever evidence is available. When an architecture model i
 
 **Before recording a tension:** Check if an existing ADR already accepts this tension. If an accepted ADR covers the exact structural choice, skip the tension and note: "Accepted via ADR-NNN: [title]".
 
-### Pass 1: Complection Scan
+### Pass 1: Concern Concentration
 
-**What to look for:** Concerns braided together that should be independent.
+**What to look for:** Modules where unrelated concerns concentrate — one module on the paths of features that otherwise share nothing.
 
 **Model evidence (when model is loaded):**
 - Components whose responsibility description mentions multiple unrelated concerns
@@ -234,13 +235,12 @@ Run each pass using whatever evidence is available. When an architecture model i
 **Codebase evidence:**
 - Modules that import from multiple unrelated domains
 - Files that contain logic for multiple independent concerns
-- Functions that combine data access, business logic, and orchestration
 
 **Flow evidence (from Step 1b, when available):**
 - Modules that participate in request paths for multiple unrelated features (a module appearing in both the checkout path and the reporting path participates in independent concerns)
 - Request paths that pass through a single module for unrelated reasons
 
-**Tension pattern:** "[Component/Module] braids [Concern A] and [Concern B]"
+**Tension pattern:** "[Component/Module] concentrates [Concern A] and [Concern B]"
 
 ### Pass 2: Interface Analysis
 
@@ -319,19 +319,17 @@ The principle: dependencies should flow from orchestration (higher abstraction) 
 
 **Tension pattern:** "[A] (lower abstraction) depends on [B] (higher abstraction) — upward dependency"
 
-### Pass 6: State/Identity Conflation
+### Pass 6: Shared Mutable State
 
-**What to look for:** Mutable shared state, identity used where value would suffice.
+**What to look for:** Mutable state shared between modules — a coupling channel the dependency graph does not show.
 
 **Model evidence (when model is loaded):**
 - relates_to edges that represent shared mutable state (not just interaction)
 - Components that both read and write the same state
-- Identity-based references where value-based would decouple
 
 **Codebase evidence:**
 - Global mutable state accessed by multiple modules
 - Singletons that carry mutable state between components
-- Object identity used for comparison where value equality would work
 - Caches or registries that create hidden state dependencies
 
 **Tension pattern:** "[A] and [B] share mutable state [S] creating hidden coupling"
@@ -340,33 +338,11 @@ The principle: dependencies should flow from orchestration (higher abstraction) 
 
 **What to look for:** Modules within the same component that change at significantly different rates — empirical evidence that shearing layers are misaligned with component boundaries.
 
-**Skip if:** fewer than 10 non-filtered commits in the repository. **Warn if:** shallow clone detected (fewer than 100 commits available) — results may be unreliable.
+**History depth, noise filtering, and counting:** `skills/common-patterns/change-history.md`. Below its skip threshold, skip Pass 7 and note "Insufficient commit history for rate-of-change analysis (N commits). Pass 7 skipped."; below its warn threshold, carry its warning into the report.
 
 **Step 7a — Gather change frequency data:**
 
-Dispatch `hyperpowers:codebase-investigator` with:
-```
-Analyze git history to determine change frequency per module/directory.
-
-NOISE FILTERING (apply all before counting):
-1. Exclude commits touching 50+ files (bulk operations like renames, migrations)
-2. Exclude changes to generated files: *.lock, *.generated.*, dist/, build/, vendor/, node_modules/
-3. Exclude commits whose message matches: /^(rename|migrate|bulk|refactor all|chore: bump|update deps)/i
-4. Exclude dependency-manifest-only commits (e.g., commits that touch only package.json, Cargo.toml, go.mod without any source file changes)
-
-After filtering, for each top-level module/directory:
-- Count how many commits touched files in that module in the last 6 months
-- Report the total commit count before and after filtering
-
-Output format:
-- "Analyzed N commits (excluded M bulk, K generated-only, J manifest-only)"
-- Per-module change counts, sorted by frequency
-- Flag any modules where ALL commits were filtered out (report as "no signal after filtering")
-```
-
-**Check for insufficient history:**
-- `git rev-list --count HEAD` — if fewer than 10: skip Pass 7 entirely, note "Insufficient commit history for rate-of-change analysis (N commits). Pass 7 skipped."
-- If fewer than 100: warn "Shallow history (N commits) — rate-of-change analysis may be unreliable."
+Run the counting command in that file yourself — it takes under a second — and group the per-file counts by top-level module/directory. Record its filtering line, the per-module counts sorted by frequency, and any module whose commits were all filtered out ("no signal after filtering").
 
 **Step 7b — Identify mismatches:**
 
@@ -393,13 +369,13 @@ Structural observation: [N] co-changes in last [period] where [A] changed indepe
 Evidence: [from git history analysis]
 ```
 
-**Filtering stats (include in report header):** "Analyzed N commits (excluded M bulk, K generated-only, J manifest-only)"
+**Filtering stats (include in report header):** the filtering line from `change-history.md`
 
 ### Pass 8: Workaround Cascade Detection
 
 **What to look for:** Code that exists to compensate rather than to build value — the structural fingerprint of accumulated workarounds. A single workaround is not a cascade; look for clusters of 2+ compensating patterns in the same area, all handling special cases for the same subsystem or code path.
 
-**Note:** Pass 8 may flag modules also flagged by Pass 1 (Complection). This is expected — a module can braid concerns (Pass 1) AND contain compensating code (Pass 8). Pass 8 adds the cascade framing: these are not independent concerns but symptoms of accumulated workarounds.
+**Note:** Pass 8 may flag modules also flagged by Pass 1 (Concern Concentration). This is expected — a module can concentrate concerns (Pass 1) AND contain compensating code (Pass 8). Pass 8 adds the cascade framing: these are not independent concerns but symptoms of accumulated workarounds.
 
 **Skip if:** no codebase (design-phase model only).
 
@@ -627,7 +603,7 @@ This report — including the one-line summaries under "Tensions Outside Focus" 
 **Accepted (via ADRs):** [count]
 **Drift detected (ADR):** [count]
 **Rate-of-change mismatches:** [count, or "skipped — insufficient history"]
-**Change-frequency filtering:** [Analyzed N commits (excluded M bulk, K generated-only, J manifest-only)]
+**Change-frequency filtering:** [the filtering line from change-history.md]
 **Workaround cascades:** [count, or "none"]
 **Mechanism bypass:** [count, or "skipped — no cascades" or "none — cascades without identified bypass"]
 **Model-vs-code accuracy:** not checked here — /hyperpowers:ponder audits the model against the code.
@@ -671,13 +647,15 @@ These questions are part of the ANALYTICAL phase (Step 3). Present them as part 
 
 ## Step 4 -- Resolution Protocol
 
+**A second read first.** After presenting the report, ask once whether the architect wants hyperpowers:fact-or-fiction's read on these tensions: an opinionated critique that says which pull it would take and why, and what the structure cannot show. Ask even when the audit found no tensions; the critique then carries only what the structure cannot show. On yes, load hyperpowers:fact-or-fiction with the Skill tool, dispatch its Chained from intuition block with this report's path, and present its Critique section verbatim. Each resolution question below then carries the critic's one-line lean for that tension, labeled as fact-or-fiction's — this audit's own text stays neutral. After the last tension, run fact-or-fiction's pick-list for its findings outside the tensions. On no, resolve as below.
+
 After presenting the tension report, guide the architect through resolution of each tension. This step IS interactive — use AskUserQuestion for each tension.
 
 **For each tension, present the four options:**
 
 ```
 AskUserQuestion:
-  question: "How do you want to resolve: [Tension Name]?"
+  question: "How do you want to resolve: [Tension Name]?  [when a critique exists: fact-or-fiction leans: <its line for this tension>]"
   header: "Tension Resolution"
   options:
     - label: "Accept"
@@ -760,7 +738,7 @@ Five worked examples (good audit with model, codebase-only audit, BAD makes-reco
 <critical_rules>
 ## Rules That Have No Exceptions
 
-1. **NO recommendations.** Both pulls presented equally. Never say "should", "recommend", "better", "prefer", or "consider changing". If you catch yourself writing one, rewrite to neutral structural observation.
+1. **NO recommendations** in this audit's text. Both pulls presented equally. A fact-or-fiction lean carried into Step 4, labeled as its own, is not this audit's text. Never say "should", "recommend", "better", "prefer", or "consider changing". If you catch yourself writing one, rewrite to neutral structural observation.
 
 2. **NO severity rankings.** Never use "critical", "high", "medium", "low", "severe", "minor", "urgent", or "important" to describe tensions. Use structural observations: "affects N downstream nodes", "both modules changed together in N commits", "3 files import across this boundary".
 
@@ -768,7 +746,7 @@ Five worked examples (good audit with model, codebase-only audit, BAD makes-reco
 
 4. **Run self-check EVERY TIME.** Scan all output for recommendation, severity, and ordering keywords before presenting. This step is mandatory and non-negotiable. "Output looks fine" is a rationalization for skipping it.
 
-5. **Run ALL 9 passes.** Never skip a pass, even if early passes found nothing. Each pass looks for a different category of problem. Skipping passes misses problems. Pass 7 (rate-of-change mismatch) is skipped only when fewer than 10 non-filtered commits are available. Pass 8 (workaround cascade) is skipped only when no codebase exists. Pass 9 (mechanism bypass) is skipped only when Pass 8 finds zero cascades.
+5. **Run ALL 9 passes.** Never skip a pass, even if early passes found nothing. Each pass looks for a different category of problem. Skipping passes misses problems. Pass 7 (rate-of-change mismatch) is skipped only below the skip threshold in `skills/common-patterns/change-history.md`. Pass 8 (workaround cascade) is skipped only when no codebase exists. Pass 9 (mechanism bypass) is skipped only when Pass 8 finds zero cascades.
 
 6. **ANALYTICAL in Steps 0-3, INTERACTIVE in Step 4.** No AskUserQuestion during analysis (Steps 0-3). Step 4 (resolution protocol) IS interactive — use AskUserQuestion to walk the architect through each tension's resolution.
 
@@ -808,8 +786,8 @@ Before presenting the audit report:
 - [ ] Codebase-investigator dispatched (if codebase exists)
 - [ ] Evidence gathered covers: module structure, imports, co-change, call patterns, interfaces, shared state
 - [ ] Flow evidence gathered (Step 1b): request paths, undeclared data flows, implicit ordering (if codebase exists)
-- [ ] All 9 analysis passes executed (complection, interfaces, temporal coupling, hidden deps, structural dependency direction, state/identity, rate-of-change mismatch, workaround cascade, mechanism bypass)
-- [ ] Pass 7 analyzed git change frequencies with noise filtering, or skipped with reason (<10 commits)
+- [ ] All 9 analysis passes executed (concern concentration, interfaces, temporal coupling, hidden deps, structural dependency direction, shared mutable state, rate-of-change mismatch, workaround cascade, mechanism bypass)
+- [ ] Pass 7 analyzed git change frequencies per `change-history.md`, or skipped below its threshold with the reason stated
 - [ ] Pass 8 scanned for workaround cascades, or skipped (no codebase)
 - [ ] Pass 9 dispatched targeted codebase-investigator per cascade, or skipped (no cascades from Pass 8)
 - [ ] Linked Pass 8+9 findings presented together in Step 4 (bypass resolves cascade)
@@ -824,6 +802,7 @@ Before presenting the audit report:
 - [ ] Report includes module summary table and audit outcome
 - [ ] Report written to the dispatch's report path, passes appended as completed, `### Audit Outcome` present before return; final message is the one `TENSION REPORT:` line (`report-file-contract.md`)
 - [ ] ADR age check: stale ADRs (6+ months) flagged as maintenance notes (not tensions)
+- [ ] Step 4: fact-or-fiction read offered once before the first resolution question; on yes, each resolution question carries its labeled lean
 - [ ] Step 4: each tension presented to architect with resolution options (accept/resolve/brainstorm/investigate/skip)
 - [ ] Step 4: ADRs created for Accept and Resolve paths
 - [ ] Step 4: forge issues filed for Resolve path, title and body shown first
@@ -838,6 +817,7 @@ Before presenting the audit report:
 **This skill calls:**
 - hyperpowers:codebase-investigator (when codebase exists — gathers evidence for all 9 passes)
 - hyperpowers:ponder (Step 4 bootstrap — dispatched as subagent when first Resolve on audit without architecture model creates initial model)
+- hyperpowers:fact-or-fiction (Step 4, on the architect's yes — its chained run, given this report's path)
 
 **This skill is called by:**
 - User (via /hyperpowers:intuition command)
@@ -852,6 +832,9 @@ ARCHITECTURE CYCLE:
               ↕
   /intuition → find tensions → Step 4 resolve → update model
 
+SECOND READ (Step 4, optional):
+  report → fact-or-fiction chained run → its lean carried into each resolution question → its pick-list for findings outside the tensions
+
 RESOLUTION (Step 4 per-tension):
   tension → accept (ADR) / resolve (ADR + forge issue) / brainstorm (complex) / investigate (deeper evidence) / skip (defer)
 
@@ -863,7 +846,7 @@ HANDOFF (all tensions resolved/accepted):
 ```
 
 **Agents used:**
-- codebase-investigator (Step 1a: gather module structure, imports, co-change, call patterns, interfaces, shared state, compensating code patterns, fix clustering; Step 1b: gather request paths, undeclared data flows, implicit ordering; Pass 7: analyze git change frequencies per module with noise filtering; Pass 9: trace bypass paths for cascade root cause; Step 4 Investigate: targeted deep-dive on specific tensions)
+- codebase-investigator (Step 1a: gather module structure, imports, co-change, call patterns, interfaces, shared state, compensating code patterns, fix clustering; Step 1b: gather request paths, undeclared data flows, implicit ordering; Pass 9: trace bypass paths for cascade root cause; Step 4 Investigate: targeted deep-dive on specific tensions)
 - ponder (Step 4: bootstrap mode — dispatched when first Resolve on audit without architecture model creates initial model)
 - NO internet-researcher (audit uses only model + codebase evidence)
 
@@ -894,11 +877,9 @@ HANDOFF (all tensions resolved/accepted):
 - [Forge detection and issues](../common-patterns/forge-detection.md)
 - [Common anti-patterns](../common-patterns/common-anti-patterns.md)
 - [Common rationalizations](../common-patterns/common-rationalizations.md)
+- [Change history](../common-patterns/change-history.md) -- history depth, noise filtering, churn counting (Pass 7)
 
-**Hickey's simplicity framework:**
-- Simple Made Easy (Rich Hickey) -- complection detection, simple vs easy
-- Are We There Yet? (Rich Hickey) -- state, identity, value separation
-- Hammock-Driven Development (Rich Hickey) -- think deeply before acting
+**Hickey's lens:** hyperpowers:fact-or-fiction carries it — whether the design is simple, which complexity is incidental. This audit reads structure and change only.
 
 **Brand's empirical architecture:**
 - How Buildings Learn (Stewart Brand) -- shearing layers discovered by observing how buildings actually change over decades
