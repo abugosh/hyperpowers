@@ -115,10 +115,11 @@ Write test that reproduces the bug:
 
 ```python
 def test_rejects_empty_email():
-    """Regression test for #123: Empty email accepted"""
     with pytest.raises(ValidationError):
-        create_user(email="")  # Should fail, currently passes
+        create_user(email="")
 ```
+
+The test's name and assertion carry what it guards; the issue number lives in the commit body (Step 6), not in a docstring.
 
 **Run test, verify it FAILS:**
 ```bash
@@ -135,10 +136,12 @@ pytest tests/test_user.py::test_rejects_empty_email
 
 ```python
 def create_user(email: str):
-    if not email or not email.strip():  # Fix
+    if not email or not email.strip():
         raise ValidationError("Email required")
-    # ... rest
+    ...
 ```
+
+The fix carries no comment about itself. Why the clause or value changed, what was rejected, and which issue asked for it go in the commit body (Step 6); the forge issue and git history hold the lineage. A comment remains only for a hazard the code cannot show, in one sentence (`skills/common-patterns/prose-style.md`, Comment Policy).
 
 **Run test, verify it now PASSES:**
 ```bash
@@ -489,6 +492,7 @@ Before claiming bug fixed:
 - [ ] Verified test PASSES after fix
 - [ ] Ran full test suite (all pass)
 - [ ] Commit body carries root cause, regression test, suite result
+- [ ] No comment narrates or justifies the fix (`skills/common-patterns/prose-style.md`, Comment Policy)
 - [ ] `Closes #<N>` present when an issue exists; `Tracking:` line otherwise
 
 </verification_checklist>

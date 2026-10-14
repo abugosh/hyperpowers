@@ -246,7 +246,7 @@ Complete workflow for fixing bugs systematically:
 1. **Know Where the Bug Is Tracked** - The owning epic, an existing forge issue, or a forge issue proposed at a gate (never a bd issue)
 2. **Debugging with Tools** - Use debuggers, internet-researcher, codebase-investigator to find root cause
 3. **Write Failing Test** (RED phase) - Reproduce the bug in a test
-4. **Implement Fix** (GREEN phase) - Minimal fix addressing root cause
+4. **Implement Fix** (GREEN phase) - Minimal fix addressing root cause; no comment about the change, the commit body carries the why (`skills/common-patterns/prose-style.md`, Comment Policy, cited by fixing-bugs, test-driven-development, and refactoring-safely alike)
 5. **Verify** - Run full test suite via test-runner agent, check for regressions
 6. **Classify and Commit** - Evidence in the commit body; `Closes #<N>` when a forge issue exists
 

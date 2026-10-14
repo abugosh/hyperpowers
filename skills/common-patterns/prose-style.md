@@ -110,12 +110,13 @@ AND prior.account_id = v_account_id
 
 ## Boy-Scout Rule
 
-Within a file a task spec already directs you to edit, removing noise
-comments and correcting stale docstrings you encounter there is mandatory
-and in-scope — it is not scope drift, and it does not require spec
-amendment. Opening a file the spec does not name — for cleanup or any other
-reason — remains prohibited; the boy-scout rule extends what you fix inside
-an authorized file, never which files are authorized.
+Within a file your task already has you editing (the spec names it, or the
+fix or refactor requires it), removing noise comments and correcting stale
+docstrings you encounter there is mandatory and in-scope — it is not scope
+drift, and it does not require spec amendment. Opening a file the task does
+not require — for cleanup or any other reason — remains prohibited; the
+boy-scout rule extends what you fix inside an authorized file, never which
+files are authorized.
 
 ## The Reader (Audience Contract)
 

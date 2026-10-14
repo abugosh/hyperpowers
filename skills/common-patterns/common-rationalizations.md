@@ -95,6 +95,7 @@ These rationalizations appear across multiple contexts. When you catch yourself 
 | "Every clause here has a hazard" | Then each gets one sentence. A hazard that needs a paragraph is an ADR. |
 | "The policy is never numeric, so volume can't be a finding" | Shape is evidence. A comment longer than its code is presumed misplaced until each sentence passes. |
 | "The spec explained it, so the code should too" | The spec is for the executor. Nothing in Why or Context is transcribed into comments. |
+| "The value changed, so the comment should say why and what it was" | Lineage lives in the commit body and the issue. The comment holds the live constraint in one sentence, or nothing. |
 
 ## TDD Shortcuts
 

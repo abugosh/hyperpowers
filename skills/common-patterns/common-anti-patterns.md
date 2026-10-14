@@ -86,6 +86,10 @@ Anti-patterns that apply across multiple skills. Reference this to avoid duplica
 
 ❌ No comment that proves its own claim
    State the hazard in a sentence. The proof has a home, and it is never the code
+
+❌ No comment that records lineage
+   What the value was, who asked, which ticket, what was tried — git history
+   and the forge issue hold that (skills/common-patterns/prose-style.md, Comment Policy)
 ```
 
 ### Testing

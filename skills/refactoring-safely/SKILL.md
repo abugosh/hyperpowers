@@ -89,6 +89,8 @@ The smallest transformation that compiles.
 - Renaming + moving + restructuring
 - "While I'm here" improvements
 
+The transformation leaves no comment saying what moved, what it used to be, or why; the commit message and the refactor issue carry that. A docstring the move made stale is corrected in the same change (`skills/common-patterns/prose-style.md`, Comment Policy and Boy-Scout Rule).
+
 **Example:**
 
 ```rust
@@ -494,6 +496,7 @@ Before marking refactoring complete:
 - [ ] No behavior changes introduced
 - [ ] Code is cleaner/simpler than before
 - [ ] Each commit in history is small and safe
+- [ ] No comment records what moved or why; commits and the issue hold that (`skills/common-patterns/prose-style.md`, Comment Policy)
 - [ ] bd task documents what was done and why
 - [ ] Can explain what each transformation did
 

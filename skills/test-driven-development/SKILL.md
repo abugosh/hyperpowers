@@ -76,6 +76,8 @@ Write simplest code to pass the test. Nothing more.
 
 **Key principle:** Don't add features the test doesn't require. Don't refactor other code. Don't "improve" beyond the test.
 
+No comment narrates the change or explains why it was made; that is the commit message's job. The default is no comment, and one that stays states a hazard the code cannot show, in a sentence (`skills/common-patterns/prose-style.md`, Comment Policy).
+
 ## 4. Verify GREEN - Watch It Pass
 
 **MANDATORY.**
@@ -94,6 +96,7 @@ Run tests and confirm:
 - Remove duplication
 - Improve names
 - Extract helpers
+- Cut noise comments and correct stale docstrings in the files you changed (`skills/common-patterns/prose-style.md`, Boy-Scout Rule)
 
 Keep tests green. Don't add behavior.
 
@@ -302,6 +305,7 @@ Before marking work complete:
 - [ ] Watched each test **fail** before implementing
 - [ ] Each test failed for expected reason (feature missing, not typo)
 - [ ] Wrote minimal code to pass each test
+- [ ] No comment narrates the change (`skills/common-patterns/prose-style.md`, Comment Policy)
 - [ ] All tests pass with no warnings
 - [ ] Tests use real code (mocks only if unavoidable)
 - [ ] Edge cases and errors covered
