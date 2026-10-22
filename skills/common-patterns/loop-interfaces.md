@@ -123,7 +123,7 @@ Definition sites cite this section; parse sites must match it exactly.
   The full report lives in the file at the path; the lead parses the verdict
   word immediately after `SRE VERDICT: ` and reads the report file on demand.
   The count covers specs strengthened and specs trimmed.
-- **Peek synthesis → user** (derived in `skills/peek/SKILL.md` Step 6 from
+- **Peek synthesis → user** (derived in `skills/peek/SKILL.md` Step 5 from
   severities anchored in `pipeline-constants.md`, Severity Anchor): the
   review report and the draft comment open with exactly one of
   `Verdict: APPROVE`, `Verdict: APPROVE WITH CHANGES`,
@@ -133,7 +133,7 @@ Definition sites cite this section; parse sites must match it exactly.
   every surviving finding) — any Critical → REQUEST CHANGES; else any
   Important → APPROVE WITH CHANGES; else APPROVE.
   The lead never hand-picks it.
-- **Peek report Path → user** (derived in `skills/peek/SKILL.md` Step 6,
+- **Peek report Path → user** (derived in `skills/peek/SKILL.md` Step 5,
   stated once under the report's Overall Assessment): exactly one of
   `Path: fix in place`, `Path: rework`. `fix in place` — each surviving
   finding is addressed where it stands and the branch's shape holds.

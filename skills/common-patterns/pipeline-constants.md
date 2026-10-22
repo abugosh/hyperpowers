@@ -88,18 +88,18 @@ by the follow-up it requires, not by how the defect feels:
     contract; that concern is a Question for the Author
     (agents/peek.md Shared Rule 3). Consequence: what happens when it does, stated
     concretely.
-  - *Delivery* — a confirmed stated aim the branch does not deliver (the
+  - *Delivery* — a stated aim the branch does not deliver (the
     aims table row reads `missing`). Trigger: the aim, quoted, with its
     source. Consequence: the capability the merge record claims and the
     merge would not ship, and who relies on that claim.
   - *Structural* — a change of ownership, dependency direction, or boundary
-    that no confirmed aim covers (an undeclared reshape). Trigger: the
+    that no stated aim covers (an undeclared reshape). Trigger: the
     move — what responsibility or arrow, from where to where, at file:line.
     Consequence: the decision the merge would make without a record, and
     what inherits it afterwards.
 
   A `partial` aim is Important, not a delivery Critical. A reshape that a
-  confirmed aim covers is a decision for the reader, never a finding from
+  stated aim covers is a decision for the reader, never a finding from
   the stance alone. Every Critical finding names its class on a
   `Critical class:` line so synthesis and triage can read it.
 - **Important** — requires fix before merge, no re-peek: the author
@@ -160,13 +160,14 @@ Consumers cite this section; none restates it.
 
 ## Peek Fix Carve-out
 
-Bounded authority for peek's lead (skills/peek/SKILL.md, synthesis and gate
-steps) to resolve findings at the review worktree instead of routing them
-to the author. Lenses never fix — agents/peek.md's read-only rules are not
-relaxed by this section. opt's Step 6 Tier 1 (`skills/opt/SKILL.md`) cites
-the same eligibility and suite rules for architect-approved fixes on the
-author's own branch — there routing-to-author does not arise, and delivery
-waits on opt's outward gate instead of peek's.
+Bounded authority for peek's lead (skills/peek/SKILL.md, synthesis,
+decision, and delivery steps) to resolve findings at the review worktree
+instead of routing them to the author. Lenses never fix — agents/peek.md's
+read-only rules are not relaxed by this section. opt's Step 6 Tier 1
+(`skills/opt/SKILL.md`) cites the same eligibility and suite rules for
+architect-approved fixes on the author's own branch — there
+routing-to-author does not arise, and delivery waits on opt's outward gate
+instead of peek's decision round.
 
 - Eligibility: every `[convention]` finding; a `[capability]` finding only
   when its severity is Important or Suggestion AND the fix is an exact
@@ -177,12 +178,12 @@ waits on opt's outward gate instead of peek's.
   A red or unrunnable suite demotes the capability fixes back to ordinary
   findings; `[convention]` fixes are unaffected.
 - Delivery: additive commits only, one per finding, pushed or ref-updated
-  only after the user approves the exact diff, comment text, and target at
-  peek's gate. Never a force-push; never an amend, squash, or rebase of
-  author commits.
+  only when the user elected them at peek's decision round
+  (`skills/peek/SKILL.md`, Step 6). Never a force-push; never an amend,
+  squash, or rebase of author commits.
 - Verdict: derived over the findings NOT fixed by review
   (loop-interfaces.md, Verdict Contracts, peek entry); fixed findings move
-  to the report's Fixed-by-review block.
+  to the comment's `Fixed directly` list (`skills/peek/SKILL.md`, Step 7).
 
 Consumers cite this section; none restates it.
 

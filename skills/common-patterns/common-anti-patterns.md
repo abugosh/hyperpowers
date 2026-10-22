@@ -142,6 +142,13 @@ Anti-patterns that apply across multiple skills. Reference this to avoid duplica
    - Proposed at a gate with title and body; filed only on approval
    - A decline is recorded, never silent
 
+❌ Don't add a stop or a re-approval a skill does not name
+   An election is the gate; a second question on the same decision is oversight
+   the user did not ask for (peek: 64 of 97 runs asked twice after the report,
+   117 of ~118 delivery approvals went through unchanged)
+   - Deliver what was elected; escalate only on a failure the skill names
+   - "To be safe" is the rationalization, not a reason
+
 ❌ Don't add or change a rule in a skill or agent prompt without a recorded observation
    The lead authors from evidence; a hypothesis is a question for the user
    (skills/writing-skills/SKILL.md)

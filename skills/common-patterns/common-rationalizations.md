@@ -13,6 +13,8 @@ These rationalizations appear across multiple contexts. When you catch yourself 
 | "No time for proper approach" | Shortcuts cost more time in rework. |
 | "Partner won't notice" | They will. Trust is earned through consistency. |
 | "Different words so rule doesn't apply" | Spirit over letter. Intent matters. |
+| "I'll add a confirmation step before the expensive part, to be safe" | Across 89 peek intent gates the aims changed in about 6 runs and the user took the recommended option 78% of the time. A stop the skill does not name costs the user a round for nothing; the report is where they judge, with the findings in front of them (`skills/peek/SKILL.md`). |
+| "Show the exact thing before it goes out, to be safe" | 117 of about 118 peek delivery approvals went through unchanged. The user's election is the approval; what they elected goes out, and a second look at the same decision is the needy workflow the evidence removed. |
 
 ## Verification Shortcuts
 
