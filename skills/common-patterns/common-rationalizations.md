@@ -14,7 +14,8 @@ These rationalizations appear across multiple contexts. When you catch yourself 
 | "Partner won't notice" | They will. Trust is earned through consistency. |
 | "Different words so rule doesn't apply" | Spirit over letter. Intent matters. |
 | "I'll add a confirmation step before the expensive part, to be safe" | Across 89 peek intent gates the aims changed in about 6 runs and the user took the recommended option 78% of the time. A stop the skill does not name costs the user a round for nothing; the report is where they judge, with the findings in front of them (`skills/peek/SKILL.md`). |
-| "Show the exact thing before it goes out, to be safe" | 117 of about 118 peek delivery approvals went through unchanged. The user's election is the approval; what they elected goes out, and a second look at the same decision is the needy workflow the evidence removed. |
+| "Show the exact thing before it goes out, to be safe" | 117 of about 118 peek delivery approvals went through unchanged. An election is the approval; what was elected goes out, and a second look at the same decision is the needy workflow the evidence removed. |
+| "Nobody is watching this run, so ask before anything goes out" | Across 204 answered peek decision rounds the user posted the comment in 205 of 206 questions, followed the lead's approve-or-hold call in 119 of 119 and took every offered fix in 155 of 162, while the boxes sat open 166 hours and 6 elected deliveries were lost to a branch that moved during the wait. Where a skill elects, the election goes out and the report is the record (`skills/peek/SKILL.md`, Step 6). |
 
 ## Verification Shortcuts
 

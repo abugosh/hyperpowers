@@ -145,7 +145,8 @@ Definition sites cite this section; parse sites must match it exactly.
   never appears in colleague-facing text — the cause sentence may, in plain
   language. The accompanying `Decision:` line names what only the reader
   can decide (a declared reshape to accept or send back, an aim to drop
-  from the description) or reads `(none)`.
+  from the description), each with the position the run took on it
+  (`skills/peek/SKILL.md`, Step 6), or reads `(none)`.
 - **Opt disposition → user** (defined in `skills/opt/SKILL.md`, disposition
   gate; proposed by the lead, decided by the user): every incoming review
   finding carries exactly one of `FIX NOW`, `FILE FOLLOW-UP`, `DECLINE`,

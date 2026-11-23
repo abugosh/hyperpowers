@@ -224,8 +224,9 @@ or a non-zero exit means identity is unknown, not "not the author" (C11).
 
 ## Write commands
 
-Used only after explicit user approval — the approval gate belongs to the
-consumer skill, not to this file.
+When a write goes out is the consumer skill's rule, not this file's: opt
+posts behind its gate, peek on its own election (`skills/peek/SKILL.md`,
+Step 6).
 
 Two shapes, and they are not interchangeable. A **new top-level comment**
 opens its own conversation on the MR/PR — right for a standalone statement

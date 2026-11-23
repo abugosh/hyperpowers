@@ -161,13 +161,12 @@ Consumers cite this section; none restates it.
 ## Peek Fix Carve-out
 
 Bounded authority for peek's lead (skills/peek/SKILL.md, synthesis,
-decision, and delivery steps) to resolve findings at the review worktree
+election, and delivery steps) to resolve findings at the review worktree
 instead of routing them to the author. Lenses never fix — agents/peek.md's
 read-only rules are not relaxed by this section. opt's Step 6 Tier 1
 (`skills/opt/SKILL.md`) cites the same eligibility and suite rules for
 architect-approved fixes on the author's own branch — there
-routing-to-author does not arise, and delivery waits on opt's outward gate
-instead of peek's decision round.
+routing-to-author does not arise, and delivery waits on opt's outward gate.
 
 - Eligibility: every `[convention]` finding; a `[capability]` finding only
   when its severity is Important or Suggestion AND the fix is an exact
@@ -178,9 +177,8 @@ instead of peek's decision round.
   A red or unrunnable suite demotes the capability fixes back to ordinary
   findings; `[convention]` fixes are unaffected.
 - Delivery: additive commits only, one per finding, pushed or ref-updated
-  only when the user elected them at peek's decision round
-  (`skills/peek/SKILL.md`, Step 6). Never a force-push; never an amend,
-  squash, or rebase of author commits.
+  only on peek's election (`skills/peek/SKILL.md`, Step 6). Never a
+  force-push; never an amend, squash, or rebase of author commits.
 - Verdict: derived over the findings NOT fixed by review
   (loop-interfaces.md, Verdict Contracts, peek entry); fixed findings move
   to the comment's `Fixed directly` list (`skills/peek/SKILL.md`, Step 7).

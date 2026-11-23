@@ -149,6 +149,14 @@ Anti-patterns that apply across multiple skills. Reference this to avoid duplica
    - Deliver what was elected; escalate only on a failure the skill names
    - "To be safe" is the rationalization, not a reason
 
+❌ Don't ask where a skill elects
+   A skill that names its own election delivers it unasked and records it in
+   its report (peek, Step 6: the first option was taken on 257 of 258 comment
+   and approval questions, every offered fix on 155 of 162)
+   - A hold names a reason the review found; "nobody is watching" is not one
+   - What only the user can grant goes to the author as a question, never
+     granted for them
+
 ❌ Don't add or change a rule in a skill or agent prompt without a recorded observation
    The lead authors from evidence; a hypothesis is a question for the user
    (skills/writing-skills/SKILL.md)
